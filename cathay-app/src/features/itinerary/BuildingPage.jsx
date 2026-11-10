@@ -108,9 +108,9 @@ export default function BuildingPage() {
           Group votes
         </IconHeading>
         <ul>
-          {readiness.map((member, i) => (
+          {readiness.map((member) => (
             <li className={member.ready ? 'is-done' : ''} key={member.userId}>
-              <span className={`building__avatar avatar-tone--${avatarTone(i)}`} aria-hidden="true">
+              <span className={`building__avatar avatar-tone--${avatarTone(member.userId)}`} aria-hidden="true">
                 {member.initial}
               </span>
               <span className="building__who">{member.ready ? copy.finishedSwiping(member.name) : `${member.name} is still swiping`}</span>

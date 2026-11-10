@@ -31,6 +31,7 @@ import Chip from '../components/ui/Chip';
 import Field from '../components/ui/Field';
 import LoadingState from '../components/ui/LoadingState';
 import Sheet from '../components/ui/Sheet';
+import CalendarSheet from '../components/ui/CalendarSheet';
 import StateMessage from '../components/ui/StateMessage';
 import { useToast } from '../components/ui/Toast';
 import { pickPhoto } from '../data/photos';
@@ -65,8 +66,8 @@ const Spec = ({ label, children }) => (
 );
 
 const SAMPLE_MEMBERS = [
-  { userId: 'a', name: 'Gaudi', initial: 'G', airport: { code: 'SIN', city: 'Singapore' }, status: 'booked', isCreator: true },
-  { userId: 'b', name: 'Clara', initial: 'C', airport: { code: 'HKG', city: 'Hong Kong' }, status: 'picked', isViewer: true },
+  { userId: 'gaudi', name: 'Gaudi', initial: 'G', airport: { code: 'SIN', city: 'Singapore' }, status: 'booked', isCreator: true },
+  { userId: 'clara', name: 'Clara', initial: 'C', airport: { code: 'HKG', city: 'Hong Kong' }, status: 'picked', isViewer: true },
   { userId: 'c', name: 'Mei', initial: 'M', airport: { code: 'TPE', city: 'Taipei' }, status: 'browsing' },
 ];
 
@@ -236,7 +237,7 @@ function FieldBlock() {
         </Spec>
         <Spec label="Select">
           <Field id="ds-f6" label="Dates" disclosure="▾">
-            <select className="field__text" id="ds-f6" defaultValue="a"><option value="a">Nov 7–10, 2026</option></select>
+            <select className="field__text" id="ds-f6" defaultValue="a"><option value="a">Nov 21–24, 2026</option></select>
           </Field>
         </Spec>
       </div>
@@ -248,10 +249,10 @@ function CardBlock() {
   return (
     <Block id="ds-cards" title="Cards and rows" figma="trip context, group card, member row, bonus teaser, section heading." proposal="hover and pressed on the group card." rule="A whole card is one link; do not nest a second link or button inside it.">
       <div className="ds-specs">
-        <Spec label="Group card"><GroupCard to="/groups" photo={TRIP_PHOTO} name="Tokyo together" meta="Nov 7–10, 2026" status="3 members" chip={{ tone: 'tint', label: 'Invited' }} /></Spec>
-        <Spec label="Group card, hover"><GroupCard className="is-hover" to="/groups" photo={TRIP_PHOTO} name="Tokyo together" meta="Nov 7–10, 2026" status="3 members" chip={{ tone: 'tint', label: 'Invited' }} /></Spec>
-        <Spec label="Group card, pressed"><GroupCard className="is-pressed" to="/groups" photo={TRIP_PHOTO} name="Tokyo together" meta="Nov 7–10, 2026" status="3 members" chip={{ tone: 'tint', label: 'Invited' }} /></Spec>
-        <Spec label="Trip context"><TripContext photo={TRIP_PHOTO} title="Tokyo, Japan" dates="Nov 7–10, 2026" status="Group set up" /></Spec>
+        <Spec label="Group card"><GroupCard to="/groups" photo={TRIP_PHOTO} name="Tokyo together" meta="Nov 21–24, 2026" status="3 members" chip={{ tone: 'tint', label: 'Invited' }} /></Spec>
+        <Spec label="Group card, hover"><GroupCard className="is-hover" to="/groups" photo={TRIP_PHOTO} name="Tokyo together" meta="Nov 21–24, 2026" status="3 members" chip={{ tone: 'tint', label: 'Invited' }} /></Spec>
+        <Spec label="Group card, pressed"><GroupCard className="is-pressed" to="/groups" photo={TRIP_PHOTO} name="Tokyo together" meta="Nov 21–24, 2026" status="3 members" chip={{ tone: 'tint', label: 'Invited' }} /></Spec>
+        <Spec label="Trip context"><TripContext photo={TRIP_PHOTO} title="Tokyo, Japan" dates="Nov 21–24, 2026" status="Group set up" /></Spec>
         <Spec label="Member rows"><ul className="ds-list">{SAMPLE_MEMBERS.map((member) => <MemberRow key={member.userId} member={member} />)}</ul></Spec>
         <Spec label="Section heading"><SectionHeading title="Members" action={<button className="section-heading__action" type="button">Share invite</button>} /></Spec>
         <Spec label="Bonus teaser"><BonusTeaser heading="Book together, earn more" text="Sample copy for the bonus teaser." /></Spec>
@@ -273,6 +274,7 @@ function LayoutBlock() {
 
 function SheetBlock() {
   const [open, setOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const toast = useToast();
   return (
     <Block id="ds-overlay" title="Sheet, state message, skeleton, toast" figma="sheet with handle; confirmation and building states." proposal="empty, error and unavailable messages, skeleton and toast." rule="Messages say what happened and what to do next. Sheets trap focus, close on Escape and return focus to the opener.">
@@ -286,6 +288,22 @@ function SheetBlock() {
             <Button onClick={() => setOpen(false)} data-autofocus>Confirm</Button>
           </Sheet>
         </Screen>
+        <Screen className="ds-frame">
+          <div className="ds-frame__body">
+            <Button variant="secondary" onClick={() => setCalendarOpen(true)}>Open travel dates</Button>
+          </div>
+          <CalendarSheet
+            open={calendarOpen}
+            onClose={() => setCalendarOpen(false)}
+            origin="HKG"
+            destination="HND"
+            currency="HKD"
+            rangeText="Nov 21–24"
+            startText="Sat 21 Nov 2026"
+            endText="Tue 24 Nov 2026"
+            windowInfo={{ start: '2026-11-21', end: '2026-11-24', fares: [{ date: '2026-11-21', priceFrom: 5531 }, { date: '2026-11-22', priceFrom: 5863 }, { date: '2026-11-23', priceFrom: 5697 }, { date: '2026-11-24', priceFrom: 5365 }] }}
+          />
+        </Screen>
         <Screen className="ds-frame"><StateMessage as="div" mark="!" tone="sand" title="Something went wrong" text="We could not reach the service. Check your connection and try again."><Button>Retry</Button></StateMessage></Screen>
         <Screen className="ds-frame"><StateMessage as="div" mark="✓" title="Invite sent" text="Your friends can join with the link." /></Screen>
         <Screen className="ds-frame"><LoadingState as="div" variant="list" /></Screen>
@@ -297,7 +315,7 @@ function SheetBlock() {
   );
 }
 
-const BOARD_MEMBER = { userId: 'x', name: 'Gaudi', initial: 'G', airport: { code: 'HKG', city: 'Hong Kong' }, status: 'booked', isViewer: false };
+const BOARD_MEMBER = { userId: 'gaudi', name: 'Gaudi', initial: 'G', airport: { code: 'HKG', city: 'Hong Kong' }, status: 'booked', isViewer: false };
 const BOARD_FLIGHTS = { arrive: { dateLabel: 'Sat 7 Nov', time: '16:10', airport: 'HND', flightNo: 'CX500' }, leave: { dateLabel: 'Tue 10 Nov', time: '15:35', airport: 'HND', flightNo: 'CX6321' } };
 const TL_COLUMNS = [
   { id: 'a', title: 'Arrivals', dateLabel: 'Sat 7 Nov', icon: '/assets/ui-plane-arrival.svg', tone: 'arrive', spanLabel: '40m', points: [{ time: '16:10', minutes: 970, names: ['Gaudi'], includesViewer: false }, { time: '16:50', minutes: 1010, names: ['You'], includesViewer: true }] },

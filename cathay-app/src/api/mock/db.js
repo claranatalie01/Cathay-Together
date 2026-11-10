@@ -3,7 +3,7 @@
 import { seedSelectionFor, windowOf } from './flightData';
 import { PLACE_IDS, SEED_CHOICES } from './placeData';
 
-const KEY = 'cathay-mock-db-v3';
+const KEY = 'cathay-mock-db-v4';
 
 export const USERS = {
   clara: { id: 'clara', name: 'Clara', initial: 'C', airport: { code: 'SHA', city: 'Shanghai' } },
@@ -13,45 +13,15 @@ export const USERS = {
 
 // Windows the server accepts when creating a group.
 export const DATE_WINDOWS = {
-  'nov-7-10': { label: 'Nov 7–10, 2026', available: true },
-  'nov-14-17': { label: 'Nov 14–17, 2026', available: false },
-  'nov-21-24': { label: 'Nov 21–24, 2026', available: false },
+  'nov-21-24': { label: 'Nov 21–24, 2026', start: '2026-11-21', end: '2026-11-24', available: true },
 };
 
 const INVITE_BASE_URL = 'https://flights.cathaypacific.com/share/';
 export const inviteUrlFor = (code) => `${INVITE_BASE_URL}${code}`;
 
+// The demo starts with no groups: the first thing a visitor does is create one.
 function seed() {
-  return {
-    session: { currentUserId: 'gaudi' },
-    groups: [
-      {
-        id: 'tokyo-together',
-        name: 'Tokyo together',
-        destination: 'Tokyo, Japan',
-        datesLabel: 'Nov 7–10, 2026',
-        code: 'VFX37K',
-        creatorId: 'gaudi',
-        inviteCopied: false,
-        createdAt: 1,
-        members: [
-          { userId: 'gaudi', status: 'booked' },
-          { userId: 'kabe', status: 'picked' },
-        ],
-        invitations: [{ userId: 'clara', status: 'pending' }],
-      },
-      {
-        id: 'neon-nights', name: 'Neon nights', destination: 'Tokyo, Japan', datesLabel: 'Nov 14–17, 2026',
-        code: 'NEON42', creatorId: 'gaudi', inviteCopied: false, createdAt: 2,
-        members: [{ userId: 'gaudi', status: 'picked' }], invitations: [],
-      },
-      {
-        id: 'kyoto-autumn', name: 'Kyoto autumn', destination: 'Kyoto, Japan', datesLabel: 'Nov 21–24, 2026',
-        code: 'KYO777', creatorId: 'kabe', inviteCopied: false, createdAt: 3,
-        members: [{ userId: 'kabe', status: 'booked' }, { userId: 'gaudi', status: 'picked' }], invitations: [],
-      },
-    ],
-  };
+  return { session: { currentUserId: 'gaudi' }, groups: [] };
 }
 
 // Members who are already "picked" or "booked" get real flight choices, so the board, the Members

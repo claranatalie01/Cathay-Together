@@ -8,6 +8,7 @@ import { itineraryRoutes } from './itineraryHandlers';
 import { preferenceRoutes } from './preferenceHandlers';
 import { currentUser, findGroup } from './helpers';
 import { makeInviteCode, uniqueGroupId } from './ids';
+import { DESTINATION_AIRPORT, lowestEconomy } from './flightData';
 
 const GROUP_NAME_MAX = 30;
 
@@ -44,7 +45,7 @@ function validateCreate(body) {
   if (!destination) fields.destination = 'Enter a destination.';
   else if (!/^tokyo\b/i.test(destination)) fields.destination = 'Only Tokyo, Japan is available in this demo.';
   if (!dates) fields.dates = 'Choose your travel dates.';
-  else if (!DATE_WINDOWS[dates]?.available) fields.dates = 'Only Nov 7–10, 2026 is available in this demo.';
+  else if (!DATE_WINDOWS[dates]?.available) fields.dates = 'Only Nov 21–24, 2026 is available in this demo.';
   if (Object.keys(fields).length) {
     throw new ApiError(422, 'validation_failed', 'Some fields need attention.', fields);
   }
@@ -69,6 +70,23 @@ export const routes = [
         return mine(a) - mine(b) || b.createdAt - a.createdAt;
       });
     return { status: 200, body: { groups: visible.map((g) => serialize(g, user.id)) } };
+  }],
+
+  // GET /date-windows – windows a new group can use, with the lowest economy fare per day
+  ['GET', '/date-windows', () => {
+    const db = getDb();
+    const user = currentUser(db);
+    const windows = Object.entries(DATE_WINDOWS)
+      .filter(([, w]) => w.available)
+      .map(([id, w]) => {
+        const fares = [];
+        for (let t = Date.parse(`${w.start}T12:00:00Z`); t <= Date.parse(`${w.end}T12:00:00Z`); t += 86400000) {
+          const date = new Date(t).toISOString().slice(0, 10);
+          fares.push({ date, priceFrom: lowestEconomy({ home: user.airport, direction: 'outbound', date }) });
+        }
+        return { id, label: w.label, start: w.start, end: w.end, fares };
+      });
+    return { status: 200, body: { origin: user.airport.code, destination: DESTINATION_AIRPORT.code, currency: 'HKD', windows } };
   }],
 
   // POST /groups

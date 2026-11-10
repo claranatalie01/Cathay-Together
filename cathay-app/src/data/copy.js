@@ -239,12 +239,21 @@ export const COPY = {
     submitting: 'Creating…',
     failed: 'We could not create the group. Please try again.',
     labels: { name: 'Group name', destination: 'Destination', dates: 'Travel dates' },
+    calendar: {
+      title: 'Select travel dates',
+      done: 'Done',
+      weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+      note: (range, origin, currency) => `Demo: only ${range} is open. Lowest economy fare per day from ${origin}, in ${currency}.`,
+      loading: 'Loading dates…',
+      failed: 'We could not load the dates. Please try again.',
+    },
     errors: {
       nameRequired: 'Enter a group name.',
       destinationRequired: 'Enter a destination.',
       destinationUnsupported: 'Only Tokyo, Japan is available in this demo.',
       datesRequired: 'Choose your travel dates.',
-      datesUnavailable: 'Only Nov 7–10, 2026 is available in this demo.',
+      datesUnavailable: 'Only Nov 21–24, 2026 is available in this demo.',
     },
   },
   bonus: {
@@ -271,7 +280,7 @@ export const COPY = {
     title: (name) => `Hello ${name}, You’re invited!`,
     rightsTitle: 'All members have equal rights',
     rightsText:
-      'Joining accepts Tokyo and Nov 7–10. Choose your departure airport and coordinate flights with friends.',
+      'Joining accepts Tokyo and Nov 21–24. Choose your departure airport and coordinate flights with friends.',
     join: 'Join',
     joining: 'Joining…',
     decline: 'Decline',

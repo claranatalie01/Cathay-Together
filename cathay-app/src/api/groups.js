@@ -20,6 +20,12 @@ export function getGroupByCode(code) {
   return request('GET', `/invitations/${enc(code)}`);
 }
 
+// Date windows the user can pick when creating a group, with the lowest economy fare per day
+// from their own airport (HKD). The demo offers one window.
+export function getDateWindows() {
+  return request('GET', '/date-windows');
+}
+
 export async function createGroup(values) {
   const group = await request('POST', '/groups', {
     name: values.name,

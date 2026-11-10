@@ -54,7 +54,7 @@ as "This invitation isn't available".
   "id": "tokyo-together",
   "name": "Tokyo together",
   "destination": "Tokyo, Japan",
-  "datesLabel": "Nov 7–10, 2026",
+  "datesLabel": "Nov 21–24, 2026",
   "code": "VFX37K",
   "inviteUrl": "https://flights.cathaypacific.com/share/VFX37K",
   "creatorId": "gaudi",
@@ -103,12 +103,27 @@ Creates a group; the caller becomes its creator and first member (`browsing`).
 Request:
 
 ```json
-{ "name": "Weekend in Tokyo", "destination": "Tokyo, Japan", "dates": "nov-7-10" }
+{ "name": "Weekend in Tokyo", "destination": "Tokyo, Japan", "dates": "nov-21-24" }
 ```
 
 Validation: `name` 1–30 characters; `destination` required (the demo accepts Tokyo only);
-`dates` one of the available window ids (`nov-7-10`). Response `201`: a **Group**.
+`dates` one of the available window ids (`nov-21-24`). Response `201`: a **Group**.
 Errors: `422 validation_failed` with `fields`.
+
+### `GET /date-windows`
+
+Date windows a new group can use, with the lowest economy fare per day from the signed-in person's
+airport. Feeds the "Select travel dates" sheet on Create group. The demo offers one window.
+
+```json
+{
+  "origin": "HKG", "destination": "HND", "currency": "HKD",
+  "windows": [{
+    "id": "nov-21-24", "label": "Nov 21–24, 2026", "start": "2026-11-21", "end": "2026-11-24",
+    "fares": [{ "date": "2026-11-21", "priceFrom": 5531 }, { "date": "2026-11-22", "priceFrom": 5863 }]
+  }]
+}
+```
 
 ### `GET /groups/:id`
 
@@ -160,8 +175,8 @@ Prefilled "Book a trip" form. Response `200`:
 {
   "origin": { "code": "HKG", "city": "Hong Kong" },
   "destination": { "code": "HND", "city": "Tokyo" },
-  "departDate": "2026-11-07", "returnDate": "2026-11-10",
-  "departLabel": "Sat 7 Nov 2026", "returnLabel": "Tue 10 Nov 2026",
+  "departDate": "2026-11-21", "returnDate": "2026-11-24",
+  "departLabel": "Sat 21 Nov 2026", "returnLabel": "Tue 24 Nov 2026",
   "cabins": [{ "id": "economy", "label": "Economy" }],
   "passengers": "1 Adult",
   "groupWindow": { "hours": 1, "min": 1, "max": 6, "step": 1 }
@@ -179,13 +194,13 @@ Response `200`:
 {
   "direction": "outbound",
   "route": { "from": { "code": "HKG", "city": "Hong Kong" }, "to": { "code": "HND", "city": "Tokyo" } },
-  "tripLabel": "Return", "rangeLabel": "(Sat) 7 Nov - (Tue) 10 Nov",
-  "date": "2026-11-07", "cabin": "economy",
+  "tripLabel": "Return", "rangeLabel": "(Sat) 21 Nov - (Tue) 24 Nov",
+  "date": "2026-11-21", "cabin": "economy",
   "cabins": [{ "id": "economy", "label": "Economy", "delta": 0 }, { "id": "premium", "label": "Premium Economy", "delta": 8931 }],
-  "dates": [{ "date": "2026-11-05", "label": "Thu, 5 Nov", "priceFrom": null }, { "date": "2026-11-07", "label": "Sat, 7 Nov", "priceFrom": 5531 }],
+  "dates": [{ "date": "2026-11-19", "label": "Thu, 19 Nov", "priceFrom": null }, { "date": "2026-11-21", "label": "Sat, 21 Nov", "priceFrom": 5531 }],
   "groupWindow": { "hours": 1, "others": [{ "time": "16:15" }] },
   "flights": [{
-    "id": "outbound-2026-11-07-548", "flightNo": "CX548", "from": "HKG", "to": "HND", "date": "2026-11-07",
+    "id": "outbound-2026-11-21-548", "flightNo": "CX548", "from": "HKG", "to": "HND", "date": "2026-11-21",
     "departTime": "08:55", "arriveTime": "13:45", "duration": "3h 50m", "operatedBy": null,
     "seatsLeft": 9, "lowest": false, "economyPrice": 6691, "priceFrom": 6691,
     "timing": {
@@ -207,7 +222,7 @@ Fare types for one flight. Response `200`:
 ```json
 {
   "direction": "outbound",
-  "flight": { "id": "outbound-2026-11-07-548", "priceFrom": 6691 },
+  "flight": { "id": "outbound-2026-11-21-548", "priceFrom": 6691 },
   "cabin": "economy",
   "cabins": [{ "id": "economy", "label": "Economy", "delta": 0 }],
   "fares": [{
@@ -228,7 +243,7 @@ The caller's chosen flights so far: `{ "outbound"?: Selection, "return"?: Select
 
 ### `PUT /groups/:id/flights/selection`
 
-Request: `{ "flightId": "outbound-2026-11-07-548", "cabin": "economy", "fare": "essential" }`.
+Request: `{ "flightId": "outbound-2026-11-21-548", "cabin": "economy", "fare": "essential" }`.
 Saves the choice for that flight's direction and responds `200` with the full selection object. When both
 directions are chosen the caller's member status changes from `browsing` to `picked` (never from `booked`).
 A **Selection** is `{ flightId, cabin, cabinLabel, fare, fareName, price, from, to, date, departTime, arriveTime, flightNo }`.
@@ -247,18 +262,18 @@ Extra error codes: `409 no_flights`, `409 already_booked`, `410 hold_expired`.
 
 ```json
 {
-  "group": { "id": "tokyo-together", "name": "Tokyo together", "destination": "Tokyo, Japan", "datesLabel": "Nov 7–10, 2026" },
+  "group": { "id": "tokyo-together", "name": "Tokyo together", "destination": "Tokyo, Japan", "datesLabel": "Nov 21–24, 2026" },
   "destination": { "code": "HND", "city": "Tokyo" },
   "summary": { "members": 3, "joined": 2, "picked": 1, "booked": 1 },
   "members": [{
     "userId": "gaudi", "name": "Gaudi", "initial": "G", "airport": { "code": "HKG", "city": "Hong Kong" },
     "status": "booked", "isViewer": true, "hasFlights": true,
-    "arrive": { "dateLabel": "Sat 7 Nov", "time": "16:10", "airport": "HND", "flightNo": "CX500" },
-    "leave": { "dateLabel": "Tue 10 Nov", "time": "15:35", "airport": "HND", "flightNo": "CX6321" }
+    "arrive": { "dateLabel": "Sat 21 Nov", "time": "16:10", "airport": "HND", "flightNo": "CX500" },
+    "leave": { "dateLabel": "Tue 24 Nov", "time": "15:35", "airport": "HND", "flightNo": "CX6321" }
   }],
   "timeline": {
-    "arrivals": { "dateLabel": "Sat 7 Nov", "points": [{ "time": "16:10", "minutes": 970, "names": ["You"], "includesViewer": true }], "spanMinutes": 40 },
-    "departures": { "dateLabel": "Tue 10 Nov", "points": [], "spanMinutes": 55 }
+    "arrivals": { "dateLabel": "Sat 21 Nov", "points": [{ "time": "16:10", "minutes": 970, "names": ["You"], "includesViewer": true }], "spanMinutes": 40 },
+    "departures": { "dateLabel": "Tue 24 Nov", "points": [], "spanMinutes": 55 }
   },
   "viewerAction": "book"
 }
@@ -298,7 +313,7 @@ Response `200`: the four suggestions, the caller's choices and everyone's readin
 
 ```json
 {
-  "group": { "id": "tokyo-together", "name": "Tokyo together", "destination": "Tokyo, Japan", "datesLabel": "Nov 7–10, 2026" },
+  "group": { "id": "tokyo-together", "name": "Tokyo together", "destination": "Tokyo, Japan", "datesLabel": "Nov 21–24, 2026" },
   "places": [{ "id": "food", "category": "Food", "name": "Tsukiji Outer Market", "area": "Tsukiji · Chuo City", "description": "…", "budget": "¥2,000–3,500", "savedNote": "¥2,000–3,500 est.", "duration": "1–1.5 hrs", "bestTime": "Morning", "tip": "…", "photo": "/assets/ab624.png", "thumb": "/assets/2c161.png", "alt": "…" }],
   "choices": { "food": "like", "scenery": "pass" },
   "saved": false,
@@ -333,19 +348,19 @@ How it is built: a voted place is scheduled when more than half the group liked 
 
 ```json
 {
-  "group": { "id": "tokyo-together", "name": "Tokyo together", "destination": "Tokyo, Japan", "datesLabel": "Nov 7–10, 2026" },
+  "group": { "id": "tokyo-together", "name": "Tokyo together", "destination": "Tokyo, Japan", "datesLabel": "Nov 21–24, 2026" },
   "members": 2,
   "days": [{
-    "index": 1, "date": "2026-11-07", "weekday": "Sat", "label": "7 Nov", "longLabel": "7 November", "title": "Arrive & settle in",
+    "index": 1, "date": "2026-11-21", "weekday": "Sat", "label": "21 Nov", "longLabel": "21 November", "title": "Arrive & settle in",
     "items": [
-      { "id": "flight-arrival", "kind": "flight-arrival", "slot": "Afternoon", "title": "Arrival", "from": "HKG", "to": "HND", "date": "2026-11-07", "departTime": "11:20", "arriveTime": "16:10", "flightNo": "CX500", "travelBefore": null },
+      { "id": "flight-arrival", "kind": "flight-arrival", "slot": "Afternoon", "title": "Arrival", "from": "HKG", "to": "HND", "date": "2026-11-21", "departTime": "11:20", "arriveTime": "16:10", "flightNo": "CX500", "travelBefore": null },
       { "id": "suggested-ramen", "kind": "place", "source": "suggested", "slot": "Evening", "name": "Neighbourhood ramen", "area": "Near your hotel", "description": "…", "minutes": 60, "cost": 1500, "costLabel": "¥1,500", "thumb": "…", "photo": "…", "alt": "…", "travelBefore": { "minutes": 60, "text": "by train · airport to city" } },
       { "id": "place-culture", "kind": "place", "source": "voted", "placeId": "culture", "liked": 2, "total": 2, "…": "…" }
     ],
     "totals": { "cost": 2500, "allowance": 1000, "minutes": 120, "travelMinutes": 60 }
   }],
   "maybe": [{ "placeId": "food", "name": "Tsukiji Outer Market", "liked": 1, "passed": 1, "duration": "1–1.5 hrs", "savedNote": "¥2,000–3,500 est." }],
-  "summary": { "places": 7, "voted": 1, "days": 4, "costPerPerson": 12000, "avgTravelMinutes": 45, "firstDate": "2026-11-07", "lastDate": "2026-11-10" },
+  "summary": { "places": 7, "voted": 1, "days": 4, "costPerPerson": 12000, "avgTravelMinutes": 45, "firstDate": "2026-11-21", "lastDate": "2026-11-24" },
   "builtAt": 1731100000000
 }
 ```
@@ -354,7 +369,7 @@ How it is built: a voted place is scheduled when more than half the group liked 
 
 ### `PUT /groups/:id/itinerary`
 
-Request: `{ "days": [{ "date": "2026-11-08", "stopIds": ["place-culture", "suggested-ueno"] }] }`. Every day must be sent with its stops in the new order; leaving a stop out removes it. Flights cannot be moved. Responds with the same body as the `GET`, with totals recalculated. Errors: `422 validation_failed`.
+Request: `{ "days": [{ "date": "2026-11-22", "stopIds": ["place-culture", "suggested-ueno"] }] }`. Every day must be sent with its stops in the new order; leaving a stop out removes it. Flights cannot be moved. Responds with the same body as the `GET`, with totals recalculated. Errors: `422 validation_failed`.
 
 ### `GET /groups/:id/itinerary/stops/:stopId`
 

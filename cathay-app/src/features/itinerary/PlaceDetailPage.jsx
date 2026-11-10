@@ -78,9 +78,9 @@ export default function PlaceDetailPage() {
         </IconHeading>
         {votes ? (
           <ul className="place__votes">
-            {votes.map((vote, i) => (
+            {votes.map((vote) => (
               <li key={vote.userId}>
-                <span className={`place__avatar avatar-tone--${avatarTone(i)}`} aria-hidden="true">
+                <span className={`place__avatar avatar-tone--${avatarTone(vote.userId)}`} aria-hidden="true">
                   {vote.initial}
                 </span>
                 <span className="place__voter">

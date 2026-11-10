@@ -21,13 +21,13 @@ Needs Node.js 20+ (`brew install node`).
 
 ## Review shortcuts
 
-Every route below also works when typed straight into the address bar. The sample group is `tokyo-together`.
+Every route below also works when typed straight into the address bar. The demo starts with no groups. Create one on `/groups/new` (the default name gives it the id `tokyo-together`, used below).
 
 | Flow | Route | What it is |
 |---|---|---|
 | A. Groups | `/groups` | Travel Groups list (the nav tab) |
-| | `/groups/new` | Start of group set-up (also what `/` opens) |
-| | `/invite/VFX37K` | Invitation link for the sample group |
+| | `/groups/new` | Start of group set-up (also what `/` opens). Travel dates opens a calendar sheet |
+| | `/invite/<code>` | Invitation link for a group (the code is on the Members page) |
 | | `/groups/tokyo-together/invite` | Members page |
 | B. Flights | `/groups/tokyo-together/flights/search` | Book a trip (cabin, trip type, group timing window) |
 | | `.../flights/outbound`, `.../flights/return` | Results, grouped by how close they land to everyone |

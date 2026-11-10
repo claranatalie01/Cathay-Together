@@ -102,7 +102,7 @@ The family cannot be identified from a screenshot. I **cannot confirm Inter**. C
 
 | Item | Value in screenshots | Value in my document | Status | Confidence | Which screenshot |
 |---|---|---|---|---|---|
-| Font family | not identifiable | Inter; Lexend for flight-search filters | UNKNOWN. Lexend: MISSING (no filter screen) | n/a | all |
+| Font family | not identifiable | Inter (Lexend removed, unused) | UNKNOWN. Lexend: MISSING (no filter screen) | n/a | all |
 | Hero IATA code (Book, "HKG") | cap 24.5 dp, so about 34 sp, bold, mid-teal | `display` 32/39 or `code` 36/44 | **CONFLICT**. 34 sits between them. Needs a sharper crop | ESTIMATED ±1.5 | S1, S2 |
 | Home IATA ("HKG", "Search") | cap 18.4 dp, about 26 sp, bold, mid-teal | `display-sm` 26/31 | MATCH (≈) | ESTIMATED | S3 |
 | App-bar title ("Select departing flight fare", "Fill in information") | cap 14.5 dp, about 20 sp, regular, `#282828`, centred | `page-title` 25/30, semibold, brand | **CONFLICT** (size, weight, colour, alignment) | ESTIMATED | S6, S10, S11 |

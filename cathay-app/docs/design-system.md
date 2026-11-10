@@ -58,7 +58,7 @@ Figma defined only three shared styles (v1.0 section 1): colour style "Dark" `#1
 `--<category>-<role>[-<variant>]`. Names say what a value is for. Existing token names are unchanged; new names are marked **new**.
 
 - Colour: `--color-text-*`, `--color-surface-*`, `--color-border-*`, `--color-icon-*`, `--color-divider`, `--color-overlay-scrim*`, `--color-focus-ring`, `--color-neutral-*`, `--color-canvas`.
-- Type: `--text-<style>-size` with `--text-<style>-leading` (always a pair), `--weight-*`, `--font-family`, `--font-family-numeric`.
+- Type: `--text-<style>-size` with `--text-<style>-leading` (always a pair), `--weight-*`, `--font-family`.
 - Space: `--space-xs … --space-3xl` (4, 8, 12, 16, 24, 32, 40) and `--space-optical-N` for off-grid values.
 - Radius (by use): see 3.5.
 - Border width: `--border-width-default` 1, `-strong` 2, `-selected` 1 (**changed from 3**).
@@ -143,7 +143,7 @@ Figma defined only three shared styles (v1.0 section 1): colour style "Dark" `#1
 
 ### 3.3 Typography
 
-**Family.** v1.0 says Inter. The real app's typeface **cannot be identified from the screenshots**, so Inter is kept (Figma kept) and is not confirmed. `--font-family-numeric` (Lexend, flight search filters) is kept; no filter screen was captured.
+**Family.** v1.0 says Inter. The real app's typeface **cannot be identified from the screenshots**, so Inter is kept (Figma kept) and is not confirmed. The Lexend numeric font from v1.0 was removed: no screen uses it.
 
 Sizes below are Real (est.) at ±1.5 sp, from cap-height ÷ 0.71 (assumed ratio). Where they match a v1.0 style, the v1.0 size and leading pair is kept.
 
@@ -301,6 +301,7 @@ Sizes below are Real (est.) at ±1.5 sp, from cap-height ÷ 0.71 (assumed ratio)
 | **Price** (built, Flow B) | `ui/Price`. Currency regular, amount bold ("HKD**6,691**") | R (S5, S6) |
 | **Slider** (built, Flow B) | `ui/Slider`. "Group timing window": label left, value right ("Within 1 hour"), real range input (1 to 6 hours, 1h steps), helper line below. Brand-teal fill, grey track, round dark-green thumb | Prototype ("Arrival Window"). Track and thumb sizes: PROPOSAL (`size-slider-track` 4, `size-slider-thumb` 22). Hover / pressed / focus: PROPOSAL |
 | **Group timing badge** (built, Flow B) | On `domain/FlightCard`. Green with a tick: "Within 1h of everyone". Amber: "Outside your window +2h". No names. Results are grouped under headings, nearest first | Prototype ("within 1h of everyone", "Outside your arrival window"). Wording is yours; the prototype's red "+15m" is dropped (3.4:1 contrast) |
+| **Member avatar colours** (built) | One colour per person on every screen (Members, board, Saved, Building, place votes): Kabe teal (`--color-surface-brand-subtle`), Gaudi steel blue (`--color-surface-timeline-depart`), Clara sand (`--color-surface-warning`); anyone else gets a colour from their id. Set by `avatarTone(userId)` in `IconHeading.jsx`, applied with the `avatar-tone--*` classes | PROPOSAL (approved) |
 | **Member card** (built, Flow C) | `domain/MemberRow` with `flights`: white card, avatar, name "(you)", route to HND, status chip (Picked dark green, Booked sand, Invited tint), then two columns "Arrives / Leaves" with plane icons, big time, airport and flight number. Arrivals mid-teal, departures steel blue (`text-class-premium`, existing token in a new role); times stay dark | Prototype board, restyled. Direction colours: PROPOSAL |
 | **Timeline** (built, Flow C) | `domain/Timeline`. Two columns (Arrivals, Departures), vertical hourly axis, one marker per time (members sharing a time share a marker), filled dot = your flight, band between first and last marker, "Span" pill. The axis grows so markers never overlap | PROPOSAL (new component). `surface-timeline-depart` tint is new |
 | **Countdown** (built, Flow C) | `ui/Countdown`. One teal ring and `mm:ss`; caution tone under 5 minutes; announced as a timer, not every tick | PROPOSAL |
@@ -324,6 +325,7 @@ Sizes below are Real (est.) at ±1.5 sp, from cap-height ÷ 0.71 (assumed ratio)
 | Button sizes (built, Flow B) | `size="sm"` 38, default 52, `size="lg"` 56 | R |
 | Chip `peach` (built, Flow B) | Peach fill, radius 4, "Recommended" | R (S6) |
 | Sheet + scrim (decline-invite sheet) | Structure follows the bottom sheet above | F + R |
+| Select travel dates sheet (`CalendarSheet`, Create group) | Real-app date sheet: × and centred title, route header (origin, plane, destination with long dates), weekday row, two months, window ends `--color-surface-brand` with inverse text, days between `--color-surface-brand-subtle`, lowest economy fare under each open day (caption-sm), other days muted at `--opacity-disabled`, demo note, Done button. Not selectable beyond the one demo window; the real app's Reset is left out because nothing can change | R + PROPOSAL |
 | State message | confirmation, building | F; real loading is the veil and mark above |
 | Skeleton, Toast, inline field error | Not visible | P |
 
@@ -475,4 +477,4 @@ Library: `src/data/photos.js`; files: `public/assets/photos/` (9 photos, each as
 | Subject | Landmark or street scene, subject kept near the centre so square crops still work; no readable faces as the focus |
 | Alt text | Required, describes the scene (see `photos.js`) |
 | Stable choice | `pickPhoto(destination, groupId)` always returns the same photo for the same group |
-| Not Tokyo | `fuji-chureito-pagoda` (Fujiyoshida) and `kyoto-kiyomizu-autumn` (Kyoto) are kept under their own keys so they are not shown as Tokyo |
+| Not Tokyo | The Fuji and Kyoto photos were removed: the demo only supports Tokyo |

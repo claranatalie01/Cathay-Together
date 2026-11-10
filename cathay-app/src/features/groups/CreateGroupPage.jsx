@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, createGroup } from '../../api';
+import { ApiError, createGroup, getDateWindows } from '../../api';
 import Screen from '../../components/layout/Screen';
 import StatusBar from '../../components/layout/StatusBar';
 import PageHeader from '../../components/layout/PageHeader';
@@ -8,9 +8,12 @@ import BottomNav from '../../components/layout/BottomNav';
 import Button from '../../components/ui/Button';
 import Field from '../../components/ui/Field';
 import BonusTeaser from '../../components/domain/BonusTeaser';
+import CalendarSheet from '../../components/ui/CalendarSheet';
 import { COPY } from '../../data/copy';
 import { DATE_OPTIONS, DEFAULT_GROUP_VALUES, DESTINATIONS, GROUP_NAME_MAX_LENGTH } from '../../data/trip';
+import { useAsync } from '../../hooks/useAsync';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { shortDate } from '../board/boardFormat';
 import './CreateGroupPage.css';
 
 const FORM_ID = 'create-group-form';
@@ -46,6 +49,11 @@ export default function CreateGroupPage() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const dateWindows = useAsync(() => getDateWindows().catch(() => null), []);
+  const windowInfo = dateWindows.data?.windows.find((w) => w.id === values.dates);
+  const fullDate = (iso) => `${shortDate(iso)} ${iso.slice(0, 4)}`;
+  const dateText = windowInfo ? `${shortDate(windowInfo.start)} – ${fullDate(windowInfo.end)}` : DATE_OPTIONS.find((d) => d.value === values.dates)?.label;
 
   useDocumentTitle(copy.title);
 
@@ -141,24 +149,17 @@ export default function CreateGroupPage() {
             icon="/assets/4341a.svg"
             disclosure="⌄"
           >
-            <select
-              className="field__text"
+            <button
+              className="field__text field__button"
               id="field-dates"
-              name="dates"
-              required
-              value={values.dates}
-              onChange={update('dates')}
-              onBlur={check('dates')}
+              type="button"
+              aria-haspopup="dialog"
               aria-invalid={errors.dates ? 'true' : undefined}
               aria-describedby={describe('dates')}
+              onClick={() => setCalendarOpen(true)}
             >
-              {DATE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value} disabled={!option.available}>
-                  {option.label}
-                  {option.available ? '' : ' (not in demo)'}
-                </option>
-              ))}
-            </select>
+              {dateText}
+            </button>
           </Field>
         </form>
         <p className="group-setup__agreement">{copy.agreement}</p>
@@ -172,6 +173,17 @@ export default function CreateGroupPage() {
           {submitting ? copy.submitting : copy.submit}
         </Button>
       </main>
+      <CalendarSheet
+        open={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+        origin={dateWindows.data?.origin}
+        destination={dateWindows.data?.destination}
+        currency={dateWindows.data?.currency}
+        windowInfo={windowInfo}
+        rangeText={windowInfo ? windowInfo.label.replace(/, \d{4}$/, '') : ''}
+        startText={windowInfo ? fullDate(windowInfo.start) : ''}
+        endText={windowInfo ? fullDate(windowInfo.end) : ''}
+      />
       <BottomNav variant="groups" />
     </Screen>
   );

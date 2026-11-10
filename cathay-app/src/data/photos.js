@@ -20,16 +20,13 @@ const PHOTOS = {
     photo('shinjuku-neon-night', 'Shinjuku', 'Neon-lit Shinjuku street at night with a tall hotel tower'),
     photo('ueno-street-dusk', 'Ueno', 'Crowded Ueno side street at dusk with hanging signs and lanterns'),
   ],
-  // Not Tokyo city: kept for other Japan destinations.
-  fuji: [photo('fuji-chureito-pagoda', 'Mount Fuji', 'Chureito Pagoda with snow-capped Mount Fuji behind')],
-  kyoto: [photo('kyoto-kiyomizu-autumn', 'Kyoto', 'Kiyomizu-dera pagoda above Kyoto at sunset with autumn trees')],
 };
 
 // Pick a stable photo for a destination so a group keeps its picture.
-// Not used by any screen yet (pending design approval).
+// The demo only supports Tokyo, so `destination` is kept for the call sites and a future second city.
+// eslint-disable-next-line no-unused-vars
 export function pickPhoto(destination = '', key = '') {
-  const d = destination.toLowerCase();
-  const list = d.includes('kyoto') ? PHOTOS.kyoto : d.includes('fuji') ? PHOTOS.fuji : PHOTOS.tokyo;
+  const list = PHOTOS.tokyo;
   let h = 0;
   for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return list[h % list.length];

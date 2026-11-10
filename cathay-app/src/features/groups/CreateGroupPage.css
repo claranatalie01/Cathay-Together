@@ -39,3 +39,9 @@
   background: var(--color-surface-default);
   box-shadow: var(--shadow-card);
 }
+
+/* Travel dates opens the date sheet: a button that looks like the other values. */
+.field__button {
+  text-align: left;
+  cursor: pointer;
+}

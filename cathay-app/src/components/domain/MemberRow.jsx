@@ -1,5 +1,6 @@
 import { MEMBER_STATUS } from '../../data/memberStatus';
 import Chip from '../ui/Chip';
+import { avatarTone } from '../ui/IconHeading';
 import './MemberRow.css';
 
 // One member of a travel group: avatar, name, home airport and flight status.
@@ -18,7 +19,7 @@ export default function MemberRow({ member, flights, destination }) {
   );
   const head = (
     <>
-      <span className="member__avatar" aria-hidden="true">
+      <span className={`member__avatar avatar-tone--${avatarTone(member.userId)}`} aria-hidden="true">
         {member.initial}
       </span>
       <div className="member__details">

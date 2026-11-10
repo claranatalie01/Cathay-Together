@@ -26,11 +26,11 @@ const TEMPLATES = [
 ];
 
 // Price factor per day (earlier and later days cost more or less).
-const DAY_FACTOR = { '2026-11-06': 1.12, '2026-11-07': 1, '2026-11-08': 1.06, '2026-11-09': 1.03, '2026-11-10': 0.97 };
+const DAY_FACTOR = { '2026-11-20': 1.12, '2026-11-21': 1, '2026-11-22': 1.06, '2026-11-23': 1.03, '2026-11-24': 0.97 };
 
-export const OUTBOUND_DATES = ['2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08'];
-export const RETURN_DATES = ['2026-11-08', '2026-11-09', '2026-11-10', '2026-11-11'];
-const UNAVAILABLE = new Set(['2026-11-05', '2026-11-11']);
+export const OUTBOUND_DATES = ['2026-11-19', '2026-11-20', '2026-11-21', '2026-11-22'];
+export const RETURN_DATES = ['2026-11-22', '2026-11-23', '2026-11-24', '2026-11-25'];
+const UNAVAILABLE = new Set(['2026-11-19', '2026-11-25']);
 
 export const isAvailable = (date) => !UNAVAILABLE.has(date);
 
@@ -60,10 +60,10 @@ export const shortRange = (from, to) => {
   return `(${a.day}) ${a.d} ${a.month} - (${b.day}) ${b.d} ${b.month}`;
 };
 
-// "Nov 7–10, 2026" -> { start: '2026-11-07', end: '2026-11-10' }
+// "Nov 21–24, 2026" -> { start: '2026-11-21', end: '2026-11-24' }
 export function windowOf(datesLabel) {
   const match = /^([A-Za-z]{3}) (\d+)[–-](\d+), (\d{4})$/.exec(datesLabel);
-  if (!match) return { start: '2026-11-07', end: '2026-11-10' };
+  if (!match) return { start: '2026-11-21', end: '2026-11-24' };
   const month = String(MONTHS.indexOf(match[1]) + 1).padStart(2, '0');
   const pad = (n) => String(n).padStart(2, '0');
   return { start: `${match[4]}-${month}-${pad(match[2])}`, end: `${match[4]}-${month}-${pad(match[3])}` };

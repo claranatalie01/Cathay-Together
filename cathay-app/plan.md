@@ -41,7 +41,7 @@ Statuses: `[x]` done, `[~]` in progress, `[ ]` not started. **Stop for user revi
 - [x] Node and Vite setup, router, original prototype preserved
 - [x] Backend-ready API layer, `docs/api-contract.md`, demo panel isolated
 - [x] Design system v2.0, token checker, `/design-system` guide
-- [~] Tidy-up: design-doc section 9 wording fixed; still to do: delete unused `useDesignTheme.js`, record photo credits
+- [~] Tidy-up: design-doc section 9 wording fixed, unused `useDesignTheme.js` deleted; still to do: record photo credits
 
 **Flow A: Group setup** (create, members, invite, join or decline)
 - [x] Built and reviewed
@@ -193,6 +193,8 @@ Dependencies: `react`, `react-dom`, `react-router-dom`, `vite`, `@vitejs/plugin-
 - **No backend, login or real payments.** Pay now is simulated with a short delay.
 - **Content lives in `src/data/`.** All people are fictional (Clara, Gaudi, Kabe) and can be swapped for an API later.
 - **Shared trip state** keeps selections consistent: group details, chosen flights and fares, paid or unpaid, likes and passes.
+- **Avatar colours by person:** Kabe teal, Gaudi steel, Clara sand on every screen (was by list position).
+- **Zero-group start + calendar (Nov 21–24):** the demo now begins with no groups; Create group's Travel dates opens the new `CalendarSheet` (`GET /date-windows`, fares calculated from flight data); demo dates moved from Nov 7–10 to Nov 21–24; Kyoto/Fuji photos and the three sample groups removed; mock db key bumped to `cathay-mock-db-v4`.
 - **Other members** (Gaudi booked, Kabe picked) start from seeded data, and the payment hold countdown is real.
 - **Itinerary generation** is a timed 3-second build screen, and the itinerary itself is the designed mock one. Your likes and passes drive the "Your liked places" list on the Preferences saved screen.
 - **Copy link** uses the real clipboard with a fallback, and shows the designed "Link Copied" feedback.
@@ -205,7 +207,7 @@ Dependencies: `react`, `react-dom`, `react-router-dom`, `vite`, `@vitejs/plugin-
 3. **Desktop** has no design. I'll show the 440px phone layout centred on the prototype's dark canvas, and full-width on phones.
 4. **No designs exist for:** the travel-date picker, the Passengers and Class dropdown, the Share invite sheet, the ⋯ menu, itinerary Edit mode, or "Choose another flight". I'll use simple, on-brand native controls and ask before any material design change.
 5. **Flight results and fare screens** are absolutely positioned in the prototype. I'll rebuild them as data-driven components that keep the same percentage-based geometry, so they look the same but become real components.
-6. **Fonts** (Inter, Lexend) stay on the Google Fonts link, which needs internet. Self-hosting via `@fontsource` would add dependencies, so tell me if you want that.
+6. **Fonts** (Inter only; Lexend was removed as unused) stay on the Google Fonts link, which needs internet. Self-hosting via `@fontsource` would add dependencies, so tell me if you want that.
 7. The known 1px quirk from before (the empty check box in the Kabe row on Preferences saved) stays excluded.
 
 ## 7. First flow for review

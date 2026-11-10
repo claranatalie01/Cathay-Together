@@ -85,7 +85,7 @@ export function TypographySection() {
         Typography
       </h2>
       <p className="ds-section__text">
-        Inter throughout; Lexend only for the flight search filters. Each style pairs a size with the
+        Inter throughout. Each style pairs a size with the
         single-line leading Figma produces (&ldquo;normal&rdquo;, in whole pixels). Use the pair, never one alone.
       </p>
       <ul className="ds-type-list">
