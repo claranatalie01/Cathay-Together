@@ -9,3 +9,6 @@ build/
 OAG Developer Portal Guide.pdf
 reference screenshot cathay app/
 *.tgz
+frontend/
+pictures/
+prompt.txt

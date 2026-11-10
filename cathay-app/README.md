@@ -6,7 +6,7 @@ Interactive demo of the Cathay Together group-booking prototype.
 **Code repository:** https://github.com/claranatalie01/Cathay-Together (app in `cathay-app/`)
 
 The data layer is simulated in the browser (see "Data layer" below); there is no real backend yet.
-The original static prototype is untouched in `../frontend`.
+The original static prototype is kept locally only (not in this repository).
 
 ## Run it
 
