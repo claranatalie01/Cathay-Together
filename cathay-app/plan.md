@@ -146,7 +146,7 @@ The prototype has 31 screens plus 3 design-only component frames. They are group
 ## 3. Proposed routes (React Router)
 
 ```
-/                                   → redirect to /groups/new
+/                                   → redirect to /groups
 /groups/new                         Create group
 /groups/:id/invite                  Members & invite (empty, copied and 3-member states come from data)
 /invite/:code                       Invite view (join or decline)

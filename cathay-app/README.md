@@ -25,8 +25,8 @@ Every route below also works when typed straight into the address bar. The demo 
 
 | Flow | Route | What it is |
 |---|---|---|
-| A. Groups | `/groups` | Travel Groups list (the nav tab) |
-| | `/groups/new` | Start of group set-up (also what `/` opens). Travel dates opens a calendar sheet |
+| A. Groups | `/groups` | Travel Groups list (the nav tab, also what `/` opens) |
+| | `/groups/new` | Start of group set-up. Travel dates opens a calendar sheet |
 | | `/invite/<code>` | Invitation link for a group (the code is on the Members page) |
 | | `/groups/tokyo-together/invite` | Members page |
 | B. Flights | `/groups/tokyo-together/flights/search` | Book a trip (cabin, trip type, group timing window) |

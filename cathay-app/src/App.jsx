@@ -51,7 +51,7 @@ export default function App() {
         {/* Style guide: its own wide page, no phone frame and no demo panel. */}
         <Route path="design-system" element={<DesignSystemPage />} />
         <Route element={<AppShell />}>
-          <Route index element={<Navigate to="/groups/new" replace />} />
+          <Route index element={<Navigate to="/groups" replace />} />
           <Route path="reset" element={<ResetPage />} />
           <Route path="groups" element={<GroupsPage />} />
           <Route path="groups/new" element={<CreateGroupPage />} />
