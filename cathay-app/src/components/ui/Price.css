@@ -1,0 +1,7 @@
+.price {
+  white-space: nowrap;
+}
+
+.price__amount {
+  font-weight: var(--weight-bold);
+}

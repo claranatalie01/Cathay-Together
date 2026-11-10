@@ -1,0 +1,116 @@
+/* ==========================================================================
+   Book a trip (real app, S1). White card on the grey canvas, overlapping the photo header.
+   ========================================================================== */
+.book {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  padding: 0 var(--space-xl) var(--space-xl);
+}
+
+.book__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: calc(var(--space-2xl) * -1);
+  padding: var(--space-xl);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-default);
+  box-shadow: var(--shadow-card);
+}
+
+.book__card .tabs {
+  margin: 0 calc(var(--space-sm) * -1);
+}
+
+.book__route {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-lg) 0;
+  border-bottom: var(--border-width-default) solid var(--color-divider);
+}
+
+.book__place {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.book__place--end {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.book__place-label {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
+.book__code {
+  color: var(--color-text-brand);
+  font-size: var(--text-hero-code-size);
+  line-height: var(--text-hero-code-leading);
+  font-weight: var(--weight-bold);
+}
+
+.book__city {
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+}
+
+.book__swap {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: var(--border-width-default) solid var(--color-divider);
+  border-radius: var(--radius-pill);
+}
+
+.book__dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.book__dates--single {
+  grid-template-columns: 1fr;
+}
+
+.book__dates .field {
+  border-bottom: var(--border-width-default) solid var(--color-divider);
+}
+
+.book__dates .field:last-child {
+  border-bottom: var(--border-width-default) solid var(--color-divider);
+}
+
+.book__end {
+  text-align: right;
+}
+
+.book__note {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
+.book__card .button {
+  margin-top: var(--space-lg);
+}
+
+/* Hero variant: taller photo, larger title, card overlaps the lower edge (S1). */
+.photo-header--book {
+  height: calc(var(--size-photo-header) + var(--space-xl));
+  padding-bottom: calc(var(--space-2xl) + var(--space-lg));
+}
+
+.photo-header--book .photo-header__title {
+  font-size: var(--text-display-size);
+  line-height: var(--text-display-leading);
+}

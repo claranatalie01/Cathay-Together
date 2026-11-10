@@ -1,0 +1,84 @@
+/* ==========================================================================
+   Photo header: photo, dark overlay, white text, rounded bottom-left curve.
+   ========================================================================== */
+.photo-header {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: var(--size-photo-header);
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom-left-radius: var(--radius-header-curve);
+  color: var(--color-text-inverse);
+  overflow: hidden;
+}
+
+.photo-header__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-header__overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--color-overlay-photo);
+}
+
+.photo-header__back,
+.photo-header__edit {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.photo-header__back {
+  top: var(--space-md);
+  left: var(--space-lg);
+}
+
+.photo-header__edit {
+  right: var(--space-lg);
+  bottom: var(--space-lg);
+}
+
+.photo-header__text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.photo-header__eyebrow,
+.photo-header__subtitle {
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+}
+
+.photo-header__title {
+  font-size: var(--text-heading-md-size);
+  line-height: var(--text-heading-md-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.photo-header__back:focus-visible,
+.photo-header__edit:focus-visible {
+  outline-color: var(--color-text-inverse);
+}
+
+@media (hover: hover) {
+  .photo-header__back:hover,
+  .photo-header__edit:hover {
+    opacity: var(--opacity-hover);
+  }
+}
+
+.photo-header__back:active,
+.photo-header__edit:active {
+  opacity: var(--opacity-pressed);
+}

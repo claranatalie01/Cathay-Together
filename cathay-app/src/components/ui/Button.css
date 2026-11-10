@@ -1,0 +1,86 @@
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 52px;
+  border: var(--border-width-default) solid var(--color-border-brand);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-brand);
+  color: var(--color-text-inverse);
+  font-size: var(--text-body-xl-size);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+  line-height: var(--leading-50);
+  cursor: pointer;
+}
+
+.button--secondary {
+  background: var(--color-surface-default);
+  color: var(--color-text-brand);
+}
+
+/* ---- States: PROPOSAL (Figma has no hover/pressed/focus/disabled/loading) ----
+   `.is-hover`, `.is-pressed`, `.is-focus` mirror the real pseudo-classes so the
+   style guide can show them; product code never sets them. */
+@media (hover: hover) {
+  .button:hover:not(:disabled) {
+    opacity: var(--opacity-hover);
+  }
+}
+
+.button.is-hover:not(:disabled) {
+  opacity: var(--opacity-hover);
+}
+
+.button:active:not(:disabled),
+.button.is-pressed:not(:disabled) {
+  opacity: var(--opacity-pressed);
+}
+
+.button.is-focus {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.button:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+/* Loading: disabled while a request runs (the pages set disabled + aria-busy). */
+.button[aria-busy='true'],
+.button.is-loading {
+  opacity: var(--opacity-disabled);
+  cursor: progress;
+}
+
+/* ==========================================================================
+   Button (v2.0): dark green, 18 sp medium.
+   ========================================================================== */
+.button {
+  border-color: var(--color-surface-brand);
+  font-size: var(--text-button-size);
+  font-weight: var(--weight-medium);
+}
+
+/* Sizes (real app): 56 for Continue and Express checkout, 38 for Select in a fare card. */
+.button--lg {
+  height: var(--size-button-lg);
+  line-height: calc(var(--size-button-lg) - var(--border-width-default) * 2);
+}
+
+.button--sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 105px;
+  height: var(--size-button-sm);
+  padding: 0 var(--space-xl);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+}

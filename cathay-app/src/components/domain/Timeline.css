@@ -1,0 +1,152 @@
+/* ==========================================================================
+   Timeline (PROPOSAL, Flow C): two vertical hourly scales. Arrivals use mid-teal, departures use
+   steel blue (existing token text-class-premium); times stay dark so the colour only carries direction.
+   ========================================================================== */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-default);
+  box-shadow: var(--shadow-card);
+}
+
+.timeline__columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+
+.timeline__column {
+  --timeline-color: var(--color-text-brand);
+  --timeline-tint: var(--color-surface-brand-subtle);
+  min-width: 0;
+}
+
+.timeline__column--depart {
+  --timeline-color: var(--color-text-class-premium);
+  --timeline-tint: var(--color-surface-timeline-depart);
+}
+
+.timeline__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--timeline-color);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.timeline__title img {
+  width: 20px;
+  height: 20px;
+}
+
+.timeline__date {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
+.timeline__axis {
+  position: relative;
+  margin: var(--space-lg) 0 var(--space-md) calc(var(--space-2xl) + var(--space-md));
+  border-left: var(--border-width-strong) solid var(--color-neutral-track);
+}
+
+.timeline__hour {
+  position: absolute;
+  left: calc((var(--space-2xl) + var(--space-md)) * -1);
+  width: calc(var(--space-xl) + var(--space-xs));
+  text-align: right;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  font-size: var(--text-micro-size);
+  line-height: var(--text-micro-leading);
+  transform: translateY(-50%);
+}
+
+.timeline__band {
+  position: absolute;
+  left: calc(var(--space-xs) * -1);
+  width: var(--space-xs);
+  border-radius: var(--radius-bar);
+  background: var(--timeline-tint);
+}
+
+.timeline__marker {
+  position: absolute;
+  left: calc(var(--space-sm) * -1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  max-width: calc(100% + var(--space-sm));
+  transform: translateY(-50%);
+}
+
+.timeline__dot {
+  flex-shrink: 0;
+  width: var(--space-optical-14);
+  height: var(--space-optical-14);
+  border: var(--border-width-strong) solid var(--timeline-color);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-default);
+}
+
+.timeline__marker.is-you .timeline__dot {
+  background: var(--timeline-color);
+}
+
+.timeline__label {
+  min-width: 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  overflow-wrap: anywhere;
+}
+
+.timeline__label strong {
+  font-weight: var(--weight-semibold);
+}
+
+.timeline__span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-thumb);
+  background: var(--timeline-tint);
+  color: var(--timeline-color);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.timeline__empty,
+.timeline__legend {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
+.timeline__span img {
+  width: 16px;
+  height: 16px;
+}
+
+.timeline__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.timeline__legend-dot {
+  flex-shrink: 0;
+  width: var(--space-optical-10);
+  height: var(--space-optical-10);
+  border-radius: var(--radius-pill);
+  background: var(--color-text-brand);
+}

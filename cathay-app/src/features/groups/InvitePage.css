@@ -1,0 +1,134 @@
+/* ==========================================================================
+   Screen: Invite view
+   ========================================================================== */
+
+.invitation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-optical-18);
+  min-height: 719px;
+  padding: var(--space-xs) var(--space-xl) var(--space-optical-20);
+  flex: 1 0 auto;
+}
+
+.invite-card {
+  display: flex;
+  flex-direction: column;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-card-lg);
+  overflow: hidden;
+}
+
+.invite-card__photo {
+  position: relative;
+  flex-shrink: 0;
+  height: 152px;
+}
+
+.invite-card__photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.invite-card__summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-optical-10);
+  padding: var(--space-optical-18);
+  overflow: hidden;
+}
+
+.invite-card__name {
+  width: 100%;
+  color: var(--color-text-brand);
+  font-size: var(--text-display-sm-size);
+  line-height: var(--text-display-sm-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.invite-card__destination {
+  width: 100%;
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+}
+
+.invite-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  overflow: hidden;
+}
+
+.invite-card__meta-icon {
+  position: relative;
+  flex-shrink: 0;
+  width: 16px;
+  height: 17px;
+}
+
+.invite-card__meta-icon--clock {
+  width: 17px;
+}
+
+.invite-card__meta-icon img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.invite-card__meta-icon--calendar img {
+  top: 10%;
+  height: 90%;
+}
+
+.invite-card__meta-text {
+  color: var(--color-text-primary);
+  font-size: var(--text-body-size);
+  white-space: nowrap;
+}
+
+.invite-card__meta-text--small {
+  font-size: var(--text-body-sm-size);
+}
+
+.invite-card__members {
+  width: 100%;
+  color: var(--color-text-brand);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.agreement {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  overflow: hidden;
+}
+
+.agreement__title {
+  color: var(--color-text-primary);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.agreement__text {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-size);
+  line-height: var(--leading-20);
+}
+
+.invitation__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-optical-10);
+  overflow: hidden;
+}

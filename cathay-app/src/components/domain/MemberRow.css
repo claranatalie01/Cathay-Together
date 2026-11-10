@@ -1,0 +1,160 @@
+/* ==========================================================================
+   Member row
+   ========================================================================== */
+
+.member-list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.member {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  height: 64px;
+  border-bottom: var(--border-width-default) solid var(--color-border-default);
+  overflow: hidden;
+}
+
+.member__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-brand-subtle);
+  color: var(--color-text-brand);
+  font-size: var(--text-body-lg-size);
+  line-height: var(--text-body-lg-leading);
+  font-weight: var(--weight-semibold);
+  overflow: hidden;
+}
+
+.member__details {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.member__name {
+  color: var(--color-text-primary);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.member__origin {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
+/* ==========================================================================
+   Card variant (group board, Flow C): one white card per member.
+   Arrivals use mid-teal, departures steel blue; times stay dark.
+   ========================================================================== */
+.member.member--card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-md);
+  height: auto;
+  padding: var(--space-lg);
+  border-bottom: 0;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-default);
+  box-shadow: var(--shadow-card);
+}
+
+.member__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.member--card .member__details {
+  white-space: normal;
+}
+
+.member__flights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin: 0;
+  padding-top: var(--space-md);
+  border-top: var(--border-width-default) solid var(--color-divider);
+}
+
+.member__leg {
+  --leg-color: var(--color-text-brand);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.member__leg--leave {
+  --leg-color: var(--color-text-class-premium);
+}
+
+.member__leg dt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--leg-color);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  font-weight: var(--weight-medium);
+}
+
+.member__leg dt img {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.member__leg dd {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  overflow-wrap: anywhere;
+}
+
+.member__leg dd strong {
+  color: var(--color-text-primary);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  font-weight: var(--weight-medium);
+}
+
+.member__plane {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  vertical-align: -1px;
+}
+
+.member__none {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+}
+
+.member__tick {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin-right: var(--space-xs);
+}
+
+.chip:has(.member__tick) {
+  align-items: center;
+}

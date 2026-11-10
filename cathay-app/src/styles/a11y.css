@@ -1,0 +1,39 @@
+/* ==========================================================================
+   Accessibility helpers
+   ========================================================================== */
+
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* The page title takes focus after navigation; no ring needed on a heading. */
+[data-page-title]:focus {
+  outline: none;
+}
+
+.bottom-nav__tab:focus-visible .bottom-nav__icon,
+.bottom-nav__tab:focus-visible .bottom-nav__label {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; /* ds-allow: visually-hidden pattern */
+  height: 1px;
+  margin: -1px; /* ds-allow: visually-hidden pattern */
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}

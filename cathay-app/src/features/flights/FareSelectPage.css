@@ -1,0 +1,47 @@
+/* ==========================================================================
+   Select fare (real app, S6 / S9 / S11). Cards 24 dp apart, 24 dp gutter.
+   ========================================================================== */
+.fares {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  padding: var(--space-lg) var(--space-xl) var(--space-xl);
+}
+
+.fares__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.fares__sheet-text {
+  font-size: var(--text-body-xl-size);
+  line-height: var(--leading-body);
+}
+
+.fares__sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.fares__picks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin-top: calc(var(--space-sm) * -1);
+}
+
+.fares__picks li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+}
+
+.fares__picks .button--sm {
+  min-width: 0;
+  padding: 0 var(--space-md);
+}

@@ -1,0 +1,99 @@
+/* ==========================================================================
+   Slider (group timing window). Prototype: "Arrival Window" title, value, grey track, round point.
+   Track and thumb sizes are PROPOSALS (the prototype draws them at fixed positions).
+   ========================================================================== */
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md) 0;
+  border-bottom: var(--border-width-default) solid var(--color-divider);
+}
+
+.slider__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.slider__label {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
+.slider__value {
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.slider__help {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
+.slider__input {
+  width: 100%;
+  height: var(--size-slider-thumb);
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+.slider__input::-webkit-slider-runnable-track {
+  height: var(--size-slider-track);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(to right, var(--color-border-brand) var(--slider-fill), var(--color-neutral-track) var(--slider-fill));
+}
+
+.slider__input::-moz-range-track {
+  height: var(--size-slider-track);
+  border-radius: var(--radius-pill);
+  background: var(--color-neutral-track);
+}
+
+.slider__input::-moz-range-progress {
+  height: var(--size-slider-track);
+  border-radius: var(--radius-pill);
+  background: var(--color-border-brand);
+}
+
+.slider__input::-webkit-slider-thumb {
+  width: var(--size-slider-thumb);
+  height: var(--size-slider-thumb);
+  margin-top: calc((var(--size-slider-track) - var(--size-slider-thumb)) / 2);
+  border: var(--border-width-strong) solid var(--color-surface-default);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-brand);
+  box-shadow: var(--shadow-card);
+  appearance: none;
+}
+
+.slider__input::-moz-range-thumb {
+  width: var(--size-slider-thumb);
+  height: var(--size-slider-thumb);
+  border: var(--border-width-strong) solid var(--color-surface-default);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-brand);
+  box-shadow: var(--shadow-card);
+}
+
+.slider__input:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* States: PROPOSAL */
+@media (hover: hover) {
+  .slider__input:hover::-webkit-slider-thumb {
+    opacity: var(--opacity-hover);
+  }
+}
+
+.slider__input:active::-webkit-slider-thumb {
+  opacity: var(--opacity-pressed);
+}

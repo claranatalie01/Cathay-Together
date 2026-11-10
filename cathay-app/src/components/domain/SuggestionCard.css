@@ -1,0 +1,133 @@
+/* ==========================================================================
+   Suggestion card (prototype, Flow D). White card, 210 photo, tag chip, tilted stamp.
+   ========================================================================== */
+.suggestion {
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--color-surface-default);
+  box-shadow: var(--shadow-card);
+  touch-action: pan-y;
+  user-select: none;
+  cursor: grab;
+}
+
+.suggestion__photo {
+  position: relative;
+  height: var(--size-suggestion-photo);
+}
+
+.suggestion__photo > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.suggestion__tag {
+  position: absolute;
+  top: var(--space-md);
+  left: var(--space-md);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-default);
+  color: var(--color-text-brand);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.suggestion__stamp {
+  position: absolute;
+  right: var(--space-md);
+  bottom: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border: var(--border-width-strong) solid var(--color-border-brand);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-default);
+  color: var(--color-text-brand);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  transform: rotate(-6deg);
+}
+
+.suggestion__stamp--pass {
+  border-color: var(--color-border-pass);
+  color: var(--color-text-pass);
+}
+
+.suggestion__stamp img {
+  width: 20px;
+  height: 20px;
+}
+
+.suggestion__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+}
+
+.suggestion__name {
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-md-size);
+  line-height: var(--text-heading-md-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.suggestion__area {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+}
+
+.suggestion__area img {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.suggestion__text {
+  font-size: var(--text-body-lg-size);
+  line-height: var(--text-body-lg-leading);
+}
+
+.suggestion__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin: 0;
+}
+
+.suggestion__facts dt {
+  color: var(--color-text-secondary);
+  font-size: var(--text-micro-size);
+  line-height: var(--text-micro-leading);
+  letter-spacing: 0.04em; /* ds-allow: small-caps style label */
+  text-transform: uppercase;
+}
+
+.suggestion__facts dd {
+  margin: 0;
+  font-size: var(--text-body-lg-size);
+  line-height: var(--text-body-lg-leading);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.suggestion__facts dd.is-brand {
+  color: var(--color-text-brand);
+}
+
+.suggestion__tip {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+}

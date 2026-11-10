@@ -1,0 +1,103 @@
+/* ==========================================================================
+   Tabs (real app, S1 / S5 / S6): text, 3 dp indicator under the active tab.
+   ========================================================================== */
+.tabs {
+  display: flex;
+  border-bottom: var(--border-width-default) solid var(--color-divider);
+  background: var(--color-surface-default);
+}
+
+.tabs--scroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs--scroll .tab {
+  flex: 1 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--size-tab-row);
+  padding: 0 var(--space-sm);
+  color: var(--color-text-primary);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  white-space: nowrap;
+}
+
+.tab__text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding: var(--space-sm) 0;
+}
+
+.tab__sub {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+}
+
+/* Selected: brand colour, bold label, indicator the width of the label. */
+.tab.is-selected {
+  color: var(--color-text-brand);
+  font-weight: var(--weight-bold);
+}
+
+.tab.is-selected .tab__sub {
+  color: var(--color-text-brand);
+}
+
+.tab.is-selected .tab__text::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--size-tab-indicator);
+  border-radius: var(--radius-bar) var(--radius-bar) 0 0;
+  background: var(--color-border-brand);
+}
+
+.tabs--deep .tab.is-selected {
+  color: var(--color-text-brand-deep);
+}
+
+.tabs--deep .tab.is-selected .tab__text::after {
+  background: var(--color-border-brand-deep);
+}
+
+/* Not available: plain grey text, no fill (real app, S5). */
+.tab.is-unavailable {
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
+/* States: PROPOSAL (touch UI, hover / pressed / focus are not visible in the real app) */
+@media (hover: hover) {
+  .tab:not(.is-selected):not(.is-unavailable):hover {
+    opacity: var(--opacity-hover);
+  }
+}
+
+.tab.is-hover:not(.is-selected) {
+  opacity: var(--opacity-hover);
+}
+
+.tab:active:not(.is-unavailable),
+.tab.is-pressed {
+  opacity: var(--opacity-pressed);
+}

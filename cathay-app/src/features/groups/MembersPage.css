@@ -1,0 +1,418 @@
+/* ==========================================================================
+   Screen: Members & invite
+   ========================================================================== */
+
+.members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  min-height: 719px;
+  padding: var(--space-xs) var(--space-xl) var(--space-optical-20);
+  flex: 1 0 auto;
+}
+
+.members__deadline {
+  color: var(--color-text-brand);
+  font-size: var(--text-body-sm-size);
+}
+
+.group-members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-optical-10);
+  overflow: hidden;
+}
+
+.group-members__note {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+}
+
+.invite-share {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-optical-10);
+  overflow: hidden;
+}
+
+.invite-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  height: 44px;
+  padding: 0 var(--space-md);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.invite-link__url {
+  flex: 1 0 0;
+  min-width: 1px;
+  color: var(--color-text-primary);
+  font-size: var(--text-caption-sm-size);
+  line-height: var(--text-caption-sm-leading);
+}
+
+.invite-link__url--copied {
+  white-space: pre-wrap;
+  line-height: var(--leading-13);
+}
+
+.invite-link__copied {
+  color: var(--color-text-brand);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-13);
+}
+
+.invite-link__copy {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.invite-link__copy-elements {
+  position: absolute;
+  inset: 8.33%;
+}
+
+.invite-link__copy-elements img {
+  position: absolute;
+  inset: -4.09%;
+  width: 108.18%;
+  height: 108.18%;
+}
+
+.invite-link__copy--alt .invite-link__copy-elements img {
+  inset: -3.75%;
+  width: 107.5%;
+  height: 107.5%;
+}
+
+.guidance {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-subtle);
+  overflow: hidden;
+}
+
+.guidance__title {
+  color: var(--color-text-brand);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.guidance__text {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--leading-17);
+}
+
+.invite-link__url {
+  user-select: all;
+  line-height: var(--leading-13);
+}
+
+/* ==========================================================================
+   v2.0 (real-app first). Tokens only.
+   Each section becomes a white card on the grey canvas.
+   ========================================================================== */
+.members {
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-xl);
+}
+
+.group-members,
+.invite-share {
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-default);
+  box-shadow: var(--shadow-card);
+}
+
+/* Link to the group board (Flow C). */
+.group-members__board {
+  align-self: flex-start;
+  color: var(--color-text-brand);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+  font-weight: var(--weight-semibold);
+}
+
+/* Group details (Flow D): the call to pick itinerary preferences, same tint as the guidance note. */
+.prefs-callout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-brand-subtle);
+}
+
+.prefs-callout__title {
+  color: var(--color-text-brand);
+  font-size: var(--text-title-xs-size);
+  line-height: var(--text-title-xs-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.prefs-callout__text {
+  font-size: var(--text-body-lg-size);
+  line-height: var(--text-body-lg-leading);
+}
+
+.prefs-callout__meta {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
+/* ==========================================================================
+   Group details, visual refresh (Flow D): icon tiles, tinted link rows, tinted avatars,
+   photo thumbnails in the call to action. Flexible layout: nothing is positioned by hand, long
+   text is cut with an ellipsis, and the ready chip wraps under the heading when space runs out.
+   ========================================================================== */
+.gd {
+  gap: var(--space-lg);
+  padding-top: var(--space-lg);
+}
+
+.gd .trip-context {
+  background: var(--color-surface-default);
+  box-shadow: var(--shadow-card);
+}
+
+.gd .trip-context__meta span:last-child {
+  color: var(--color-text-brand);
+  font-weight: var(--weight-medium);
+}
+
+.gd__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-default);
+  box-shadow: var(--shadow-card);
+}
+
+.gd__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm) var(--space-md);
+}
+
+.gd__title {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: var(--text-title-xs-size);
+  line-height: var(--text-title-xs-leading);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.gd__tile {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-control);
+}
+
+.gd__tile img {
+  width: 18px;
+  height: 18px;
+}
+
+.gd__tile--teal {
+  background: var(--color-surface-brand-subtle);
+}
+
+.gd__tile--peach {
+  background: var(--color-surface-chip);
+}
+
+/* Inside a tinted link row the tile turns white, so it still stands out. */
+.gd__link .gd__tile {
+  background: var(--color-surface-default);
+}
+
+.gd__link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-optical-10) var(--space-md);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-brand);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  font-weight: var(--weight-medium);
+}
+
+.gd__link-text {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.gd__chevron {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.gd__note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+}
+
+.gd__note img {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.gd .member {
+  min-width: 0;
+}
+
+.gd .member__name,
+.gd .member__origin {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gd__share {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 var(--space-xs);
+  color: var(--color-text-brand);
+  font-size: var(--text-body-lg-size);
+  line-height: var(--text-body-lg-leading);
+  font-weight: var(--weight-medium);
+}
+
+.gd__friends {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: 0 var(--space-xs);
+}
+
+.gd__friends-text {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.gd__callout-title {
+  flex: 1 1 0;
+  min-width: 0;
+  color: var(--color-text-brand);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.gd__callout-text {
+  font-size: var(--text-body-lg-size);
+  line-height: var(--text-body-lg-leading);
+}
+
+.gd__photos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.gd__photos li {
+  position: relative;
+  height: 56px;
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.gd__photos img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gd__photos span {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: var(--space-optical-2) var(--space-xs);
+  background: var(--color-overlay-photo-label);
+  color: var(--color-text-inverse);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  font-weight: var(--weight-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gd__callout-meta {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
+.gd__button-icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: var(--space-sm);
+  vertical-align: middle;
+}
+
+/* The link may be longer than the box: cut it with an ellipsis and keep a gap before the copy button. */
+.gd .invite-link {
+  gap: var(--space-sm);
+  padding-right: 0;
+}
+
+/* The copy button is a full 44 x 44 tap target (the icon stays small). */
+.gd .invite-link__copy {
+  width: 44px;
+  height: 44px;
+  overflow: visible;
+}
+
+/* The icon keeps its own 22 x 22 box, centred inside the 44 x 44 button. */
+.gd .invite-link__copy-elements {
+  inset: 50% auto auto 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+}
+
+.gd .invite-link__url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

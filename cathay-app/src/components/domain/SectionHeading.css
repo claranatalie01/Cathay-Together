@@ -1,0 +1,37 @@
+/* ==========================================================================
+   Section heading
+   ========================================================================== */
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.section-heading--start {
+  align-items: flex-start;
+}
+
+.section-heading__title {
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-sm-size);
+  line-height: var(--text-heading-sm-leading);
+}
+
+.section-heading--start .section-heading__title {
+  line-height: var(--leading-21);
+}
+
+.section-heading__title--small {
+  font-size: var(--text-title-xs-size);
+  line-height: var(--text-title-xs-leading);
+}
+
+.section-heading__action {
+  color: var(--color-text-brand);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+}

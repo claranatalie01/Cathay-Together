@@ -1,0 +1,79 @@
+/* Fixed to the window, so a sheet opens in view even on a long page. */
+.screen > .scrim,
+.screen > .sheet {
+  position: fixed;
+}
+
+.scrim {
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  background: var(--color-overlay-scrim);
+}
+
+.sheet {
+  bottom: 0;
+  left: 50%;
+  z-index: 2;
+  width: min(100%, var(--screen-width));
+  max-height: 92dvh;
+  overflow-y: auto;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-md) var(--space-xl) var(--space-optical-28);
+  border-radius: var(--radius-card-lg) var(--radius-card-lg) 0 0;
+  background: var(--color-surface-default);
+}
+
+.sheet__handle {
+  display: flex;
+  justify-content: center;
+}
+
+.sheet__handle-bar {
+  width: 40px;
+  height: 4px;
+  border-radius: var(--radius-hairline);
+  background: var(--color-divider);
+}
+
+.sheet__heading {
+  display: grid;
+  grid-template-columns: var(--space-2xl) 1fr var(--space-2xl);
+  align-items: center;
+  color: var(--color-text-primary);
+}
+
+/* Real app (S9 / S13): close X on the left, centred regular title. */
+.sheet__title {
+  grid-column: 2;
+  font-size: var(--text-bar-title-size);
+  font-weight: var(--weight-regular);
+  line-height: var(--text-bar-title-leading);
+  text-align: center;
+}
+
+.sheet__close {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+}
+
+.sheet__close img {
+  width: 14px;
+  height: 14px;
+}
+
+.sheet__text {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-size);
+  line-height: var(--leading-19);
+}

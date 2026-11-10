@@ -1,0 +1,177 @@
+/* ==========================================================================
+   Form field
+   ========================================================================== */
+
+.trip-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-optical-6);
+}
+
+.field__label {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.field__value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-optical-10);
+  height: 40px;
+  padding: 0 var(--space-optical-14);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.field__icon {
+  flex-shrink: 0;
+  width: 17px;
+  height: 18px;
+}
+
+.field__text {
+  flex: 1 0 0;
+  min-width: 1px;
+  color: var(--color-text-primary);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+}
+
+.field__disclosure {
+  color: var(--color-text-brand);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  white-space: nowrap;
+}
+
+/* Native controls inside the field */
+.field__text {
+  width: 100%;
+  min-width: 1px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-family: inherit;
+  appearance: none;
+  cursor: text;
+}
+
+.field__text::placeholder {
+  color: var(--color-text-secondary);
+}
+
+select.field__text {
+  cursor: pointer;
+}
+
+.field__value:focus-within {
+  border-color: var(--color-border-brand);
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.field--invalid .field__value {
+  border-color: var(--color-border-danger);
+}
+
+/* ---- States: PROPOSAL (Figma shows only the default field) ---------------- */
+@media (hover: hover) {
+  .field__value:hover {
+    border-color: var(--color-border-strong);
+  }
+}
+
+.field__value.is-hover {
+  border-color: var(--color-border-strong);
+}
+
+.field__value.is-focus {
+  border-color: var(--color-border-brand);
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* An invalid field keeps its danger border while focused. */
+.field--invalid .field__value:focus-within,
+.field--invalid .field__value.is-focus {
+  border-color: var(--color-border-danger);
+}
+
+.field--disabled .field__value {
+  background: var(--color-surface-subtle);
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.field--disabled .field__text {
+  cursor: not-allowed;
+}
+
+.field__error {
+  color: var(--color-text-danger);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
+/* The surrounding .field__value shows the focus ring. */
+.field__text:focus-visible {
+  outline: none;
+}
+
+/* ==========================================================================
+   Fields (v2.0): unboxed rows split by dividers; focus = underline.
+   ========================================================================== */
+.field {
+  gap: var(--space-optical-2);
+  padding: var(--space-md) 0;
+  border-bottom: var(--border-width-default) solid var(--color-divider);
+}
+
+.field:last-child {
+  border-bottom: 0;
+}
+
+.field--invalid {
+  border-bottom-color: var(--color-border-danger);
+}
+
+.field__label {
+  font-weight: var(--weight-regular);
+}
+
+.field__value {
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+/* Unboxed fields: focus shows as a 2 dp underline (1 dp divider + 1 dp inset) (no ring around the row, so it
+   never boxes in the label or the error text). Inset shadow = no layout shift. */
+.field__value:focus-within {
+  border-color: transparent;
+  outline: 0;
+}
+
+.field:focus-within {
+  box-shadow: inset 0 calc(var(--border-width-default) * -1) 0 0 var(--color-focus-ring);
+}
+
+.field--invalid:focus-within {
+  box-shadow: inset 0 calc(var(--border-width-default) * -1) 0 0 var(--color-border-danger);
+}
+
+.field__error {
+  margin-top: var(--space-xs);
+}

@@ -1,0 +1,1411 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cathay Together · Proposals (not built)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@500&display=swap" rel="stylesheet">
+<style>/* ==========================================================================
+   Design tokens (from the Cathay Together prototype)
+   ========================================================================== */
+:root {
+  --color-alert: #ff474c;
+  --color-amber-bg: #fff3d6;
+  --color-amber-ink: #854d0e;
+  --color-black: #000000;
+  --color-border: #dce6e4;
+  --color-canvas: #444444;
+  --color-card-line: rgba(0, 0, 0, 0.43);
+  --color-fare-green: #a8dcab;
+  --color-ink: #172e33;
+  --color-lowest: #ecaa4d;
+  --color-muted: #647578;
+  --color-outline: rgba(0, 0, 0, 0.54);
+  --color-pass: #796c69;
+  --color-primary: #006564;
+  --color-rule: #d9d9d9;
+  --color-sand: #fbf5ea;
+  --color-sand-ink: #886a38;
+  --color-scrim: rgba(23, 46, 51, 0.44);
+  --color-surface: #f4f8f7;
+  --color-surface-alt: #fbfbfb;
+  --color-tint: #e6f2ef;
+  --color-track: #d3d3d3;
+  --color-white: #ffffff;
+  --font-bold: 700;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-lexend: 'Lexend', var(--font-family);
+  --font-medium: 500;
+  --font-regular: 400;
+  --font-semibold: 600;
+  --fs-10: 10px;
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-15: 15px;
+  --fs-16: 16px;
+  --fs-17: 17px;
+  --fs-18: 18px;
+  --fs-20: 20px;
+  --fs-21: 21px;
+  --fs-22: 22px;
+  --fs-23: 23px;
+  --fs-25: 25px;
+  --fs-26: 26px;
+  --fs-32: 32px;
+  --fs-36: 36px;
+  --lh-body: 1.45;
+  --lh-normal: normal;
+  --lh-tight: 1.4;
+  --space-4: 4px;
+  --space-5: 5px;
+  --space-6: 6px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-13: 13px;
+  --space-14: 14px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-30: 30px;
+  --radius-10: 10px;
+  --radius-14: 14px;
+  --radius-20: 20px;
+  --radius-8: 8px;
+  --radius-sheet: 20px;
+  --screen-height: 956px;
+  --screen-width: 440px;
+  --shadow-card: 0 2px 4px -2px rgba(24, 39, 75, 0.12), 0 4px 4px -2px rgba(24, 39, 75, 0.08);
+}
+
+/* ==========================================================================
+   Reset / base
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-family);
+  font-weight: var(--font-regular);
+  line-height: var(--lh-normal);
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+ul,
+ol,
+figure {
+  margin: 0;
+  padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+img {
+  display: block;
+  max-width: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Device status (iPhone status bar)
+   ========================================================================== */
+.status-bar {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 var(--space-30);
+  background: var(--color-primary);
+  overflow: hidden;
+}
+
+.status-bar__inner {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 380px;
+  height: 26px;
+}
+
+.status-bar__time {
+  position: absolute;
+  inset: 30.77% 91.32% 11.54% 0;
+  color: var(--color-white);
+  font-size: var(--fs-12);
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+}
+
+.status-bar__wifi {
+  position: absolute;
+  inset: 15.38% 8.68% 15.38% 86.32%;
+  overflow: hidden;
+}
+.status-bar__wifi-elements { position: absolute; inset: 22.92% 8.33%; }
+.status-bar__wifi-elements img { position: absolute; inset: -7.69% -4.74% -10.26% -4.74%; width: 109.48%; height: 117.95%; }
+
+.status-bar__battery {
+  position: absolute;
+  inset: 0 0 7.69% 93.68%;
+  overflow: hidden;
+}
+.status-bar__battery-elements { position: absolute; inset: 25% 8.33%; }
+.status-bar__battery-elements img { position: absolute; inset: -6.25% -3.75%; width: 107.5%; height: 112.5%; }
+
+.status-bar__signal {
+  position: absolute;
+  inset: 3.85% 15.53% 3.85% 78.16%;
+}
+.status-bar__signal-elements { position: absolute; inset: 20.83% 16.67%; }
+.status-bar__signal-elements img { position: absolute; inset: -5.36% -4.69%; width: 109.38%; height: 110.72%; }
+
+.status-bar--transparent { background: transparent; }
+
+/* ==========================================================================
+   Page header
+   ========================================================================== */
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  height: 76px;
+  padding: 0 var(--space-24);
+  overflow: hidden;
+}
+
+.page-header__back {
+  position: relative;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.page-header__back img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.page-header__title {
+  flex: 1 0 0;
+  min-width: 1px;
+  color: var(--color-primary);
+  font-size: var(--fs-25);
+  font-weight: var(--font-semibold);
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+.button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 52px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-8);
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-size: var(--fs-16);
+  font-weight: var(--font-semibold);
+  text-align: center;
+  line-height: 50px;
+  cursor: pointer;
+}
+
+.button--secondary {
+  background: var(--color-white);
+  color: var(--color-primary);
+}
+
+
+/* ==========================================================================
+   Bottom navigation
+   ========================================================================== */
+.bottom-nav {
+  position: relative;
+  height: 117px;
+  background: var(--color-white);
+  overflow: hidden;
+}
+
+.bottom-nav__inner {
+  position: relative;
+  width: 100%;
+  height: 117px;
+}
+
+.bottom-nav__icon {
+  position: absolute;
+}
+.bottom-nav__icon-elements { position: absolute; }
+.bottom-nav__icon-elements img { position: absolute; }
+
+.bottom-nav__icon--profile { inset: 21.37% 24.32% 43.59% 66.36%; }
+.bottom-nav__icon--profile .bottom-nav__icon-elements { inset: 8.33%; }
+.bottom-nav__icon--profile img { inset: -2.2% -2.19% -2.2% -2.2%; width: 104.39%; height: 104.4%; }
+
+.bottom-nav__icon--trips { inset: 17.09% 42.73% 43.59% 44.77%; }
+.bottom-nav__icon--trips .bottom-nav__icon-elements { inset: 8.33% 25%; }
+.bottom-nav__icon--trips img { inset: -1.96% -2.73%; width: 105.46%; height: 103.92%; }
+
+.bottom-nav__icon--book { inset: 17.09% 61.82% 41.88% 26.36%; }
+.bottom-nav__icon--book .bottom-nav__icon-elements { inset: 8.33% 12.5%; }
+.bottom-nav__icon--book img { inset: -1.73% -2.08%; width: 104.16%; height: 103.46%; }
+
+.bottom-nav__icon--groups { inset: 19.66% 5.68% 43.59% 84.55%; background: var(--color-white); }
+.bottom-nav__icon--groups .bottom-nav__icon-elements { inset: 18.75% 10.42%; }
+.bottom-nav__icon--groups img { inset: -3.72% -2.94%; width: 105.88%; height: 107.44%; }
+
+.bottom-nav__icon--home { inset: 17.95% 82.73% 43.59% 6.82%; background: var(--color-white); }
+.bottom-nav__icon--home .bottom-nav__icon-elements { inset: 10.42% 12.5%; }
+.bottom-nav__icon--home img { inset: -2.11% -2.17%; width: 104.34%; height: 104.22%; }
+
+.bottom-nav__label {
+  position: absolute;
+  font-size: var(--fs-13);
+  font-weight: var(--font-semibold);
+  color: var(--color-black);
+  white-space: nowrap;
+}
+.bottom-nav__label--home { inset: 60.68% 83.64% 25.64% 7.95%; color: var(--color-ink); }
+.bottom-nav__label--book { inset: 60.68% 65% 25.64% 27.73%; }
+.bottom-nav__label--trips { inset: 60.68% 41.59% 25.64% 45.91%; }
+.bottom-nav__label--profile { inset: 60.68% 24.32% 25.64% 66.36%; }
+.bottom-nav__label--groups {
+  inset: 56.41% 3.41% 17.95% 85.23%;
+  font-size: var(--fs-12);
+  white-space: normal;
+}
+.bottom-nav__label--active { color: var(--color-primary); }
+
+/* Rotated airplane icon (active "Book" tab) */
+.bottom-nav__icon--rotated { container-type: size; }
+.bottom-nav__icon-turn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100cqh;
+  height: 100cqw;
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+.bottom-nav__icon--rotated .bottom-nav__icon-elements { inset: 8.33% 12.5%; }
+.bottom-nav__icon--rotated img { inset: -2.31% -2.78% -2.3% -2.78%; width: 105.56%; height: 104.61%; }
+
+.bottom-nav__icon--groups-alt img { inset: -2.79% -2.2%; width: 104.4%; height: 105.58%; }
+
+.bottom-nav__icon--home-alt img { inset: -4.21% -4.35%; width: 108.7%; height: 108.42%; }
+
+.bottom-nav__icon--home-alt2 img { inset: -2.81% -2.9%; width: 105.8%; height: 105.62%; }
+
+/* Each tab is a link; its icon and label keep their designed positions. */
+.bottom-nav__tab {
+  display: contents;
+}
+
+/* ==========================================================================
+   Chips
+   ========================================================================== */
+.chip {
+  display: flex;
+  flex-shrink: 0;
+  padding: 5px 9px;
+  border-radius: 100px;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: var(--fs-12);
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.chip--booked {
+  background: var(--color-sand);
+  color: var(--color-sand-ink);
+}
+
+.chip--picked {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+
+/* Tones used by the React Chip component */
+.chip--sand {
+  background: var(--color-sand);
+  color: var(--color-sand-ink);
+}
+
+.chip--primary {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.chip--tint {
+  background: var(--color-tint);
+  color: var(--color-primary);
+}
+
+/* ==========================================================================
+   Form field
+   ========================================================================== */
+.trip-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.field__label {
+  color: var(--color-muted);
+  font-size: var(--fs-12);
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+}
+
+.field__value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  height: 40px;
+  padding: 0 var(--space-14);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-8);
+  overflow: hidden;
+}
+
+.field__icon {
+  flex-shrink: 0;
+  width: 17px;
+  height: 18px;
+}
+
+.field__text {
+  flex: 1 0 0;
+  min-width: 1px;
+  color: var(--color-ink);
+  font-size: var(--fs-16);
+}
+
+.field__disclosure {
+  color: var(--color-primary);
+  font-size: var(--fs-16);
+  white-space: nowrap;
+}
+
+
+/* Native controls inside the field */
+.field__text {
+  width: 100%;
+  min-width: 1px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-family: inherit;
+  appearance: none;
+  cursor: text;
+}
+
+.field__text::placeholder {
+  color: var(--color-muted);
+}
+
+select.field__text {
+  cursor: pointer;
+}
+
+.field__value:focus-within {
+  border-color: var(--color-primary);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.field--invalid .field__value {
+  border-color: var(--color-alert);
+}
+
+.field__error {
+  color: var(--color-alert);
+  font-size: var(--fs-12);
+  line-height: 15px;
+}
+
+/* The surrounding .field__value shows the focus ring. */
+.field__text:focus-visible {
+  outline: none;
+}
+
+/* ==========================================================================
+   Bonus miles teaser
+   ========================================================================== */
+.teaser {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-16);
+  border-radius: var(--radius-8);
+  background: var(--color-tint);
+}
+
+.teaser__heading {
+  color: var(--color-primary);
+  font-size: var(--fs-17);
+  font-weight: var(--font-semibold);
+}
+
+.teaser__text {
+  color: var(--color-ink);
+  font-size: var(--fs-13);
+  line-height: var(--lh-body);
+}
+
+
+/* ==========================================================================
+   Section heading
+   ========================================================================== */
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.section-heading--start {
+  align-items: flex-start;
+}
+
+.section-heading__title {
+  color: var(--color-ink);
+  font-size: var(--fs-21);
+}
+
+.section-heading__title--small {
+  font-size: var(--fs-17);
+}
+
+.section-heading__action {
+  color: var(--color-primary);
+  font-size: var(--fs-14);
+}
+
+
+/* ==========================================================================
+   Trip context
+   ========================================================================== */
+.trip-context {
+  display: flex;
+  align-items: center;
+  gap: var(--space-14);
+  padding: var(--space-16);
+  border-radius: var(--radius-8);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.trip-context__photo {
+  position: relative;
+  flex-shrink: 0;
+  width: 64px;
+  height: 72px;
+  border-radius: var(--radius-8);
+}
+
+.trip-context__photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-8);
+  pointer-events: none;
+}
+
+.trip-context__info {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 1px;
+  overflow: hidden;
+}
+
+.trip-context__title {
+  color: var(--color-ink);
+  font-size: var(--fs-20);
+  font-weight: var(--font-semibold);
+}
+
+.trip-context__dates {
+  color: var(--color-muted);
+  font-size: var(--fs-13);
+}
+
+.trip-context__status {
+  color: var(--color-primary);
+  font-size: var(--fs-12);
+  font-weight: var(--font-semibold);
+}
+
+
+/* ==========================================================================
+   Member row
+   ========================================================================== */
+.member-list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.member {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  height: 64px;
+  border-bottom: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.member__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 100px;
+  background: var(--color-tint);
+  color: var(--color-primary);
+  font-size: var(--fs-15);
+  font-weight: var(--font-semibold);
+  overflow: hidden;
+}
+
+.member__details {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.member__name {
+  color: var(--color-ink);
+  font-size: var(--fs-16);
+  font-weight: var(--font-semibold);
+}
+
+.member__origin {
+  color: var(--color-muted);
+  font-size: var(--fs-12);
+}
+
+
+/* ==========================================================================
+   Screen: Members & invite
+   ========================================================================== */
+:root {
+  --color-surface: #f4f8f7;
+  --fs-11: 11px;
+  --fs-14: 14px;
+  --fs-20: 20px;
+  --fs-21: 21px;
+  --lh-tight: 1.4;
+}
+
+.members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  min-height: 719px;
+  padding: var(--space-4) var(--space-24) 20px;
+  flex: 1 0 auto;
+}
+
+.members__deadline {
+  color: var(--color-primary);
+  font-size: var(--fs-13);
+}
+
+.group-members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  overflow: hidden;
+}
+
+.group-members__note {
+  color: var(--color-muted);
+  font-size: var(--fs-13);
+}
+
+.invite-share {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  overflow: hidden;
+}
+
+.invite-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 var(--space-12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-8);
+  overflow: hidden;
+}
+
+.invite-link__url {
+  flex: 1 0 0;
+  min-width: 1px;
+  color: var(--color-ink);
+  font-size: var(--fs-11);
+}
+
+.invite-link__url--copied {
+  white-space: pre-wrap;
+}
+
+.invite-link__copied {
+  color: var(--color-primary);
+  font-weight: var(--font-bold);
+}
+
+.invite-link__copy {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.invite-link__copy-elements {
+  position: absolute;
+  inset: 8.33%;
+}
+
+.invite-link__copy-elements img {
+  position: absolute;
+  inset: -4.09%;
+  width: 108.18%;
+  height: 108.18%;
+}
+
+.invite-link__copy--alt .invite-link__copy-elements img {
+  inset: -3.75%;
+  width: 107.5%;
+  height: 107.5%;
+}
+
+.guidance {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-12);
+  border-radius: var(--radius-8);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.guidance__title {
+  color: var(--color-primary);
+  font-size: var(--fs-13);
+  font-weight: var(--font-semibold);
+}
+
+.guidance__text {
+  color: var(--color-muted);
+  font-size: var(--fs-12);
+  line-height: var(--lh-tight);
+}
+
+
+.invite-link__url { user-select: all; }
+
+/* ==========================================================================
+   Screen: Invite view
+   ========================================================================== */
+:root {
+  --color-sand: #fbf5ea;
+  --color-sand-ink: #886a38;
+  --fs-26: 26px;
+}
+
+.invitation {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 719px;
+  padding: var(--space-4) var(--space-24) 20px;
+  flex: 1 0 auto;
+}
+
+.invite-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.invite-card__photo {
+  position: relative;
+  flex-shrink: 0;
+  height: 152px;
+}
+
+.invite-card__photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.invite-card__summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-10);
+  padding: 18px;
+  overflow: hidden;
+}
+
+.invite-card__name {
+  width: 100%;
+  color: var(--color-primary);
+  font-size: var(--fs-26);
+  font-weight: var(--font-semibold);
+}
+
+.invite-card__destination {
+  width: 100%;
+  color: var(--color-muted);
+  font-size: var(--fs-14);
+}
+
+.invite-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.invite-card__meta-icon {
+  position: relative;
+  flex-shrink: 0;
+  width: 16px;
+  height: 17px;
+}
+
+.invite-card__meta-icon--clock {
+  width: 17px;
+}
+
+.invite-card__meta-icon img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.invite-card__meta-icon--calendar img {
+  top: 10%;
+  height: 90%;
+}
+
+.invite-card__meta-text {
+  color: var(--color-ink);
+  font-size: var(--fs-14);
+  white-space: nowrap;
+}
+
+.invite-card__meta-text--small {
+  font-size: var(--fs-13);
+}
+
+.invite-card__members {
+  width: 100%;
+  color: var(--color-primary);
+  font-size: var(--fs-13);
+  font-weight: var(--font-semibold);
+}
+
+.agreement {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.agreement__title {
+  color: var(--color-ink);
+  font-size: var(--fs-16);
+  font-weight: var(--font-semibold);
+}
+
+.agreement__text {
+  color: var(--color-muted);
+  font-size: var(--fs-14);
+  line-height: var(--lh-body);
+}
+
+.invitation__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  overflow: hidden;
+}
+
+
+/* ==========================================================================
+   Screen: Create group
+   ========================================================================== */
+.group-setup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-13);
+  min-height: 719px;
+  padding: var(--space-4) var(--space-24) var(--space-16);
+  flex: 1 0 auto;
+}
+
+.group-setup__description {
+  color: var(--color-muted);
+  font-size: var(--fs-15);
+  line-height: var(--lh-body);
+}
+
+.group-setup__agreement {
+  color: var(--color-muted);
+  font-size: var(--fs-13);
+  line-height: var(--lh-body);
+}
+
+
+/* ==========================================================================
+   Screen: Tokyo preferences saved
+   ========================================================================== */
+.saved {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  height: 719px;
+  padding: 2px var(--space-24) 0;
+  overflow: hidden;
+}
+
+.saved__confirmation { display: flex; flex-direction: column; align-items: center; gap: var(--space-10); overflow: hidden; }
+.saved__mark { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 100px; background: var(--color-tint); overflow: hidden; }
+.saved__mark img { width: 30px; height: 30px; }
+.saved__title { color: var(--color-primary); font-size: var(--fs-26); font-weight: var(--font-semibold); text-align: center; }
+.saved__summary { color: var(--color-muted); font-size: var(--fs-14); line-height: var(--lh-body); text-align: center; }
+
+.liked-places { display: flex; flex-direction: column; gap: var(--space-12); overflow: hidden; }
+.liked-places__title,
+.readiness-update__title { color: var(--color-ink); font-size: 19px; font-weight: var(--font-semibold); line-height: 1.2; }
+.liked-place { display: flex; align-items: center; gap: var(--space-12); padding: var(--space-10); border: 1px solid var(--color-border); border-radius: var(--radius-8); overflow: hidden; }
+.liked-place__thumb { position: relative; flex-shrink: 0; width: 58px; height: 58px; border-radius: 6px; }
+.liked-place__thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 6px; pointer-events: none; }
+.liked-place__summary { display: flex; flex: 1 0 0; flex-direction: column; gap: var(--space-5); min-width: 1px; white-space: nowrap; overflow: hidden; }
+.liked-place__name { color: var(--color-ink); font-size: var(--fs-15); font-weight: var(--font-semibold); }
+.liked-place__meta { color: var(--color-muted); font-size: var(--fs-12); }
+.liked-place__heart { position: relative; flex-shrink: 0; width: 19px; height: 19px; }
+.liked-place__heart img { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.readiness-update { display: flex; flex-direction: column; gap: var(--space-4); overflow: hidden; }
+.readiness-update__heading { display: flex; align-items: center; justify-content: space-between; overflow: hidden; }
+.readiness-update__title { flex: 1 0 0; min-width: 1px; }
+.group-member--compact { padding: var(--space-10) 0; }
+.group-member--compact .group-member__avatar { width: 36px; height: 36px; }
+.group-member--compact .group-member__name { font-size: var(--fs-14); }
+.group-member--compact .group-member__state { font-size: var(--fs-12); }
+.group-member__check--small { width: 16.668px; height: 16.668px; }
+.group-member__check--small img { inset: -5.1%; width: 110.2%; height: 110.2%; }
+.saved__note { color: var(--color-muted); font-size: var(--fs-12); line-height: var(--lh-body); }
+
+.readiness-update > .group-members-list { gap: var(--space-4); }
+
+/* ==========================================================================
+   Screens with a bottom sheet over the group board
+   ========================================================================== */
+:root {
+  --color-scrim: rgba(23, 46, 51, 0.44);
+  --radius-sheet: 20px;
+}
+
+.screen--sheet { height: var(--screen-height); }
+.screen--sheet > .scrim,
+.screen--sheet > .sheet { position: absolute; }
+
+.scrim { top: 0; left: 0; width: 100%; height: var(--screen-height); background: var(--color-scrim); }
+
+.sheet {
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-12) var(--space-24) 28px;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--color-white);
+  overflow: hidden;
+}
+
+.sheet__handle { display: flex; justify-content: center; }
+.sheet__handle-bar { width: 40px; height: 4px; border-radius: 2px; background: var(--color-border); }
+.sheet__heading { display: flex; align-items: center; justify-content: space-between; color: var(--color-primary); font-size: var(--fs-25); white-space: nowrap; }
+.sheet__title { font-weight: var(--font-semibold); }
+.sheet__close { font-size: var(--fs-25); font-weight: var(--font-regular); line-height: normal; }
+.sheet__subtitle { color: var(--color-muted); font-size: var(--fs-14); }
+
+.itinerary { display: flex; flex-direction: column; gap: var(--space-12); padding: var(--space-16); border-radius: var(--radius-8); background: var(--color-surface); overflow: hidden; }
+.itinerary__leg { color: var(--color-ink); font-size: var(--fs-14); font-weight: var(--font-semibold); }
+.itinerary__time { color: var(--color-muted); font-size: var(--fs-13); }
+.itinerary__divider { height: 1px; background: var(--color-border); }
+
+.price { display: flex; align-items: flex-end; justify-content: space-between; white-space: nowrap; overflow: hidden; }
+.price__label { display: flex; flex-direction: column; gap: var(--space-4); }
+.price__title { color: var(--color-ink); font-size: var(--fs-14); font-weight: var(--font-semibold); }
+.price__note { color: var(--color-muted); font-size: var(--fs-11); }
+.price__amount { color: var(--color-primary); font-size: var(--fs-25); font-weight: var(--font-semibold); }
+
+.conditions { display: flex; flex-direction: column; gap: 8px; font-size: var(--fs-13); overflow: hidden; }
+.conditions__lead { color: var(--color-ink); line-height: var(--lh-body); }
+.conditions__note { color: var(--color-muted); line-height: var(--lh-tight); }
+
+.note { display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-12); border-radius: var(--radius-8); background: var(--color-tint); overflow: hidden; }
+.note__title { color: var(--color-primary); font-size: var(--fs-13); font-weight: var(--font-semibold); }
+.note__text { color: var(--color-muted); font-size: var(--fs-12); line-height: var(--lh-tight); }
+
+.sheet__link { display: block; width: 100%; color: var(--color-primary); font-size: var(--fs-14); font-weight: var(--font-semibold); text-align: center; line-height: normal; }
+
+.chip--tint { background: var(--color-tint); color: var(--color-primary); }
+.board--behind { padding-bottom: 0; }
+.board--behind .board__title { color: var(--color-ink); font-size: var(--fs-21); font-weight: var(--font-semibold); white-space: nowrap; }
+
+/* ==========================================================================
+   Line-height snapping
+   Text boxes in the design use whole-pixel line boxes.
+   ========================================================================== */
+.actions__note { line-height: 17px; }
+.agreement__text { line-height: 20px; }
+.agreement__title { line-height: 19px; }
+.alert__text { line-height: 17px; }
+.alert__title { line-height: 16px; }
+.behind-itinerary__source { line-height: 17px; }
+.behind-itinerary__title { line-height: 20px; }
+.board__note { line-height: 17px; }
+.board__title { line-height: 25px; }
+.bonus__note { line-height: 13px; }
+.building-status__label { line-height: 15px; }
+.building-status__text { line-height: 20px; }
+.building-status__title { line-height: 31px; }
+.building__note { line-height: 17px; }
+.checklist__count { line-height: 16px; }
+.checklist__title { line-height: 25px; }
+.chip { line-height: 15px; }
+.chip--booked { line-height: 15px; }
+.chip--picked { line-height: 15px; }
+.chip--primary { line-height: 15px; }
+.chip--sand { line-height: 15px; }
+.chip--tint { line-height: 15px; }
+.comparison__footnote { line-height: 15px; }
+.comparison__intro { line-height: 17px; }
+.comparison__summary { line-height: 17px; }
+.comparison__title { line-height: 25px; }
+.conditions__lead { line-height: 19px; }
+.conditions__note { line-height: 18px; }
+.countdown__label { line-height: 16px; }
+.countdown__value { line-height: 17px; }
+.day-tabs__date { line-height: 12px; }
+.day-tabs__day { line-height: 15px; }
+.day-timeline__date { line-height: 15px; }
+.day-timeline__scale { line-height: 12px; }
+.day-timeline__title { line-height: 18px; }
+.day__eyebrow { line-height: 15px; }
+.day__note { line-height: 17px; }
+.edit-bar__button { line-height: 17px; }
+.eticket__download { line-height: 20px; }
+.eticket__leg { line-height: 19px; }
+.eticket__passenger { line-height: 19px; }
+.eticket__reference { line-height: 16px; }
+.eticket__time { line-height: 19px; }
+.eticket__title { line-height: 21px; }
+.field__disclosure { line-height: 19px; }
+.field__label { line-height: 15px; }
+.field__text { line-height: 19px; }
+.flight-event__name { line-height: 13px; }
+.flight-header__title { line-height: 39px; }
+.flight-leg__airport { line-height: 25px; }
+.flight-leg__arrow { line-height: 15px; }
+.flight-leg__detail { line-height: 15px; }
+.flight-leg__title { line-height: 20px; }
+.flight-leg__when { line-height: 17px; }
+.group-banner__count { line-height: 15px; }
+.group-banner__deadline { line-height: 13px; }
+.group-banner__name { line-height: 18px; }
+.group-banner__route { line-height: 15px; }
+.group-itinerary__title { line-height: 25px; }
+.group-member__name--dim { line-height: 19px; }
+.group-member__state--strong { line-height: 16px; }
+.group-members__note { line-height: 16px; }
+.group-setup__agreement { line-height: 19px; }
+.group-setup__description { line-height: 22px; }
+.guidance__text { line-height: 17px; }
+.guidance__title { line-height: 16px; }
+.hold-countdown__label { line-height: 17px; }
+.hold-countdown__unit { line-height: 15px; }
+.invitation-card__meta { line-height: 15px; }
+.invitation-card__text { line-height: 20px; }
+.invitation-card__title { line-height: 21px; }
+.invite-card__destination { line-height: 17px; }
+.invite-card__members { line-height: 16px; }
+.invite-card__meta-text--small { line-height: 16px; }
+.invite-card__name { line-height: 31px; }
+.invite-link__copied { line-height: 13px; }
+.invite-link__url { line-height: 13px; }
+.invite-link__url--copied { line-height: 13px; }
+.itinerary-card__date { line-height: 16px; }
+.itinerary-card__flight { line-height: 16px; }
+.itinerary-card__name { line-height: 16px; }
+.itinerary-card__route { line-height: 16px; }
+.itinerary-card__state { line-height: 13px; }
+.itinerary-card__time { line-height: 19px; }
+.itinerary-days__note { line-height: 15px; }
+.itinerary-overview__source { line-height: 15px; }
+.itinerary-overview__title { line-height: 19px; }
+.itinerary__leg { line-height: 17px; }
+.itinerary__time { line-height: 16px; }
+.liked-place__meta { line-height: 15px; }
+.liked-place__name { line-height: 18px; }
+.liked-places__title { line-height: 23px; }
+.maybe__meta { line-height: 15px; }
+.maybe__name { line-height: 20px; }
+.member-flight__meta { line-height: 15px; }
+.member-flight__route { line-height: 15px; }
+.member-flight__time { line-height: 17px; }
+.member-payment__name { line-height: 18px; }
+.member-payment__status { line-height: 15px; }
+.member-vote__name { line-height: 15px; }
+.member-vote__state { line-height: 15px; }
+.member__avatar { line-height: 18px; }
+.member__name { line-height: 19px; }
+.member__origin { line-height: 15px; }
+.members__deadline { line-height: 16px; }
+.note__text { line-height: 17px; }
+.note__title { line-height: 16px; }
+.page-header__title { line-height: 30px; }
+.pay-bar__amount { line-height: 22px; }
+.pay-bar__label { line-height: 16px; }
+.payment__note { line-height: 17px; }
+.period__label { line-height: 15px; }
+.place-card__meta { line-height: 17px; }
+.place-card__name { line-height: 22px; }
+.place-card__text { line-height: 15px; }
+.place-card__vote-text { line-height: 13px; }
+.place-description { line-height: 20px; }
+.place-heading__area { line-height: 16px; }
+.place-heading__title { line-height: 28px; }
+.pref-round__hint { line-height: 16px; }
+.pref-round__note { line-height: 15px; }
+.price-change__delta { line-height: 19px; }
+.price-change__label { line-height: 19px; }
+.price-change__new-label { line-height: 18px; }
+.price-change__new-value { line-height: 30px; }
+.price-change__old { line-height: 19px; }
+.price__amount { line-height: 30px; }
+.price__note { line-height: 13px; }
+.price__title { line-height: 17px; }
+.protection__text { line-height: 17px; }
+.readiness-summary__text { line-height: 20px; }
+.readiness-summary__title { line-height: 25px; }
+.readiness-update__title { line-height: 23px; }
+.readiness__title { line-height: 25px; }
+.review__leg { line-height: 19px; }
+.review__member-name { line-height: 18px; }
+.review__member-note { line-height: 16px; }
+.review__time { line-height: 19px; }
+.review__title { line-height: 25px; }
+.round-progress__count { line-height: 16px; }
+.round-progress__title { line-height: 16px; }
+.saved__note { line-height: 17px; }
+.saved__title { line-height: 31px; }
+.section-heading__action { line-height: 17px; }
+.section-heading__title--small { line-height: 21px; }
+.sheet__close { line-height: 30px; }
+.sheet__footnote { line-height: 16px; }
+.sheet__link { line-height: 17px; }
+.sheet__subtitle { line-height: 17px; }
+.sheet__text { line-height: 19px; }
+.sheet__title { line-height: 30px; }
+.stage__text { line-height: 20px; }
+.status-pill { line-height: 15px; }
+.success-info__meta { line-height: 19px; }
+.success-info__status { line-height: 19px; }
+.success-info__title { line-height: 25px; }
+.suggestion-card__area { line-height: 16px; }
+.suggestion-card__badge { line-height: 15px; }
+.suggestion-card__fact-label { line-height: 13px; }
+.suggestion-card__fact-value--budget { line-height: 17px; }
+.suggestion-card__text { line-height: 20px; }
+.suggestion-card__tip { line-height: 17px; }
+.suggestion-card__title { line-height: 28px; }
+.suggestion__link { line-height: 17px; }
+.suggestion__text { line-height: 20px; }
+.suggestion__title { line-height: 18px; }
+.swipe-controls__action { line-height: 19px; }
+.swipe-controls__action--selected { line-height: 19px; }
+.tag { line-height: 13px; }
+.teaser__heading { line-height: 21px; }
+.teaser__text { line-height: 19px; }
+.travel-chip { line-height: 13px; }
+.trip-heading__meta { line-height: 16px; }
+.trip-heading__title { line-height: 25px; }
+.trip-stats__label { line-height: 12px; }
+.trip-stats__value { line-height: 18px; }
+.trip-type__tab { line-height: 17px; }
+.trip-type__tab--active { line-height: 17px; }
+.view-itinerary { line-height: 21px; }
+.view-toggle__option { line-height: 17px; }
+.view-toggle__option--active { line-height: 17px; }
+.visit-info__value { line-height: 18px; }
+.visit-info__value--budget { line-height: 18px; }
+.visit-tips__text { line-height: 17px; }
+.visit-tips__title { line-height: 20px; }
+.votes-heading__note { line-height: 12px; }
+.votes-heading__title { line-height: 22px; }
+.section-heading--start .section-heading__title { line-height: 21px; }
+
+/* ==========================================================================
+   Inside strokes
+   Strokes in the design sit inside the frame and never change its size, so
+   hugging containers draw their outline with an overlay instead of a border.
+   ========================================================================== */
+.invite-card,
+.eticket,
+.suggestion-card,
+.liked-place,
+.place-card,
+.maybe__item {
+  position: relative;
+  border: 0;
+}
+
+.invite-card::after,
+.eticket::after,
+.suggestion-card::after,
+.liked-place::after,
+.place-card::after,
+.maybe__item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--color-border);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.member-flight,
+.review__member,
+.group-member {
+  position: relative;
+  border-bottom: 0;
+}
+
+.actions,
+.pay-bar,
+.edit-bar {
+  position: relative;
+  border-top: 0;
+}
+
+.member-flight::after,
+.review__member::after,
+.group-member::after,
+.actions::after,
+.pay-bar::after,
+.edit-bar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--color-border);
+  pointer-events: none;
+}
+
+.member-flight::after,
+.review__member::after,
+.group-member::after { bottom: 0; }
+
+.actions::after,
+.pay-bar::after,
+.edit-bar::after { top: 0; }
+
+
+.screen { position: relative; display: flex; flex-direction: column; align-items: flex-start; width: 100%; max-width: 440px; background: #fff; overflow: hidden; font-size: 16px; color: var(--color-ink); }
+.screen > * { position: relative; flex-shrink: 0; width: 100%; }
+.screen > .bottom-nav { margin-top: auto; }
+.screen > .scrim, .screen > .sheet { position: absolute; }
+html { background: #444; }
+body { background: #444; color: #fff; font-family: var(--font-family); }
+.sheetpage { padding: 40px; max-width: 2040px; margin: 0 auto; }
+.sheetpage > h1 { font-size: 34px; font-weight: 700; margin: 0 0 8px; }
+.sheetpage > .lead { font-size: 16px; line-height: 1.5; color: #ddd; max-width: 980px; margin: 0 0 28px; }
+.legend { display: flex; gap: 24px; flex-wrap: wrap; margin: 0 0 32px; font-size: 14px; color: #ddd; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.row-title { font-size: 20px; font-weight: 700; margin: 40px 0 16px; padding-top: 16px; border-top: 1px solid #666; }
+.row { display: flex; gap: 40px; align-items: flex-start; flex-wrap: nowrap; }
+.item { width: 440px; flex: 0 0 440px; }
+.tag { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 8px; padding: 4px 10px; border-radius: 6px;
+  background: #fff3d6; color: #854d0e; border: 1px dashed #854d0e; font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+.item > h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; color: #fff; }
+.item .src { margin: 0 0 12px; font-size: 13px; line-height: 1.45; color: #cfcfcf; }
+.item .screen { outline: 2px dashed #f0b45b; outline-offset: 6px; min-height: 956px; }
+.note { margin: 16px 0 0; padding: 14px 16px; background: #3a3a3a; border-radius: 8px; font-size: 13px; line-height: 1.5; color: #e8e8e8; }
+.note b { color: #fff; }
+.note ul { margin: 6px 0 0; padding-left: 18px; }
+.note li { margin: 3px 0; }
+.built { margin-top: 40px; padding: 18px 20px; background: #3a3a3a; border-radius: 8px; font-size: 14px; line-height: 1.55; color: #e8e8e8; max-width: 980px; }
+.built h2 { margin: 0 0 8px; font-size: 18px; color: #fff; }
+
+/* ---- Proposal-only components (not in the Figma file) ---- */
+.group-card { text-align: left; width: 100%; }
+.groups { display: flex; flex-direction: column; gap: 12px; padding: 4px 24px 16px; flex: 1 0 auto; }
+.groups__intro { color: var(--color-muted); font-size: 15px; line-height: 22px; }
+.groups__heading { color: var(--color-ink); font-size: 21px; font-weight: 600; line-height: 25px; }
+.empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 24px 16px; text-align: center; flex: 1 0 auto; }
+.empty__mark { display: flex; align-items: center; justify-content: center; width: 88px; height: 88px; border-radius: 100px; background: var(--color-tint); color: var(--color-primary); font-size: 34px; font-weight: 600; }
+.empty__mark--sand { background: var(--color-sand); color: var(--color-sand-ink); }
+.empty__title { color: var(--color-primary); font-size: 26px; font-weight: 600; line-height: 31px; }
+.empty__text { color: var(--color-muted); font-size: 14px; line-height: 20px; max-width: 334px; }
+.empty .button { margin-top: 8px; }
+.actions-stack { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+
+.demo-panel { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px dashed var(--color-sand-ink); border-radius: 8px; background: var(--color-sand); }
+.demo-panel__head { display: flex; align-items: center; gap: 8px; }
+.demo-panel__tag { padding: 3px 8px; border-radius: 100px; background: var(--color-sand-ink); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .06em; line-height: 12px; }
+.demo-panel__title { color: var(--color-sand-ink); font-size: 14px; font-weight: 600; line-height: 17px; }
+.demo-panel__text { color: var(--color-sand-ink); font-size: 12px; line-height: 17px; }
+.demo-panel__row { display: flex; align-items: center; gap: 8px; }
+.demo-panel__label { color: var(--color-sand-ink); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.demo-select { flex: 1; height: 36px; padding: 0 12px; border: 1px solid var(--color-sand-ink); border-radius: 8px; background: #fff; color: var(--color-ink); font-size: 13px; display: flex; align-items: center; justify-content: space-between; }
+.demo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.demo-button { height: 36px; padding: 0 12px; border: 1px solid var(--color-sand-ink); border-radius: 8px; background: transparent; color: var(--color-sand-ink); font-size: 13px; font-weight: 600; line-height: 16px; }
+.demo-button--solid { background: var(--color-sand-ink); color: #fff; }
+
+.choice-list { display: flex; flex-direction: column; }
+.choice { display: flex; align-items: center; gap: 12px; min-height: 56px; border-bottom: 1px solid var(--color-border); }
+.choice:last-child { border-bottom: 0; }
+.choice__radio { flex-shrink: 0; width: 22px; height: 22px; border: 2px solid var(--color-border); border-radius: 100px; position: relative; }
+.choice--selected .choice__radio { border-color: var(--color-primary); }
+.choice--selected .choice__radio::after { content: ''; position: absolute; inset: 3px; border-radius: 100px; background: var(--color-primary); }
+.choice__label { flex: 1; color: var(--color-ink); font-size: 16px; font-weight: 600; line-height: 19px; }
+.choice__sub { display: block; margin-top: 3px; color: var(--color-muted); font-size: 12px; font-weight: 400; line-height: 15px; }
+.choice--disabled .choice__label { opacity: .5; }
+.choice--disabled .choice__radio { opacity: .5; }
+.sheet .button { margin-top: 0; }
+</style></head><body><div class="sheetpage">
+<h1>Proposed additions · for approval</h1>
+<p class="lead">Everything on this page is a <b>proposal</b>. None of it is built in the app yet and none of it exists in the Figma file. Each frame has an amber dashed outline and a PROPOSAL tag; the explanation under it says which Figma pattern it borrows and how it would behave.</p>
+<div class="legend"><span><span class="tag" style="margin:0">PROPOSAL</span> new screen, state or control (not in Figma)</span><span>Colours, type, spacing, cards, sheets and nav are the existing Cathay tokens</span></div>
+<h2 class="row-title">A · Roles and simulated invitations (affects the first flow)</h2><div class="row"><div class="item"><span class="tag">PROPOSAL P2</span><h3>Demo controls for simulated invitations</h3><p class="src">Not in Figma. Built from the Members &amp; invite screen plus the amber “Fare / seat alert” card colours, with a dashed outline so it never looks like product UI.</p><section class="screen "><div class="status-bar" aria-hidden="true"><div class="status-bar__inner"><div class="status-bar__wifi"><div class="status-bar__wifi-elements"><img src="/public/assets/b0ee8.svg" alt=""></div></div><p class="status-bar__time">15:54</p><div class="status-bar__battery"><div class="status-bar__battery-elements"><img src="/public/assets/87706.svg" alt=""></div></div><div class="status-bar__signal"><div class="status-bar__signal-elements"><img src="/public/assets/962bc.svg" alt=""></div></div></div></div><header class="page-header"><button class="page-header__back" type="button" aria-label="Back"><img src="/public/assets/65e02.svg" alt=""></button><h1 class="page-header__title">Weekend in Tokyo</h1></header>
+<main class="members">
+<div class="trip-context"><div class="trip-context__photo"><img src="/public/assets/4922e.png" alt=""></div><div class="trip-context__info"><p class="trip-context__title">Tokyo, Japan</p><p class="trip-context__dates">Nov 7–10, 2026</p><p class="trip-context__status">1 member · HKG · Invite your friends</p></div></div>
+<p class="members__deadline">Decide by Nov 5, 2026 · 18:00 HKT</p>
+<section class="group-members"><div class="section-heading"><h2 class="section-heading__title">Your travel group</h2><a class="section-heading__action" href="#">Pick flight →</a></div>
+<ul class="member-list"><li class="member"><span class="member__avatar">G</span><div class="member__details"><p class="member__name">Gaudi (you) · Creator</p><p class="member__origin">HKG · Hong Kong</p></div><span class="chip">Browsing</span></li></ul></section>
+<section class="invite-share"><div class="section-heading section-heading--start"><h2 class="section-heading__title section-heading__title--small">Group invite link</h2><button class="section-heading__action" type="button">Share invite</button></div>
+<div class="invite-link"><p class="invite-link__url">https://flights.cathaypacific.com/share/XUT8IZ</p><button class="invite-link__copy" type="button"><span class="invite-link__copy-elements"><img src="/public/assets/76582.svg" alt=""></span></button></div></section>
+<aside class="guidance"><h3 class="guidance__title">Friends can fly from different airports</h3><p class="guidance__text">Joining automatically accepts destination, dates and deadline.</p></aside>
+<aside class="demo-panel" aria-label="Demo controls">
+<div class="demo-panel__head"><span class="demo-panel__tag">DEMO ONLY</span><h3 class="demo-panel__title">Simulated invitations</h3></div>
+<p class="demo-panel__text">Pretend friends act on your invite. Not part of the real product.</p>
+<div class="demo-panel__row"><span class="demo-panel__label">Viewing as</span><span class="demo-select">Gaudi · creator<span>⌄</span></span></div>
+<div class="demo-actions"><button class="demo-button demo-button--solid" type="button">Open link as Clara</button><button class="demo-button" type="button">Kabe joins</button><button class="demo-button" type="button">Friends pick &amp; book</button></div>
+<div class="demo-actions"><button class="demo-button" type="button">Reset demo</button></div></aside></main><nav class="bottom-nav" aria-label="Primary"><div class="bottom-nav__inner"><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--home"><span class="bottom-nav__icon-elements"><img src="/public/assets/cda7a.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--home">Home</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--book"><span class="bottom-nav__icon-elements"><img src="/public/assets/47480.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--book">Book</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--trips"><span class="bottom-nav__icon-elements"><img src="/public/assets/e2721.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--trips">My Trips</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--profile"><span class="bottom-nav__icon-elements"><img src="/public/assets/2fa4b.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--profile">Profile</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--groups"><span class="bottom-nav__icon-elements"><img src="/public/assets/5abd4.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--groups bottom-nav__label--active">Travel<br>Groups</span></a></div></nav></section><div class="note"><b>Behaviour</b><ul><li>Shown only on the creator’s Members page while demo mode is on.</li><li><b>Open link as Clara</b> opens the invitation for this group; <b>Join</b> then lands on the 3-member view.</li><li><b>Kabe joins</b> adds a second member live (list and header update).</li><li><b>Friends pick &amp; book</b> fast-forwards Gaudi and Kabe to the designed Booked/Picked states so later flows match Figma.</li><li><b>Viewing as</b> switches the signed-in person; <b>Reset demo</b> clears saved state.</li></ul></div></div><div class="item"><span class="tag">PROPOSAL P3a</span><h3>Decline confirmation</h3><p class="src">Not in Figma. Reuses the bottom-sheet pattern from “Book now” and “Fare increase” dialogs.</p><section class="screen screen--sheet"><div class="status-bar" aria-hidden="true"><div class="status-bar__inner"><div class="status-bar__wifi"><div class="status-bar__wifi-elements"><img src="/public/assets/b0ee8.svg" alt=""></div></div><p class="status-bar__time">15:54</p><div class="status-bar__battery"><div class="status-bar__battery-elements"><img src="/public/assets/87706.svg" alt=""></div></div><div class="status-bar__signal"><div class="status-bar__signal-elements"><img src="/public/assets/962bc.svg" alt=""></div></div></div></div><header class="page-header"><button class="page-header__back" type="button" aria-label="Back"><img src="/public/assets/65e02.svg" alt=""></button><h1 class="page-header__title">Hello Clara, You’re invited!</h1></header><main class="invitation">
+<article class="invite-card"><div class="invite-card__photo"><img src="/public/assets/e555a.png" alt=""></div><div class="invite-card__summary"><h2 class="invite-card__name">Tokyo together</h2><p class="invite-card__destination">Tokyo, Japan</p>
+<div class="invite-card__meta"><span class="invite-card__meta-icon invite-card__meta-icon--calendar"><img src="/public/assets/f8248.svg" alt=""></span><p class="invite-card__meta-text">Nov 7–10, 2026</p></div>
+<div class="invite-card__meta"><span class="invite-card__meta-icon invite-card__meta-icon--clock"><img src="/public/assets/4bc73.svg" alt=""></span><p class="invite-card__meta-text invite-card__meta-text--small">Decide by Nov 5, 2026 · 18:00 SHA</p></div>
+<p class="invite-card__members">2 members · 3 including you after joining</p></div></article>
+<section class="agreement"><h3 class="agreement__title">All members have equal rights</h3><p class="agreement__text">Joining accepts Tokyo, Nov 7–10 and the deadline above. Choose your departure airport and coordinate flights with friends.</p></section>
+<aside class="teaser"><h2 class="teaser__heading">Look forward to +10% bonus miles</h2><p class="teaser__text">Get extra miles for travelling together. Bonus miles are not earned yet.</p></aside>
+<div class="invitation__actions"><a class="button" href="#">Join</a><a class="button button--secondary" href="#">Decline</a></div></main><div class="scrim"></div><aside class="sheet" role="dialog" aria-modal="true"><div class="sheet__handle"><span class="sheet__handle-bar"></span></div>
+<div class="sheet__heading"><h2 class="sheet__title">Decline invitation?</h2><button class="sheet__close" type="button" aria-label="Close">×</button></div>
+<p class="sheet__subtitle" style="line-height:20px">You won’t join Tokyo together. You can still change your mind until Nov 5, 2026 · 18:00 SHA.</p>
+<a class="button" href="#">Keep invitation</a><a class="button button--secondary" href="#">Decline invitation</a></aside></section><div class="note"><b>Behaviour</b><ul><li>Decline opens this sheet instead of acting immediately.</li><li><b>Keep invitation</b> (primary) or × / Esc / tapping the scrim closes it.</li><li><b>Decline invitation</b> records the decision and shows the next screen.</li></ul></div></div><div class="item"><span class="tag">PROPOSAL P3b</span><h3>Invitation declined</h3><p class="src">Not in Figma. Reuses the centred “Preferences saved” confirmation pattern.</p><section class="screen "><div class="status-bar" aria-hidden="true"><div class="status-bar__inner"><div class="status-bar__wifi"><div class="status-bar__wifi-elements"><img src="/public/assets/b0ee8.svg" alt=""></div></div><p class="status-bar__time">15:54</p><div class="status-bar__battery"><div class="status-bar__battery-elements"><img src="/public/assets/87706.svg" alt=""></div></div><div class="status-bar__signal"><div class="status-bar__signal-elements"><img src="/public/assets/962bc.svg" alt=""></div></div></div></div><header class="page-header"><button class="page-header__back" type="button" aria-label="Back"><img src="/public/assets/65e02.svg" alt=""></button><h1 class="page-header__title">Invitation declined</h1></header><main class="empty"><span class="empty__mark" style="font-size:30px">✕</span>
+<h2 class="empty__title">Invitation declined</h2><p class="empty__text">You didn’t join Tokyo together. You can still join until Nov 5, 2026 · 18:00 SHA.</p>
+<div class="actions-stack"><a class="button" href="#">Join instead</a><a class="button button--secondary" href="#">Back to Travel groups</a></div></main><nav class="bottom-nav" aria-label="Primary"><div class="bottom-nav__inner"><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--home"><span class="bottom-nav__icon-elements"><img src="/public/assets/cda7a.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--home">Home</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--book"><span class="bottom-nav__icon-elements"><img src="/public/assets/47480.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--book">Book</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--trips"><span class="bottom-nav__icon-elements"><img src="/public/assets/e2721.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--trips">My Trips</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--profile"><span class="bottom-nav__icon-elements"><img src="/public/assets/2fa4b.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--profile">Profile</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--groups"><span class="bottom-nav__icon-elements"><img src="/public/assets/5abd4.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--groups bottom-nav__label--active">Travel<br>Groups</span></a></div></nav></section><div class="note"><b>Behaviour</b><ul><li>Stays reachable at the invite URL until the deadline.</li><li><b>Join instead</b> joins the group as normal.</li><li><b>Back to Travel groups</b> goes to the groups list (P1).</li></ul></div></div><div class="item"><span class="tag">PROPOSAL P4</span><h3>Invitation unavailable</h3><p class="src">Not in Figma. Same centred pattern, sand colour as in the amber alert card.</p><section class="screen "><div class="status-bar" aria-hidden="true"><div class="status-bar__inner"><div class="status-bar__wifi"><div class="status-bar__wifi-elements"><img src="/public/assets/b0ee8.svg" alt=""></div></div><p class="status-bar__time">15:54</p><div class="status-bar__battery"><div class="status-bar__battery-elements"><img src="/public/assets/87706.svg" alt=""></div></div><div class="status-bar__signal"><div class="status-bar__signal-elements"><img src="/public/assets/962bc.svg" alt=""></div></div></div></div><header class="page-header"><button class="page-header__back" type="button" aria-label="Back"><img src="/public/assets/65e02.svg" alt=""></button><h1 class="page-header__title">Invitation</h1></header><main class="empty"><span class="empty__mark empty__mark--sand">!</span>
+<h2 class="empty__title">This invitation isn’t available</h2><p class="empty__text">The link may be incorrect, the decision deadline may have passed, or the group may be full. Ask your friend to send a new link.</p>
+<div class="actions-stack"><a class="button" href="#">Go to Travel groups</a><a class="button button--secondary" href="#">Create your own group</a></div></main><nav class="bottom-nav" aria-label="Primary"><div class="bottom-nav__inner"><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--home"><span class="bottom-nav__icon-elements"><img src="/public/assets/cda7a.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--home">Home</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--book"><span class="bottom-nav__icon-elements"><img src="/public/assets/47480.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--book">Book</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--trips"><span class="bottom-nav__icon-elements"><img src="/public/assets/e2721.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--trips">My Trips</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--profile"><span class="bottom-nav__icon-elements"><img src="/public/assets/2fa4b.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--profile">Profile</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--groups"><span class="bottom-nav__icon-elements"><img src="/public/assets/5abd4.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--groups bottom-nav__label--active">Travel<br>Groups</span></a></div></nav></section><div class="note"><b>Behaviour</b><ul><li>Shown for an unknown or mistyped invite code (today: “Page not found”).</li><li>Can also cover a passed deadline or full group (simulated by the demo controls).</li></ul></div></div></div>
+<h2 class="row-title">B · Navigation and missing states</h2><div class="row"><div class="item"><span class="tag">PROPOSAL P1a</span><h3>Travel Groups list</h3><p class="src">Not in Figma, but the bottom-nav tab exists. Cards reuse the “Liked place” card from Preferences saved.</p><section class="screen "><div class="status-bar" aria-hidden="true"><div class="status-bar__inner"><div class="status-bar__wifi"><div class="status-bar__wifi-elements"><img src="/public/assets/b0ee8.svg" alt=""></div></div><p class="status-bar__time">15:54</p><div class="status-bar__battery"><div class="status-bar__battery-elements"><img src="/public/assets/87706.svg" alt=""></div></div><div class="status-bar__signal"><div class="status-bar__signal-elements"><img src="/public/assets/962bc.svg" alt=""></div></div></div></div><header class="page-header"><h1 class="page-header__title">Travel groups</h1></header><main class="groups">
+<p class="groups__intro">Plan flights together, from any airport.</p>
+<h2 class="groups__heading">Your groups</h2>
+<article class="liked-place group-card"><span class="liked-place__thumb"><img src="/public/assets/e555a.png" alt=""></span>
+<div class="liked-place__summary"><p class="liked-place__name">Tokyo together</p><p class="liked-place__meta">Tokyo, Japan · Nov 7–10, 2026</p><p class="liked-place__meta" style="color:var(--color-primary);font-weight:600">2 members · Invitation from Gaudi</p></div><span class="chip chip--tint">Invited</span></article>
+<article class="liked-place group-card"><span class="liked-place__thumb"><img src="/public/assets/4922e.png" alt=""></span>
+<div class="liked-place__summary"><p class="liked-place__name">Weekend in Tokyo</p><p class="liked-place__meta">Tokyo, Japan · Nov 7–10, 2026</p><p class="liked-place__meta" style="color:var(--color-primary);font-weight:600">1 member · Invite your friends</p></div><span class="chip">Creator</span></article>
+<a class="button" href="#" style="margin-top:8px">Create group</a></main><nav class="bottom-nav" aria-label="Primary"><div class="bottom-nav__inner"><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--home"><span class="bottom-nav__icon-elements"><img src="/public/assets/cda7a.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--home">Home</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--book"><span class="bottom-nav__icon-elements"><img src="/public/assets/47480.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--book">Book</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--trips"><span class="bottom-nav__icon-elements"><img src="/public/assets/e2721.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--trips">My Trips</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--profile"><span class="bottom-nav__icon-elements"><img src="/public/assets/2fa4b.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--profile">Profile</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--groups"><span class="bottom-nav__icon-elements"><img src="/public/assets/5abd4.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--groups bottom-nav__label--active">Travel<br>Groups</span></a></div></nav></section><div class="note"><b>Behaviour</b><ul><li>Root of the Travel Groups tab; lists every group with your role.</li><li>Tap a card: joined group → its Members page; invitation → the Invite view.</li><li><b>Create group</b> opens the Create group form.</li><li>Becomes the Back target from the Members page.</li></ul></div></div><div class="item"><span class="tag">PROPOSAL P1b</span><h3>Travel Groups, empty</h3><p class="src">Not in Figma. Same centred pattern.</p><section class="screen "><div class="status-bar" aria-hidden="true"><div class="status-bar__inner"><div class="status-bar__wifi"><div class="status-bar__wifi-elements"><img src="/public/assets/b0ee8.svg" alt=""></div></div><p class="status-bar__time">15:54</p><div class="status-bar__battery"><div class="status-bar__battery-elements"><img src="/public/assets/87706.svg" alt=""></div></div><div class="status-bar__signal"><div class="status-bar__signal-elements"><img src="/public/assets/962bc.svg" alt=""></div></div></div></div><header class="page-header"><h1 class="page-header__title">Travel groups</h1></header><main class="empty"><span class="empty__mark">+</span>
+<h2 class="empty__title">No travel groups yet</h2><p class="empty__text">Create a group, share the link and plan flights together, from any airport.</p>
+<a class="button" href="#">Create group</a></main><nav class="bottom-nav" aria-label="Primary"><div class="bottom-nav__inner"><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--home"><span class="bottom-nav__icon-elements"><img src="/public/assets/cda7a.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--home">Home</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--book"><span class="bottom-nav__icon-elements"><img src="/public/assets/47480.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--book">Book</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--trips"><span class="bottom-nav__icon-elements"><img src="/public/assets/e2721.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--trips">My Trips</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--profile"><span class="bottom-nav__icon-elements"><img src="/public/assets/2fa4b.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--profile">Profile</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--groups"><span class="bottom-nav__icon-elements"><img src="/public/assets/5abd4.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--groups bottom-nav__label--active">Travel<br>Groups</span></a></div></nav></section><div class="note"><b>Behaviour</b><ul><li>Shown when no groups exist (after <b>Reset demo</b> with the sample group removed, or a fresh user).</li><li>Whether the sample “Tokyo together” invitation exists on first launch is decision D4.</li></ul></div></div><div class="item"><span class="tag">PROPOSAL P5</span><h3>Travel dates sheet (optional)</h3><p class="src">Not in Figma (Figma shows only a chevron “⌄”). Today I use the browser’s native dropdown.</p><section class="screen screen--sheet"><div class="status-bar" aria-hidden="true"><div class="status-bar__inner"><div class="status-bar__wifi"><div class="status-bar__wifi-elements"><img src="/public/assets/b0ee8.svg" alt=""></div></div><p class="status-bar__time">15:54</p><div class="status-bar__battery"><div class="status-bar__battery-elements"><img src="/public/assets/87706.svg" alt=""></div></div><div class="status-bar__signal"><div class="status-bar__signal-elements"><img src="/public/assets/962bc.svg" alt=""></div></div></div></div><header class="page-header"><button class="page-header__back" type="button" aria-label="Back"><img src="/public/assets/65e02.svg" alt=""></button><h1 class="page-header__title">Create group</h1></header><main class="group-setup"><p class="group-setup__description">Plan flights together, from any airport.</p>
+<div class="trip-form"><div class="field"><span class="field__label">Group name</span><div class="field__value"><span class="field__text">Tokyo together</span></div></div>
+<div class="field"><span class="field__label">Destination</span><div class="field__value"><span class="field__text">Tokyo, Japan</span></div></div>
+<div class="field"><span class="field__label">Travel dates</span><div class="field__value"><img class="field__icon" src="/public/assets/4341a.svg" alt=""><span class="field__text">Nov 7–10, 2026</span><span class="field__disclosure">⌄</span></div></div></div>
+<p class="group-setup__agreement">Destination, dates and deadline are set when you create. Joining means accepting all three.</p></main><div class="scrim"></div><aside class="sheet" role="dialog" aria-modal="true"><div class="sheet__handle"><span class="sheet__handle-bar"></span></div>
+<div class="sheet__heading"><h2 class="sheet__title">Travel dates</h2><button class="sheet__close" type="button" aria-label="Close">×</button></div>
+<ul class="choice-list"><li class="choice choice--selected"><span class="choice__radio"></span><span class="choice__label">Nov 7–10, 2026<span class="choice__sub">4 days · Sat–Tue</span></span></li><li class="choice choice--disabled"><span class="choice__radio"></span><span class="choice__label">Nov 14–17, 2026<span class="choice__sub">4 days · Sat–Tue</span></span><span class="chip">Not in demo</span></li><li class="choice choice--disabled"><span class="choice__radio"></span><span class="choice__label">Nov 21–24, 2026<span class="choice__sub">4 days · Sat–Tue</span></span><span class="chip">Not in demo</span></li></ul>
+<a class="button" href="#">Done</a></aside></section><div class="note"><b>Behaviour</b><ul><li>Optional replacement for the native select, in the same bottom-sheet style.</li><li>Unavailable windows are visible but disabled, labelled “Not in demo”.</li><li><b>Done</b> applies the choice and closes; keyboard: arrows to move, Enter to choose, Esc to close.</li></ul></div></div><div class="item"><span class="tag">PROPOSAL P6</span><h3>Placeholder for undesigned tabs</h3><p class="src">Not in Figma. Replaces today’s plain-text placeholder.</p><section class="screen "><div class="status-bar" aria-hidden="true"><div class="status-bar__inner"><div class="status-bar__wifi"><div class="status-bar__wifi-elements"><img src="/public/assets/b0ee8.svg" alt=""></div></div><p class="status-bar__time">15:54</p><div class="status-bar__battery"><div class="status-bar__battery-elements"><img src="/public/assets/87706.svg" alt=""></div></div><div class="status-bar__signal"><div class="status-bar__signal-elements"><img src="/public/assets/962bc.svg" alt=""></div></div></div></div><header class="page-header"><button class="page-header__back" type="button" aria-label="Back"><img src="/public/assets/65e02.svg" alt=""></button><h1 class="page-header__title">My Trips</h1></header><main class="empty"><span class="empty__mark" style="font-size:28px">✈</span>
+<h2 class="empty__title">Not part of this demo</h2><p class="empty__text">Home, My Trips and Profile have no designs yet. Travel groups is where this demo happens.</p>
+<a class="button" href="#">Go to Travel groups</a></main><nav class="bottom-nav" aria-label="Primary"><div class="bottom-nav__inner"><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--home"><span class="bottom-nav__icon-elements"><img src="/public/assets/cda7a.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--home">Home</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--book"><span class="bottom-nav__icon-elements"><img src="/public/assets/47480.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--book">Book</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--trips"><span class="bottom-nav__icon-elements"><img src="/public/assets/e2721.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--trips">My Trips</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--profile"><span class="bottom-nav__icon-elements"><img src="/public/assets/2fa4b.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--profile">Profile</span></a><a class="bottom-nav__tab" href="#"><span class="bottom-nav__icon bottom-nav__icon--groups"><span class="bottom-nav__icon-elements"><img src="/public/assets/5abd4.svg" alt=""></span></span><span class="bottom-nav__label bottom-nav__label--groups bottom-nav__label--active">Travel<br>Groups</span></a></div></nav></section><div class="note"><b>Behaviour</b><ul><li>Home, My Trips, Profile and any later-flow screen that is not built yet.</li><li>Nav highlight for these tabs is also undesigned (decision D8).</li></ul></div></div></div>
+<div class="built"><h2>Already built in Flow A without a Figma design</h2>Inline form error text (the prototype’s red), a short confirmation toast (“Invitation declined”, “could not copy”), a visible focus ring, disabled “not in demo” date options in the native dropdown, a plain-text placeholder page, a “Page not found” page and a <code>/reset</code> route. These are small, but they are additions; say if any should change.</div>
+</div></body></html>

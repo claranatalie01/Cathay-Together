@@ -1,0 +1,23 @@
+.toast-region {
+  position: fixed;
+  right: 16px;
+  bottom: 140px;
+  left: 16px;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.toast {
+  max-width: 392px;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-brand);
+  color: var(--color-text-inverse);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--weight-semibold);
+  line-height: var(--text-body-sm-leading);
+  text-align: center;
+  box-shadow: var(--shadow-card);
+}

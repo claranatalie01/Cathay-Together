@@ -1,0 +1,69 @@
+/* ==========================================================================
+   App shell: dark canvas with a centred 440px phone-sized screen
+   ========================================================================== */
+
+body {
+  background: var(--color-canvas);
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-items: safe center;
+  min-height: 100dvh;
+  padding: var(--space-3xl) var(--space-lg);
+}
+
+.screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: var(--screen-width);
+  min-height: var(--screen-height);
+  background: var(--color-surface-default);
+  overflow: hidden;
+  font-size: var(--text-body-xl-size);
+}
+
+.screen > * {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.screen > .bottom-nav {
+  margin-top: auto;
+}
+
+@media (max-width: 1024px) {
+  .app {
+    padding: var(--space-2xl) var(--space-lg);
+  }
+}
+
+@media (max-width: 768px) {
+  .app {
+    padding: 0;
+  }
+
+  .screen {
+    max-width: none;
+    min-height: 100dvh;
+  }
+
+  /* On phones the page fills the screen height; the bottom nav sits at the
+     bottom when content is short and scrolls with it when content is long. */
+  .screen > main {
+    min-height: 0;
+  }
+}
+
+/* ==========================================================================
+   Screen background (v2.0).
+   ========================================================================== */
+.screen {
+  background: var(--color-canvas-screen);
+}

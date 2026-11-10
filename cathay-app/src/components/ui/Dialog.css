@@ -1,0 +1,31 @@
+/* ==========================================================================
+   Dialog (PROPOSAL, Flow C): centred, radius 16, same scrim as the sheets.
+   ========================================================================== */
+.dialog__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  background: var(--color-overlay-scrim);
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: min(100%, var(--screen-width));
+  max-height: 92dvh;
+  padding: var(--space-xl);
+  border-radius: var(--radius-card-lg);
+  background: var(--color-surface-default);
+  overflow-y: auto;
+}
+
+.dialog__title {
+  color: var(--color-text-primary);
+  font-size: var(--text-bar-title-size);
+  line-height: var(--text-bar-title-leading);
+}

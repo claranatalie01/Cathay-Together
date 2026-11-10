@@ -1,0 +1,85 @@
+import Button from '../../components/ui/Button';
+import Price from '../../components/ui/Price';
+import Sheet from '../../components/ui/Sheet';
+import { getCurrentUser } from '../../api';
+import { COPY } from '../../data/copy';
+import { useAsync } from '../../hooks/useAsync';
+import { shortDate } from './boardFormat';
+
+// One chosen flight: icon, "11:20 to 15:15", date, flight number and airports.
+// `compact` (payment and confirmed screens): "11:20 to 15:15" and "Sat 7 Nov · CX500" only.
+export function TripLeg({ selection, direction, compact = false }) {
+  const arrive = direction === 'outbound';
+  if (compact) {
+    return (
+      <div className={`trip-leg trip-leg--${arrive ? 'arrive' : 'leave'}`}>
+        <img className="trip-leg__icon" src={`/assets/ui-plane-${arrive ? 'arrival' : 'departure'}.svg`} alt="" />
+        <p className="trip-leg__times">
+          <strong>
+            {selection.departTime} to {selection.arriveTime}
+          </strong>
+          <span>
+            {shortDate(selection.date)} · {selection.flightNo}
+          </span>
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className={`trip-leg trip-leg--${arrive ? 'arrive' : 'leave'}`}>
+      <img className="trip-leg__icon" src={`/assets/ui-plane-${arrive ? 'arrival' : 'departure'}.svg`} alt="" />
+      <p className="trip-leg__times">
+        <strong>
+          {selection.departTime} to {selection.arriveTime}
+        </strong>
+        <span>
+          {arrive ? 'Outbound' : 'Return'} · {selection.fareName} · {selection.flightNo}
+        </span>
+        <span>
+          {selection.from} to {selection.to}
+        </span>
+      </p>
+      <Price amount={selection.price} className="trip-leg__price" />
+    </div>
+  );
+}
+
+// "Book now": the viewer's own two flights and what they cost. Confirm starts the payment hold.
+export function BookSheet({ open, onClose, booking, busy, onConfirm }) {
+  const copy = COPY.booking;
+  return (
+    <Sheet open={open} onClose={onClose} title={copy.sheetTitle} titleId="book-title">
+      {booking?.outbound && booking?.return ? (
+        <>
+          <WhoLine cabin={booking.outbound.cabinLabel} />
+          <div className="booking__legs">
+            <TripLeg selection={booking.outbound} direction="outbound" />
+            <TripLeg selection={booking.return} direction="return" />
+          </div>
+          <p className="booking__total">
+            <span>{copy.total}</span>
+            <Price amount={booking.total} />
+          </p>
+          <p className="booking__note">{copy.individual}</p>
+          <Button size="lg" onClick={onConfirm} disabled={busy} aria-busy={busy || undefined} data-autofocus>
+            {busy ? copy.starting : copy.confirmPay}
+          </Button>
+        </>
+      ) : (
+        <p className="booking__note">{copy.noTrip}</p>
+      )}
+    </Sheet>
+  );
+}
+
+// "Clara (you) · 1 adult · Economy": whose booking this is. The name comes from the signed-in user.
+export function WhoLine({ cabin }) {
+  const { data: user } = useAsync(getCurrentUser, []);
+  return (
+    <p className="booking__who">
+      {user ? <strong>{user.name} (you)</strong> : null}
+      {user ? ' · ' : ''}
+      {COPY.booking.onlyYou(cabin)}
+    </p>
+  );
+}

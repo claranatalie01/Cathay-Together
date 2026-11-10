@@ -1,0 +1,54 @@
+/* ==========================================================================
+   Bottom navigation (v2.0, real-app first): 5 equal items, icon above label.
+   Icon box 24; icon to label gap about 6.7; label micro size, grey; active teal and bold.
+   ========================================================================== */
+.bottom-nav {
+  display: flex;
+  border-top: var(--border-width-default) solid var(--color-divider);
+  background: var(--color-surface-default);
+  height: auto;
+  padding: var(--space-sm) 0 var(--space-md);
+  overflow: visible;
+}
+
+.bottom-nav__tab {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-optical-7);
+  min-width: 1px;
+  padding-top: var(--space-xs);
+  color: var(--color-text-secondary);
+}
+
+.bottom-nav__icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.bottom-nav__label {
+  font-size: var(--text-micro-size);
+  line-height: var(--text-micro-leading);
+  font-weight: var(--weight-regular);
+  white-space: nowrap;
+}
+
+.bottom-nav__tab--active {
+  color: var(--color-text-brand);
+}
+
+.bottom-nav__tab--active .bottom-nav__label {
+  font-weight: var(--weight-bold);
+}
+
+@media (hover: hover) {
+  .bottom-nav__tab:hover {
+    opacity: var(--opacity-hover);
+  }
+}
+
+.bottom-nav__tab:active {
+  opacity: var(--opacity-pressed);
+}

@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Inside strokes
+   Strokes in the design sit inside the frame and never change its size, so
+   hugging containers draw their outline with an overlay instead of a border.
+   ========================================================================== */
+
+.invite-card,
+.eticket,
+.suggestion-card,
+.liked-place,
+.place-card,
+.maybe__item {
+  position: relative;
+  border: 0;
+}
+
+.invite-card::after,
+.eticket::after,
+.suggestion-card::after,
+.liked-place::after,
+.place-card::after,
+.maybe__item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.member-flight,
+.review__member,
+.group-member {
+  position: relative;
+  border-bottom: 0;
+}
+
+.actions,
+.pay-bar,
+.edit-bar {
+  position: relative;
+  border-top: 0;
+}
+
+.member-flight::after,
+.review__member::after,
+.group-member::after,
+.actions::after,
+.pay-bar::after,
+.edit-bar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--color-divider);
+  pointer-events: none;
+}
+
+.member-flight::after,
+.review__member::after,
+.group-member::after {
+  bottom: 0;
+}
+
+.actions::after,
+.pay-bar::after,
+.edit-bar::after {
+  top: 0;
+}

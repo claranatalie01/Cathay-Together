@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Comparison table (real app, S9 / S11): 1 dp lines, tinted column heads, Flex column tinted.
+   ========================================================================== */
+.compare {
+  width: 100%;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+}
+
+.compare th,
+.compare td {
+  padding: var(--space-md) var(--space-sm);
+  border: var(--border-width-default) solid var(--color-border-default);
+  text-align: left;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+.compare__corner {
+  width: 36%;
+}
+
+.compare__head {
+  background: var(--color-surface-table-head-a);
+  color: var(--color-text-brand-deep);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+  font-weight: var(--weight-bold);
+  text-align: center;
+  overflow-wrap: normal;
+}
+
+.compare__head.is-b {
+  background: var(--color-surface-table-head-b);
+}
+
+.compare__group {
+  border-bottom: 0;
+  color: var(--color-text-strong);
+  font-weight: var(--weight-semibold);
+}
+
+.compare__label {
+  border-top: 0;
+  font-weight: var(--weight-regular);
+}
+
+.compare__value {
+  border-top: 0;
+  padding-right: var(--space-xs);
+  padding-left: var(--space-xs);
+  text-align: center;
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  overflow-wrap: normal;
+}
+
+.compare__value--flex,
+.compare__head--flex {
+  background: var(--color-surface-brand-subtle);
+}
+
+.compare__badge {
+  display: inline-block;
+  width: 17px;
+  height: 17px;
+}

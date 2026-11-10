@@ -1,0 +1,34 @@
+.loading {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-xs) var(--space-xl) var(--space-lg);
+}
+
+.skeleton {
+  border-radius: var(--radius-control);
+  background: var(--color-surface-subtle);
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.skeleton--card {
+  height: 96px;
+}
+
+.skeleton--row {
+  height: 64px;
+}
+
+.skeleton--line {
+  height: 22px;
+}
+
+.skeleton--short {
+  width: 60%;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}

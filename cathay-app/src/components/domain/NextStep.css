@@ -1,0 +1,113 @@
+/* ==========================================================================
+   Next step card (PROPOSAL, approved from flow_next_steps_preview.html): flat brand-subtle card with
+   an eyebrow, a four-step tracker and the one action for now. Inactive labels use text-primary
+   because text-secondary is below 4.5:1 on brand-subtle.
+   ========================================================================== */
+.next-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-brand-subtle);
+}
+
+.next-step__eyebrow {
+  color: var(--color-text-brand);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.06em; /* ds-allow: small-caps style label */
+  text-transform: uppercase;
+}
+
+.next-step__tracker {
+  display: flex;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.next-step__step {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: var(--space-xs);
+  min-width: max-content; /* labels never truncate: "Preferences" needs its full width at 375 px */
+}
+
+.next-step__bar {
+  height: var(--size-tab-indicator);
+  border-radius: var(--radius-bar);
+  background: var(--color-neutral-track);
+}
+
+.next-step__step.is-done .next-step__bar {
+  background: var(--color-border-brand);
+}
+
+.next-step__label {
+  color: var(--color-text-primary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  white-space: nowrap;
+}
+
+.next-step__step.is-current .next-step__label {
+  color: var(--color-text-brand);
+  font-weight: var(--weight-semibold);
+}
+
+.next-step__title {
+  color: var(--color-text-primary);
+  font-size: var(--text-title-size);
+  line-height: var(--text-title-leading);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.next-step__text {
+  font-size: var(--text-body-lg-size);
+  line-height: var(--text-body-lg-leading);
+  overflow-wrap: anywhere;
+}
+
+.next-step__flights {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.next-step__flight {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-default);
+  min-width: 0;
+}
+
+.next-step__flight strong {
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.next-step__flight span {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+}
+
+.next-step__note {
+  color: var(--color-text-primary);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+  text-align: center;
+}

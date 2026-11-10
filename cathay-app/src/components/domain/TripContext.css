@@ -1,0 +1,79 @@
+/* ==========================================================================
+   Trip context
+   ========================================================================== */
+
+.trip-context {
+  display: flex;
+  align-items: center;
+  gap: var(--space-optical-14);
+  padding: var(--space-lg);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-subtle);
+  overflow: hidden;
+}
+
+.trip-context__photo {
+  position: relative;
+  flex-shrink: 0;
+  width: 64px;
+  height: 72px;
+  border-radius: var(--radius-control);
+}
+
+.trip-context__photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-control);
+  pointer-events: none;
+}
+
+.trip-context__info {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  gap: var(--space-optical-6);
+  min-width: 1px;
+  overflow: hidden;
+}
+
+.trip-context__title {
+  color: var(--color-text-primary);
+  font-size: var(--text-title-size);
+  font-weight: var(--weight-semibold);
+}
+
+.trip-context__dates {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm-size);
+}
+
+.trip-context__status {
+  color: var(--color-text-brand);
+  font-size: var(--text-caption-size);
+  font-weight: var(--weight-semibold);
+}
+
+/* One icon line: calendar and dates, then people (group board). */
+.trip-context__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+}
+
+.trip-context__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.trip-context__meta img {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}

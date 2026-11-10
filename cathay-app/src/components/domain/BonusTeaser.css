@@ -1,0 +1,25 @@
+/* ==========================================================================
+   Bonus miles teaser
+   ========================================================================== */
+
+.teaser {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-optical-5);
+  padding: var(--space-lg);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-brand-subtle);
+}
+
+.teaser__heading {
+  color: var(--color-text-brand);
+  font-size: var(--text-title-xs-size);
+  line-height: var(--text-title-xs-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.teaser__text {
+  color: var(--color-text-primary);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--leading-19);
+}

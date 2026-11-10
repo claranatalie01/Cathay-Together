@@ -1,0 +1,86 @@
+/* ==========================================================================
+   Device status (iPhone status bar)
+   ========================================================================== */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 var(--space-optical-30);
+  background: var(--color-surface-brand);
+  overflow: hidden;
+}
+
+.status-bar__inner {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 380px;
+  height: 26px;
+}
+
+.status-bar__time {
+  position: absolute;
+  inset: 30.77% 91.32% 11.54% 0;
+  color: var(--color-text-inverse);
+  font-size: var(--text-caption-size);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.status-bar__wifi {
+  position: absolute;
+  inset: 15.38% 8.68% 15.38% 86.32%;
+  overflow: hidden;
+}
+
+.status-bar__wifi-elements {
+  position: absolute;
+  inset: 22.92% 8.33%;
+}
+
+.status-bar__wifi-elements img {
+  position: absolute;
+  inset: -7.69% -4.74% -10.26% -4.74%;
+  width: 109.48%;
+  height: 117.95%;
+}
+
+.status-bar__battery {
+  position: absolute;
+  inset: 0 0 7.69% 93.68%;
+  overflow: hidden;
+}
+
+.status-bar__battery-elements {
+  position: absolute;
+  inset: 25% 8.33%;
+}
+
+.status-bar__battery-elements img {
+  position: absolute;
+  inset: -6.25% -3.75%;
+  width: 107.5%;
+  height: 112.5%;
+}
+
+.status-bar__signal {
+  position: absolute;
+  inset: 3.85% 15.53% 3.85% 78.16%;
+}
+
+.status-bar__signal-elements {
+  position: absolute;
+  inset: 20.83% 16.67%;
+}
+
+.status-bar__signal-elements img {
+  position: absolute;
+  inset: -5.36% -4.69%;
+  width: 109.38%;
+  height: 110.72%;
+}
+
+.status-bar--transparent {
+  background: transparent;
+}

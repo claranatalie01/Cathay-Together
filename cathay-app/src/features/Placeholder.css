@@ -1,0 +1,14 @@
+.placeholder {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  gap: var(--space-lg);
+  min-height: 719px;
+  padding: var(--space-xs) var(--space-xl) var(--space-lg);
+}
+
+.placeholder__text {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-lg-size);
+  line-height: var(--leading-body);
+}

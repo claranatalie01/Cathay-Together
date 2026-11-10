@@ -1,0 +1,50 @@
+/* ==========================================================================
+   Icon heading and tinted avatar (trial, Flow E): tinted 28 icon square beside a heading.
+   ========================================================================== */
+.icon-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.icon-heading__icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-brand-subtle);
+}
+
+.icon-heading--steel .icon-heading__icon,
+.avatar-tone--steel {
+  background: var(--color-surface-timeline-depart);
+  color: var(--color-text-class-premium);
+}
+
+.icon-heading--sand .icon-heading__icon,
+.avatar-tone--sand {
+  background: var(--color-surface-warning);
+  color: var(--color-text-warning);
+}
+
+.avatar-tone--teal {
+  background: var(--color-surface-brand-subtle);
+  color: var(--color-text-brand);
+}
+
+.icon-heading__icon img {
+  width: 16px;
+  height: 16px;
+}
+
+.icon-heading__text {
+  min-width: 0;
+  color: var(--color-text-brand);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  font-weight: var(--weight-semibold);
+}

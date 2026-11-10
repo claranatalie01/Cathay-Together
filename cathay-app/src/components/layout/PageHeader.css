@@ -1,0 +1,83 @@
+/* ==========================================================================
+   Page header
+   ========================================================================== */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  height: 76px;
+  padding: 0 var(--space-xl);
+  overflow: hidden;
+}
+
+.page-header__back {
+  position: relative;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+
+/* The icon stays 24; an invisible 44 x 44 area around it is the tap target. */
+.page-header__back::after {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--space-optical-10));
+}
+
+.page-header__back img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.page-header__title {
+  flex: 1 0 0;
+  min-width: 1px;
+  color: var(--color-text-brand);
+  font-size: var(--text-page-title-size);
+  line-height: var(--text-page-title-leading);
+  font-weight: var(--weight-semibold);
+}
+
+/* States: PROPOSAL (Figma shows the default back button only) */
+@media (hover: hover) {
+  .page-header__back:hover {
+    opacity: var(--opacity-hover);
+  }
+}
+
+.page-header__back.is-hover {
+  opacity: var(--opacity-hover);
+}
+
+.page-header__back:active,
+.page-header__back.is-pressed {
+  opacity: var(--opacity-pressed);
+}
+
+/* ==========================================================================
+   App bar (v2.0): centred regular title, 56 dp, bottom divider.
+   ========================================================================== */
+.page-header {
+  position: relative;
+  justify-content: center;
+  height: var(--size-header);
+  background: var(--color-surface-default);
+  border-bottom: var(--border-width-default) solid var(--color-divider);
+}
+
+.page-header__back {
+  position: absolute;
+  left: var(--space-xl);
+}
+
+.page-header__title {
+  flex: 0 1 auto;
+  color: var(--color-text-primary);
+  font-size: var(--text-bar-title-size);
+  line-height: var(--text-bar-title-leading);
+  font-weight: var(--weight-regular);
+  text-align: center;
+}

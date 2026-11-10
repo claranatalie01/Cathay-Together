@@ -1,0 +1,129 @@
+/* ==========================================================================
+   Place detail (Flow E). Photo, text, tiles, tip and votes in white cards on the grey canvas.
+   ========================================================================== */
+.place {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-lg) var(--space-xl) var(--space-xl);
+}
+
+.place__photo {
+  width: 100%;
+  height: var(--size-place-photo);
+  border-radius: var(--radius-card);
+  object-fit: cover;
+}
+
+.place__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.place__name {
+  font-size: var(--text-heading-md-size);
+  line-height: var(--text-heading-md-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.place__area {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+}
+
+.place__area img {
+  width: 16px;
+  height: 16px;
+}
+
+.place__text {
+  font-size: var(--text-body-lg-size);
+  line-height: var(--text-body-lg-leading);
+}
+
+.place__tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.place__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-default);
+  box-shadow: var(--shadow-card);
+}
+
+.place__card-title {
+  color: var(--color-text-brand);
+  font-size: var(--text-body-xl-size);
+  line-height: var(--text-body-xl-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.place__votes {
+  display: flex;
+  flex-direction: column;
+}
+
+.place__votes li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  border-bottom: var(--border-width-default) solid var(--color-divider);
+}
+
+.place__votes li:last-child {
+  border-bottom: 0;
+}
+
+.place__avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  font-weight: var(--weight-semibold);
+}
+
+.place__voter {
+  flex: 1 1 0;
+  min-width: 0;
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.place__vote {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-optical-2) var(--space-sm);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  font-weight: var(--weight-medium);
+}
+
+.place__vote--like {
+  background: var(--color-surface-brand-subtle);
+  color: var(--color-text-brand);
+}
+
+.place__vote img {
+  width: 14px;
+  height: 14px;
+}
