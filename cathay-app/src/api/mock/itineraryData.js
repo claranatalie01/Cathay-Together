@@ -7,7 +7,7 @@ const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 // Stops that fill a day when there are not enough voted places. They are not voted on.
-export const SUGGESTED = [
+const SUGGESTED = [
   { id: 'ramen', slot: 'Evening', name: 'Neighbourhood ramen', area: 'Near your hotel', description: 'A warm bowl near your hotel.', minutes: 60, cost: 1500, costLabel: '¥1,500', photo: '/assets/photos/shibuya-neon-signs-cover.jpg', thumb: '/assets/photos/shibuya-neon-signs-thumb.jpg', alt: 'Neon signs lining a Shibuya street at night' },
   { id: 'ueno', slot: 'Afternoon', name: 'Ueno Park & cafés', area: 'Ueno · Taito City', description: 'Autumn paths and a cosy café stop.', minutes: 90, cost: 1000, costLabel: '¥1,000', photo: '/assets/photos/ueno-street-dusk-cover.jpg', thumb: '/assets/photos/ueno-street-dusk-thumb.jpg', alt: 'Ueno side street at dusk with hanging lanterns' },
   { id: 'akihabara', slot: 'Evening', name: 'Akihabara & dinner', area: 'Akihabara · Chiyoda City', description: 'Arcades, glowing streets and casual dining.', minutes: 90, cost: 2500, costLabel: '¥2,500', photo: '/assets/photos/shinjuku-neon-night-cover.jpg', thumb: '/assets/photos/shinjuku-neon-night-thumb.jpg', alt: 'Neon-lit street at night' },
@@ -31,11 +31,11 @@ export const dayLabel = (iso) => {
   const d = new Date(`${iso}T12:00:00Z`);
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()].slice(0, 3)}`;
 };
-export const dayLong = (iso) => {
+const dayLong = (iso) => {
   const d = new Date(`${iso}T12:00:00Z`);
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
 };
-export const weekday = (iso) => DAY_NAMES[new Date(`${iso}T12:00:00Z`).getUTCDay()];
+const weekday = (iso) => DAY_NAMES[new Date(`${iso}T12:00:00Z`).getUTCDay()];
 
 // Votes per place from the saved preferences of the group's members.
 export function votesFor(group, userNames) {

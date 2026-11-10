@@ -65,7 +65,7 @@ Statuses: `[x]` done, `[~]` in progress, `[ ]` not started. **Stop for user revi
 - [x] Payment hold with 20:00 countdown, simulated Pay now (`/payment`), booking confirmed with text e-ticket (`/confirmed`)
 - [x] Seeded real flight choices for Gaudi and Kabe; fixed demo times removed
 - [x] Checks, style guide and docs updated
-- [x] Aligned the built board, payment and confirmed screens with `flow_c_final_preview.html` (icons, copy, layout, calculated values)
+- [x] Aligned the built board, payment and confirmed screens with the Flow C preview (file since removed) (icons, copy, layout, calculated values)
 - [ ] **Flow C review with the user** (promo code, filters and Fill-in information from Flow B were not built)
 
 **Flow D: Preferences**
@@ -74,7 +74,7 @@ Statuses: `[x]` done, `[~]` in progress, `[ ]` not started. **Stop for user revi
 - [x] Preferences saved (`/groups/:id/preferences/saved`): liked places, group readiness, Generate itinerary (leads to the Flow E placeholder)
 - [x] Mock API (`/groups/:id/preferences`, `/choices`, `/save`), Gaudi and Kabe seeded as Ready
 - [x] Checks, style guide and docs updated
-- [x] Group details visual refresh (`group_details_visual_refresh.html`): icon tiles, tinted link rows and avatars, ready chip with tick, photo thumbnails in the call to action, "View itinerary" when one exists
+- [x] Group details visual refresh (preview file since removed): icon tiles, tinted link rows and avatars, ready chip with tick, photo thumbnails in the call to action, "View itinerary" when one exists
 - [ ] **Flow D review with the user** (entry point added: an "Itinerary preferences" link on the Members page)
 
 **Flow E: Itinerary**

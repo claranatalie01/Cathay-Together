@@ -4,22 +4,12 @@
    hugging containers draw their outline with an overlay instead of a border.
    ========================================================================== */
 
-.invite-card,
-.eticket,
-.suggestion-card,
-.liked-place,
-.place-card,
-.maybe__item {
+.invite-card {
   position: relative;
   border: 0;
 }
 
-.invite-card::after,
-.eticket::after,
-.suggestion-card::after,
-.liked-place::after,
-.place-card::after,
-.maybe__item::after {
+.invite-card::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -28,26 +18,12 @@
   pointer-events: none;
 }
 
-.member-flight,
-.review__member,
-.group-member {
-  position: relative;
-  border-bottom: 0;
-}
-
-.actions,
-.pay-bar,
-.edit-bar {
+.actions {
   position: relative;
   border-top: 0;
 }
 
-.member-flight::after,
-.review__member::after,
-.group-member::after,
-.actions::after,
-.pay-bar::after,
-.edit-bar::after {
+.actions::after {
   content: '';
   position: absolute;
   left: 0;
@@ -57,14 +33,6 @@
   pointer-events: none;
 }
 
-.member-flight::after,
-.review__member::after,
-.group-member::after {
-  bottom: 0;
-}
-
-.actions::after,
-.pay-bar::after,
-.edit-bar::after {
+.actions::after {
   top: 0;
 }

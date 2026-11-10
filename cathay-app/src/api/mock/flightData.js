@@ -11,7 +11,7 @@ const HOME_AIRPORTS = {
 
 const TIME_DIFF_MINUTES = 60; // Tokyo is one hour ahead of Hong Kong, Shanghai and Singapore.
 
-export const CABINS = [
+const CABINS = [
   { id: 'economy', label: 'Economy', delta: 0 },
   { id: 'premium', label: 'Premium Economy', delta: 8931 },
   { id: 'business', label: 'Business', delta: 13101 },
@@ -76,7 +76,7 @@ const toClock = (total) => {
 };
 const durationLabel = (minutes) => `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
 
-export const homeFactor = (code) => HOME_AIRPORTS[code]?.price ?? 1;
+const homeFactor = (code) => HOME_AIRPORTS[code]?.price ?? 1;
 
 export function cabinsFor(homeCode) {
   const factor = homeFactor(homeCode);
@@ -123,7 +123,7 @@ export function lowestEconomy({ home, direction, date }) {
 // ---- Fares ---------------------------------------------------------------------------------
 // Three fare types per flight. Light is the flight's own price; Essential and Flex add to it.
 // Fictional rules for the demo, shaped like the real app's fare screen.
-export const FARE_STEP = { essential: 450, flex: 1150 };
+const FARE_STEP = { essential: 450, flex: 1150 };
 
 const FARE_RULES = {
   light: { name: 'Light', tagline: 'Good value', seat: 'For a fee', baggage: '1x23kg', changeFee: 1200, cancelFee: 1400, miles: 800, points: 8, seatSelect: false, milesUpgrade: false },

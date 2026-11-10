@@ -37,4 +37,3 @@ React 19 + Vite 8 + react-router-dom 7 demo app: a phone-sized (440 px) "Travel 
 
 - Extra v2.0 tokens in `docs/design-system.md` section 10 (`gutter-tight`, `text-chip`, `canvas-home`, ...) are not added; add each when its screen is built.
 - Unconfirmed: typeface (Inter is a guess), the two scrim values, card shadow blur, hero IATA size, fare-card radius. Active My trips and Profile nav states are a PROPOSAL.
-- `src/hooks/useDesignTheme.js` is unused and can be deleted.

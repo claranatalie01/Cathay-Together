@@ -117,14 +117,6 @@
   letter-spacing: 0.05em; /* ds-allow: reads a code character by character */
 }
 
-.confirmed__link {
-  padding: var(--space-sm) 0;
-  color: var(--color-text-brand);
-  font-size: var(--text-body-xl-size);
-  line-height: var(--text-body-xl-leading);
-  text-align: center;
-}
-
 /* Icon inside a full-width button, and the quiet outline used for "View everyone's flights". */
 .payment__actions .button img {
   display: inline-block;

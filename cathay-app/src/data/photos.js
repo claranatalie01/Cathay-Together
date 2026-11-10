@@ -10,7 +10,7 @@ const photo = (id, place, alt) => ({
   credit: null,
 });
 
-export const PHOTOS = {
+const PHOTOS = {
   tokyo: [
     photo('tokyo-tower-golden', 'Tokyo', 'Tokyo Tower glowing orange in golden-hour light above the city'),
     photo('tokyo-tower-blue-hour', 'Tokyo', 'Tokyo Tower lit up at blue hour with Tokyo Bay behind'),

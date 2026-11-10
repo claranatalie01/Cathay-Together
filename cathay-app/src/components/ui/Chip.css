@@ -16,16 +16,6 @@
   overflow: hidden;
 }
 
-.chip--booked {
-  background: var(--color-surface-warning);
-  color: var(--color-text-warning);
-}
-
-.chip--picked {
-  background: var(--color-surface-brand);
-  color: var(--color-text-inverse);
-}
-
 /* Tones used by the React Chip component */
 .chip--sand {
   background: var(--color-surface-warning);

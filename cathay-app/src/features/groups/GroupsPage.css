@@ -12,12 +12,6 @@
   line-height: var(--leading-body);
 }
 
-.groups__heading {
-  color: var(--color-text-primary);
-  font-size: var(--text-heading-sm-size);
-  font-weight: var(--weight-semibold);
-}
-
 .groups__list {
   display: flex;
   flex-direction: column;

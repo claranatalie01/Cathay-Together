@@ -1,5 +1,4 @@
 // Small helpers shared by the flight pages.
-export const cityName = (airport) => airport.city;
 export const routeTitle = (route) => `${route.from.city} to ${route.to.city}`;
 export const hkd = (amount) => `HKD${amount.toLocaleString('en-US')}`;
 export const cabinSub = (cabin) => (cabin.delta ? `+${hkd(cabin.delta)}` : null);

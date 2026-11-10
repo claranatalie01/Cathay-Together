@@ -33,13 +33,6 @@
   gap: var(--space-md);
 }
 
-.itinerary__heading {
-  color: var(--color-text-brand);
-  font-size: var(--text-title-xs-size);
-  line-height: var(--text-title-xs-leading);
-  font-weight: var(--weight-semibold);
-}
-
 .itinerary__note {
   color: var(--color-text-secondary);
   font-size: var(--text-caption-size);

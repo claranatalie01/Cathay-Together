@@ -63,13 +63,6 @@
   box-shadow: var(--shadow-card);
 }
 
-.place__card-title {
-  color: var(--color-text-brand);
-  font-size: var(--text-body-xl-size);
-  line-height: var(--text-body-xl-leading);
-  font-weight: var(--weight-semibold);
-}
-
 .place__votes {
   display: flex;
   flex-direction: column;

@@ -72,7 +72,6 @@ export const COPY = {
   prefs: {
     ready: 'Ready',
     calloutTitle: 'What does your Tokyo look like?',
-    calloutText: (n) => `Swipe through ${n} food, scenery, culture and shopping ideas. Like what feels like you.`,
     calloutShort: (n) => `Swipe through ${n} ideas. Like what feels like you.`,
     readyOf: (ready, total) => `${ready} of ${total} ready`,
     viewItinerary: 'View itinerary',
@@ -132,7 +131,6 @@ export const COPY = {
     sheetTitle: 'Book now',
     onlyYou: (cabin) => `1 adult · ${cabin}`,
     outbound: 'Outbound',
-    returnTrip: 'Return',
     total: 'Total',
     individual: 'Booking is individual. Other members pay for their own tickets.',
     confirmPay: 'Confirm and pay',
@@ -256,12 +254,10 @@ export const COPY = {
   },
   members: {
     heading: 'Your travel group',
-    pickFlight: 'Pick flight →',
     pickFlightPlain: 'Pick flight',
     viewFlights: 'View everyone\'s flights',
     equalRights: 'All members have equal rights',
     inviteHeading: 'Group invite link',
-    shareInvite: 'Share invite',
     copyLabel: 'Copy invite link',
     copied: 'Link Copied',
     copyFailed: 'Could not copy automatically. The link is selected, so you can copy it yourself.',

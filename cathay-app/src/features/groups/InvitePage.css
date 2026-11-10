@@ -72,10 +72,6 @@
   height: 17px;
 }
 
-.invite-card__meta-icon--clock {
-  width: 17px;
-}
-
 .invite-card__meta-icon img {
   position: absolute;
   inset: 0;
@@ -92,10 +88,6 @@
   color: var(--color-text-primary);
   font-size: var(--text-body-size);
   white-space: nowrap;
-}
-
-.invite-card__meta-text--small {
-  font-size: var(--text-body-sm-size);
 }
 
 .invite-card__members {

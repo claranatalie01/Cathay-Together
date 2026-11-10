@@ -48,7 +48,6 @@ Figma defined only three shared styles (v1.0 section 1): colour style "Dark" `#1
 | Component styles (tokens only) | `src/components/**/*.css`, `src/features/**/*.css` |
 | Style guide page | `src/design-system/` (route `/design-system`) |
 | Token checker | `scripts/check-tokens.mjs` (`npm run check:tokens`, also runs before `npm run build`) |
-| Visual regression harness (dev only) | `scripts/ds-snapshot.js` |
 | Measurements behind this document | `docs/screenshot-audit.md` |
 | Demo panel | `src/demo/`. **Not part of the design system** |
 
@@ -321,7 +320,7 @@ Sizes below are Real (est.) at ±1.5 sp, from cap-height ÷ 0.71 (assumed ratio)
 | **Stat tile** (built, Flow E) | `ui/StatTile`. White card with a 36 tinted icon square (teal, steel or sand) over a value and label | PROPOSAL |
 | Day tabs (built, Flow E) | The existing `Tabs` with a date sub-label | Reuse |
 | Building screen (built, Flow E) | Trip card, spinning ring with a plane (reduced-motion safe), vote list with ticks | Prototype / PROPOSAL (ring) |
-| Flow C alignment (built) | Aligned with `flow_c_final_preview.html`: trip card with calendar and people icons (list view only), headline plus sand "booked" chip, List / Timeline toggle with icons (`SegmentedControl` `icon` / `iconSelected`), "Everyone lands within" banner (list view), `MemberRow` with a plane between airports, span pills with arrows icon, legend dot, countdown with clock icon (120 ring, `min : sec`), compact trip legs (`TripLeg compact`), booking reference with ticket icon, outline "View everyone's flights" button. New icon files (none edited): `ui-calendar`, `ui-users`, `ui-users-group`, `ui-list`, `ui-list-light`, `ui-timeline`, `ui-timeline-light`, `ui-check-circle-sand`, `ui-arrows-teal`, `ui-arrows-steel`, `ui-clock`, `ui-download` | R / PROPOSAL (new styles) |
+| Flow C alignment (built) | Aligned with the Flow C preview (file since removed): trip card with calendar and people icons (list view only), headline plus sand "booked" chip, List / Timeline toggle with icons (`SegmentedControl` `icon` / `iconSelected`), "Everyone lands within" banner (list view), `MemberRow` with a plane between airports, span pills with arrows icon, legend dot, countdown with clock icon (120 ring, `min : sec`), compact trip legs (`TripLeg compact`), booking reference with ticket icon, outline "View everyone's flights" button. New icon files (none edited): `ui-calendar`, `ui-users`, `ui-users-group`, `ui-list`, `ui-list-light`, `ui-timeline`, `ui-timeline-light`, `ui-check-circle-sand`, `ui-arrows-teal`, `ui-arrows-steel`, `ui-clock`, `ui-download` | R / PROPOSAL (new styles) |
 | Button sizes (built, Flow B) | `size="sm"` 38, default 52, `size="lg"` 56 | R |
 | Chip `peach` (built, Flow B) | Peach fill, radius 4, "Recommended" | R (S6) |
 | Sheet + scrim (decline-invite sheet) | Structure follows the bottom sheet above | F + R |
