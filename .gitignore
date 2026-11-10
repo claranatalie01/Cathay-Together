@@ -5,3 +5,7 @@ build/
 .env.*
 !.env.example
 .DS_Store
+# Not for the public repo
+OAG Developer Portal Guide.pdf
+reference screenshot cathay app/
+*.tgz
