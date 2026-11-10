@@ -1,6 +1,11 @@
 # Cathay Together demo (React + Vite)
 
 Interactive demo of the Cathay Together group-booking prototype.
+
+**Live prototype:** https://cathay-together.vercel.app
+**Code repository:** https://github.com/claranatalie01/Cathay-Together (app in `cathay-app/`)
+
+The data layer is simulated in the browser (see "Data layer" below); there is no real backend yet.
 The original static prototype is untouched in `../frontend`.
 
 ## Run it
