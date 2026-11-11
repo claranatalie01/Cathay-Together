@@ -29,7 +29,8 @@ async function execute(method, path, body) {
     if (!match) continue;
     const params = Object.fromEntries(route.keys.map((key, i) => [key, decodeURIComponent(match[i + 1])]));
     // Round-trip through JSON so callers get plain data, as with a real response.
-    return JSON.parse(JSON.stringify(route.handler({ params, body, query }).body));
+    const { body: result } = await route.handler({ params, body, query }); // handlers may be async (AI planner)
+    return JSON.parse(JSON.stringify(result));
   }
   throw new ApiError(404, 'not_found', `No route for ${method} ${path}.`);
 }

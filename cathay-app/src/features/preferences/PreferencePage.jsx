@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { ApiError, chooseSuggestion, getPreferences, savePreferences } from '../../api';
+import { ApiError, chooseSuggestion, discoverPlaces, getPreferences, savePreferences } from '../../api';
 import SuggestionCard from '../../components/domain/SuggestionCard';
 import BottomNav from '../../components/layout/BottomNav';
 import PageHeader from '../../components/layout/PageHeader';
@@ -28,8 +28,29 @@ export default function PreferencePage() {
   const { status, data, error, reload } = useAsync(() => getPreferences(groupId), [groupId]);
   const [latest, setLatest] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [discoverError, setDiscoverError] = useState(null);
+  const [discoverTry, setDiscoverTry] = useState(0);
   const view = latest ?? data;
+  const needsDiscovery = Boolean(view?.needsDiscovery);
   useDocumentTitle(copy.title);
+
+  // AI planner on: the first person here triggers the web search that creates the group's swipe deck.
+  useEffect(() => {
+    if (!needsDiscovery) return undefined;
+    let cancelled = false;
+    setDiscoverError(null);
+    discoverPlaces(groupId).then(
+      (next) => {
+        if (!cancelled) setLatest(next);
+      },
+      (failure) => {
+        if (!cancelled) setDiscoverError(failure);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [needsDiscovery, groupId, discoverTry]);
 
   const frame = (body, backTo) => (
     <Screen>
@@ -51,6 +72,12 @@ export default function PreferencePage() {
     return frame(<ErrorState error={error} onRetry={reload} />);
   }
   if (!view) return frame(<LoadingState variant="detail" />);
+  if (needsDiscovery) {
+    if (discoverError) {
+      return frame(<ErrorState error={discoverError} title={copy.discoverFailedTitle} onRetry={() => setDiscoverTry((n) => n + 1)} />);
+    }
+    return frame(<StateMessage mark="…" title={copy.discoveringTitle} text={copy.discoveringText} role="status" />);
+  }
 
   const { places, choices, counts } = view;
   const index = places.findIndex((place) => place.id === category);

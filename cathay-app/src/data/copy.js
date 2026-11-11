@@ -105,6 +105,9 @@ export const COPY = {
     waiting: (names) => `Waiting for ${names}.`,
     generate: 'Generate itinerary',
     noSuggestionsTitle: 'No suggestions yet',
+    discoveringTitle: 'Finding places for your group…',
+    discoveringText: 'Searching the web for food, culture and more. This can take a minute.',
+    discoverFailedTitle: 'We could not find places',
     members: (n) => `${n} ${n === 1 ? 'member' : 'members'}`,
   },
   board: {

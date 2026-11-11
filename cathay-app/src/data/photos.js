@@ -32,6 +32,27 @@ export function pickPhoto(destination = '', key = '') {
   return list[h % list.length];
 }
 
+// Local fallbacks for a suggestion photo that is missing or fails to load (the same set as the server).
+const FALLBACK = {
+  food: '/assets/ab624.png',
+  culture: '/assets/culture-photo.jpg',
+  nature: '/assets/e1c39.png',
+  shopping: '/assets/shopping-photo.jpg',
+  nightlife: '/assets/photos/shinjuku-neon-night-cover.jpg',
+  adventure: '/assets/photos/tokyo-skyline-night-cover.jpg',
+  relaxation: '/assets/e1c39.png',
+};
+
+// onError handler for <img>: swaps in the category photo once, so a broken web photo never shows a gap.
+export function fallbackTo(category) {
+  return (event) => {
+    const img = event.currentTarget;
+    if (img.dataset.fallback) return;
+    img.dataset.fallback = '1';
+    img.src = FALLBACK[category] ?? FALLBACK.culture;
+  };
+}
+
 // Header photo for the flight-booking screens (from the original Cathay Together prototype).
 export const WING_PHOTO = {
   id: 'aircraft-wing',

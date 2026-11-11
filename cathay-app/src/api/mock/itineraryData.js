@@ -38,10 +38,10 @@ const dayLong = (iso) => {
 const weekday = (iso) => DAY_NAMES[new Date(`${iso}T12:00:00Z`).getUTCDay()];
 
 // Votes per place from the saved preferences of the group's members.
-export function votesFor(group, userNames) {
+export function votesFor(group, userNames, places = PLACES) {
   const voters = group.members.map((m) => ({ userId: m.userId, name: userNames[m.userId], prefs: group.preferences?.[m.userId] }));
   return Object.fromEntries(
-    PLACES.map((place) => {
+    places.map((place) => {
       const votes = voters.map((v) => ({ userId: v.userId, name: v.name, choice: v.prefs?.saved ? v.prefs.choices[place.id] ?? null : null }));
       return [place.id, { votes, liked: votes.filter((v) => v.choice === 'like').length, passed: votes.filter((v) => v.choice === 'pass').length, total: votes.length }];
     }),
@@ -123,7 +123,7 @@ function travelBetween(a, b) {
 }
 
 // Reads the stored plan for one viewer: adds their own flights, travel between stops and totals.
-export function assemble({ plan, selection, votes, dates }) {
+export function assemble({ plan, selection, votes, dates, places = PLACES }) {
   const days = plan.days.map((day, index) => {
     const items = [];
     if (index === 0) items.push(selection?.outbound ? flightStop(selection.outbound, true) : { id: 'flight-arrival', kind: 'flight-missing', slot: 'Afternoon', title: 'Arrival' });
@@ -148,13 +148,16 @@ export function assemble({ plan, selection, votes, dates }) {
   const totalCost = days.reduce((n, d) => n + d.totals.cost, 0);
   const totalTravel = days.reduce((n, d) => n + d.totals.travelMinutes, 0);
   const maybe = plan.maybe.map((id) => {
-    const place = PLACES.find((p) => p.id === id);
+    const place = places.find((p) => p.id === id);
     return { placeId: id, name: place.name, liked: votes[id].liked, passed: votes[id].passed, duration: place.duration, savedNote: place.savedNote };
   });
   return {
     builtAt: plan.builtAt,
+    builtBy: plan.builtBy ?? 'sample',
     days,
     maybe,
+    review: plan.review ?? null,
+    sources: plan.sources ?? [],
     summary: { places: placeCount, voted: days.reduce((n, d) => n + d.items.filter((i) => i.source === 'voted').length, 0), days: days.length, costPerPerson: totalCost, avgTravelMinutes: days.length ? Math.round(totalTravel / days.length) : 0, firstDate: dates[0], lastDate: dates[dates.length - 1] },
   };
 }

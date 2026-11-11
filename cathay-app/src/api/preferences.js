@@ -10,6 +10,14 @@ export function getPreferences(groupId) {
   return request('GET', `/groups/${enc(groupId)}/preferences`);
 }
 
+// AI planner only (`needsDiscovery` is true in getPreferences): searches the web for places this group
+// can swipe on. Slow (up to a minute or two). Rejects with planner_unreachable / agent_failed (424).
+export async function discoverPlaces(groupId) {
+  const result = await request('POST', `/groups/${enc(groupId)}/preferences/discover`);
+  notifyDataChanged();
+  return result;
+}
+
 // Records Pass or Like for one suggestion. `choice` is 'like' or 'pass'.
 export async function chooseSuggestion(groupId, placeId, choice) {
   const result = await request('PUT', `/groups/${enc(groupId)}/preferences/choices`, { placeId, choice });

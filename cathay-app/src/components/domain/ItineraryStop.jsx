@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { COPY } from '../../data/copy';
+import { fallbackTo } from '../../data/photos';
 import './ItineraryStop.css';
 
 const shortDate = (iso) => {
@@ -49,7 +50,7 @@ export default function ItineraryStop({ stop, to, editing = false, canUp = false
 
   const body = (
     <>
-      <img className="stop__photo" src={stop.thumb} alt={stop.alt} />
+      <img className="stop__photo" src={stop.thumb} alt={stop.alt} onError={fallbackTo(stop.category_key ?? stop.suggestedId)} />
       <div className="stop__body">
         <p className="stop__name">{stop.name}</p>
         <p className="stop__meta">

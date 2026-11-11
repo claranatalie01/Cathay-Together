@@ -1,0 +1,9 @@
+fastapi>=0.110
+uvicorn>=0.29
+openai>=1.40
+tavily-python>=0.5
+python-dotenv>=1.0
+requests>=2.31
+# Tests only
+pytest>=8
+httpx>=0.27

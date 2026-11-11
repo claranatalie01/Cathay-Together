@@ -1,7 +1,7 @@
 // The mock "database": users, groups and the signed-in session, persisted in
 // localStorage. Only src/api/mock and src/demo import this file.
 import { seedSelectionFor, windowOf } from './flightData';
-import { PLACE_IDS, SEED_CHOICES } from './placeData';
+import { demoChoicesFor } from './suggestions';
 
 const KEY = 'cathay-mock-db-v4';
 
@@ -43,10 +43,11 @@ function ensureSelections(data) {
 function ensurePreferences(data) {
   data.groups.forEach((group) => {
     group.preferences = group.preferences ?? {};
+    if (group.discovery) return; // an AI deck seeds its teammates once, when it is created
     group.members.forEach((member) => {
       if (group.preferences[member.userId] || (member.status !== 'picked' && member.status !== 'booked')) return;
-      const choices = SEED_CHOICES[member.userId];
-      if (choices) group.preferences[member.userId] = { choices: Object.fromEntries(PLACE_IDS.map((id) => [id, choices[id]])), saved: true };
+      const choices = demoChoicesFor(member.userId, group);
+      if (choices) group.preferences[member.userId] = { choices, saved: true };
     });
   });
   return data;

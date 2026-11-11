@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "python -m uvicorn server.app:app --host 127.0.0.1 --port 8000",
+    "test:api": "python -m pytest server/tests -q",
     "build": "vite build",
     "preview": "vite preview",
     "check:tokens": "node scripts/check-tokens.mjs",

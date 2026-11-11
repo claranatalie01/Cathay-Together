@@ -1,10 +1,11 @@
 // Mock endpoints for the itinerary (Flow E). Documented in docs/api-contract.md.
 import { ApiError } from '../errors';
 import { USERS, getDb, saveDb } from './db';
+import { AI_ENABLED, planTrip } from './aiPlanner';
 import { windowOf } from './flightData';
 import { currentUser, findGroup } from './helpers';
 import { assemble, buildPlan, datesBetween, votesFor } from './itineraryData';
-import { PLACES } from './placeData';
+import { placesOf } from './suggestions';
 
 function context(params) {
   const db = getDb();
@@ -14,25 +15,35 @@ function context(params) {
   if (!/^tokyo\b/i.test(group.destination)) throw new ApiError(404, 'no_suggestions', `There is no itinerary for ${group.destination} yet.`);
   const win = windowOf(group.datesLabel);
   const names = Object.fromEntries(Object.entries(USERS).map(([id, u]) => [id, u.name]));
-  return { group, user, dates: datesBetween(win.start, win.end), votes: votesFor(group, names), names };
+  const places = placesOf(group);
+  return { group, user, dates: datesBetween(win.start, win.end), votes: votesFor(group, names, places), names, places };
 }
 
 function bodyFor(ctx) {
-  const { group, user, dates, votes } = ctx;
+  const { group, user, dates, votes, places } = ctx;
   if (!group.itinerary) throw new ApiError(404, 'itinerary_not_built', 'The itinerary has not been built yet.');
   return {
     group: { id: group.id, name: group.name, destination: group.destination, datesLabel: group.datesLabel },
     members: group.members.length,
-    ...assemble({ plan: group.itinerary, selection: group.selections?.[user.id], votes, dates }),
+    ...assemble({ plan: group.itinerary, selection: group.selections?.[user.id], votes, dates, places }),
   };
 }
 
 export const itineraryRoutes = [
   // POST /groups/:id/itinerary/build – needs everyone ready; builds (or rebuilds) the plan
-  ['POST', '/groups/:id/itinerary/build', ({ params }) => {
+  ['POST', '/groups/:id/itinerary/build', async ({ params }) => {
     const ctx = context(params);
     const waiting = ctx.group.members.filter((m) => !ctx.group.preferences?.[m.userId]?.saved).map((m) => ctx.names[m.userId]);
     if (waiting.length) throw new ApiError(422, 'not_ready', `Waiting for ${waiting.join(', ')} to finish swiping.`, { waiting });
+    if (AI_ENABLED && ctx.group.discovery) {
+      // The Python agents (Scheduler, then Quality Check) plan the days from the group's votes.
+      const cards = ctx.places.map((p) => ({ ...p, like_count: ctx.votes[p.id].liked, total_members: ctx.votes[p.id].total }));
+      const plan = await planTrip(ctx.group, cards, ctx.group.discovery.sources);
+      const fresh = context(params); // the data may have changed while the planner was working
+      fresh.group.itinerary = { ...plan, builtAt: Date.now() };
+      saveDb();
+      return { status: 200, body: bodyFor(fresh) };
+    }
     ctx.group.itinerary = { ...buildPlan({ dates: ctx.dates, votes: ctx.votes }), builtAt: Date.now() };
     saveDb();
     return { status: 200, body: bodyFor(ctx) };
@@ -68,7 +79,7 @@ export const itineraryRoutes = [
     for (const day of full.days) {
       const stop = day.items.find((item) => item.id === params.stopId && item.kind === 'place');
       if (stop) {
-        const place = stop.placeId ? PLACES.find((p) => p.id === stop.placeId) : null;
+        const place = stop.placeId ? ctx.places.find((p) => p.id === stop.placeId) : null;
         return {
           status: 200,
           body: {
