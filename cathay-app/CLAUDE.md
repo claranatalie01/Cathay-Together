@@ -8,6 +8,7 @@ React 19 + Vite 8 + react-router-dom 7 demo app: a phone-sized (440 px) "Travel 
 
 - `npm run dev` : dev server (style guide at `/design-system`)
 - `npm run check:tokens` : must pass before you finish any change (also runs on `npm run build`)
+- `npm run check:backend` : checks the Supabase URL and publishable key in `.env.local` (git-ignored; names in `.env.example`) and that each table exists and is closed to visitors. Database tables live in `supabase/migrations`; never put the secret key in the repo
 - `npm run icons:inventory` : regenerate `src/design-system/iconInventory.js` after adding or changing any SVG in `public/assets`
 
 ## Design rules (read `docs/design-system.md` first)

@@ -1,229 +1,378 @@
-# Cathay Together: Master Plan
+# Cathay Together — Technical Development Plan
 
-**Read this first in every session**, then `CLAUDE.md` and `docs/design-system.md`. Update the checklist at the end of every task.
+Updated: 10 November 2026 · Event: 14–15 November 2026 · All times: Hong Kong (GMT+8).
 
-## 0. Working agreement
+Build the smallest shared travel-planning demo that proves three friends can coordinate flights and create an itinerary together. Keep the existing React interface and replace browser-only state with a shared backend.
 
-- **Scope:** frontend demo only. No real accounts, payments, hosting or paid services.
-- **Source priority:** real-app screenshots (`docs/screenshot-audit.md`, S1 to S14), then the design doc, then Figma. Anything else is a PROPOSAL that needs approval.
-- **Tokens only, reuse components.** Raw values live only in `src/styles/tokens.css`. Propose a new component before building one.
-- **Before coding:** state the plan and the files to change. Wait for the user's OK if more than 3 files change.
-- **Ask first** before changing scope, changing a token value, deleting work or publishing.
-- **Backend-ready:** pages get data only through `src/api` (async, REST-shaped, mock on localStorage). Demo controls stay in `src/demo/` and must be deletable. Document every endpoint in `docs/api-contract.md`.
-- **Definition of done for any step:**
-  1. `npm run check:tokens` passes.
-  2. `npm run build` passes.
-  3. The screens were checked at 375px and 440px or wider, against the matching screenshot.
-  4. The style guide and `docs/design-system.md` are updated if a token or component changed.
-  5. The user has reviewed the changed screens.
-  6. The checklist below is updated.
+This is the active technical roadmap. The previous frontend plan is preserved unchanged in [docs/frontend-plan-archive.md](docs/frontend-plan-archive.md). Its completed work remains valid; its frontend-only scope describes the previous stage. Future implementation should follow this roadmap, `CLAUDE.md`, and `docs/design-system.md`; confirm stale documentation against the actual code.
 
-## 1. Current state
+**Progress:** `[x]` verified existing capability or completed task; `[ ]` outstanding. **P0** = required for the core demo; **P1** = supporting work after P0; **P2** = defer. Planning a task does not mean it has been implemented or tested.
 
-- **Stack:** React 19, Vite 8 and react-router 7, with plain CSS. Original prototype preserved in `frontend/`.
-- **Done:** Flow A, the API layer, the demo panel, design system v2.0 and the `/design-system` style guide.
-- **Done, reviewed:** Flow B, flight booking (promo code, filters and Fill-in information deferred).
-- **Done:** Flow C approved.
-- **Done:** Flow D approved.
-- **Done:** Flow E approved.
-- **In progress:** final handover (planned, waiting for your OK).
-- **Next steps are listed under Final handover.** Final handover (every route by direct URL, keyboard and focus, README, mismatch report).
-- **Open product decisions:**
-  - the "Travel Groups" nav tab versus the real app's "Travel tools" (J)
-  - the Flex strip colour, fare-card radius and shadow
-  - the contrast proposals A to J in the design doc
+**Why and how:** the algorithms, data, services and backend are explained in plain language, with worked examples, in [docs/technical-guide.md](docs/technical-guide.md).
 
-## 2. Flows and checklist
+## 0. Your to-do summary (start here)
 
-Statuses: `[x]` done, `[~]` in progress, `[ ]` not started. **Stop for user review at the end of every flow**, not at each sub-step.
+A short, ordered list of everything you need to do. Each item points to the section with the detail. Added 10 November 2026.
 
-**Foundation**
-- [x] Node and Vite setup, router, original prototype preserved
-- [x] Backend-ready API layer, `docs/api-contract.md`, demo panel isolated
-- [x] Design system v2.0, token checker, `/design-system` guide
-- [~] Tidy-up: design-doc section 9 wording fixed, unused `useDesignTheme.js` deleted; still to do: record photo credits
+### Before Saturday
 
-**Flow A: Group setup** (create, members, invite, join or decline)
-- [x] Built and reviewed
-- [ ] Re-check against the real-app look after the v2.0 migration
+Do item 1 first. Items 3 to 6 are only allowed if the answer to item 1 permits preparation.
 
-**Flow B: Flight booking**
-- [x] B0: Plan approved. Defaults taken: Flex strip is a PROPOSAL gradient (Essential step to deep teal), fare-card radius 10, card shadow stays v1.0 "XXS" (flagged)
-- [x] B1: Book a Trip search (S1), then departing results (S5)
-  - [x] New tokens and components: Tabs, SegmentedControl, FlightCard, PhotoHeader, Price
-  - [x] `api/flights` mock and routes `/groups/:id/flights/search` and `/outbound`
-- [x] B2: Fare options (S6), with the Upgrade sheet (S9) and Compare sheet (S11)
-  - [x] FareCard, comparison table, small and large buttons, sheets (route `/groups/:id/flights/:direction/:flightId/fares?sheet=`)
-- [x] B3: Return results and fares, plus the Members page "Picked" status (status turns `picked` once outbound and return are both chosen)
-- [x] Checks (`check:tokens`, `build`, 375px and 440px), style guide and docs updated
-- [x] Review round 1 changes: aircraft-wing photo on Book a trip and results; "Group timing window" slider (1 to 6 h) on Book a trip; results grouped by how far each flight is from the other members (outbound and return), with "Lands 5m before Kabe" style badges. Wording as supplied by the user
-- [ ] **Flow B review with the user, round 2** (not built: Multi-city, promo code, filters from the real app; no Fill-in information screen yet)
+- [ ] 1. Ask the organisers (hackathon@cathaypacific.com) whether the existing prototype may be reused and what preparation is allowed before 11:00 on 14 November. See PRE-01.
+- [ ] 2. Ask your teammates whether the AWS, GCP or GitHub Copilot request form was submitted. If not, the team must visit the Tech Help Desk before 14:00 on Saturday.
+- [ ] 3. Register at developers.oag.com, click "Try it" on the Flight Info API, and run one test query: Cathay (`CX`) from `HKG` to `HND` on 2026-11-21. Save the response. See PRE-02 and the technical guide, section 5.
+- [x] 4. Create a free Supabase account and confirm it is reachable. Whether you may use it is one of the questions in PRE-02. *Done 11 November: organisation and project "Cathay Together" created on the Free plan in Singapore, no GitHub connection. Still open: whether the organisers allow it.*
+- [ ] 5. Check that the current demo runs on your laptop without internet (`npm run dev`), and record a short fallback video. See PRE-03.
+- [ ] 6. Collect the real opening times of the four Tokyo places for 21–24 November from their official sites. See DATA-01.
+- [ ] 7. Settle the open decisions below with your team.
+- [ ] 8. Give each workstream an owner: backend, algorithms and data, frontend integration, pitch and submission. See PRE-01.
+- [ ] 9. Read the technical guide, sections 1, 3 and 9. Make sure you can explain "timestamp", "backend" and "spread" in your own words. See PRE-03.
+- [ ] 10. Pack: HKID or travel document, laptop, chargers, adapters, toiletries, a change of clothes and any medication.
 
-**Flow C: Group board and payment**
-- [x] Board list and timeline (`/groups/:id/board`), whole 3-person group (invited people shown as "Invited")
-- [x] Book now sheet (`?sheet=book`). The fare-increase dialog and flow were removed at your request (not needed for a prototype)
-- [x] Payment hold with 20:00 countdown, simulated Pay now (`/payment`), booking confirmed with text e-ticket (`/confirmed`)
-- [x] Seeded real flight choices for Gaudi and Kabe; fixed demo times removed
-- [x] Checks, style guide and docs updated
-- [x] Aligned the built board, payment and confirmed screens with the Flow C preview (file since removed) (icons, copy, layout, calculated values)
-- [ ] **Flow C review with the user** (promo code, filters and Fill-in information from Flow B were not built)
+### Open decisions
 
-**Flow D: Preferences**
-- [x] Group details (`/groups/:id/details`): the Members page layout with Ready / Choosing chips, the "What does your Tokyo look like?" callout and "Pick itinerary preferences"
-- [x] Four suggestion cards (`/groups/:id/preferences/:category`, food, scenery, culture, shopping): swipe or Pass / Like, saved straight away
-- [x] Preferences saved (`/groups/:id/preferences/saved`): liked places, group readiness, Generate itinerary (leads to the Flow E placeholder)
-- [x] Mock API (`/groups/:id/preferences`, `/choices`, `/save`), Gaudi and Kabe seeded as Ready
-- [x] Checks, style guide and docs updated
-- [x] Group details visual refresh (preview file since removed): icon tiles, tinted link rows and avatars, ready chip with tick, photo thumbnails in the call to action, "View itinerary" when one exists
-- [ ] **Flow D review with the user** (entry point added: an "Itinerary preferences" link on the Members page)
+| # | Decision | Current plan | Mentor's suggestion |
+| --- | --- | --- | --- |
+| D1 | Flight data | Fictional direct flights for all three travellers | If the OAG test in item 3 works, save a real schedule snapshot once and label it. Keep prices fictional |
+| D2 | Shanghai and Singapore routes | Direct to Tokyo | Check in OAG whether Cathay's real routes connect through Hong Kong. If so, decide whether to show connections |
+| D3 | Vote rule | Strict majority; minority picks go to "Maybe" (DEV-04) | Optional: add one labelled "minority pick". See the technical guide, section 3B |
+| D4 | Number of places | The four existing places | With four places almost everything fits, so votes decide little. Consider about 12 if time allows |
+| D5 | Where our API runs | One Supabase Edge Function | Keep it, but test in the first hour that it can use the algorithm files. Fallback: Vercel functions |
 
-**Flow E: Itinerary**
-- [x] Building screen (`/groups/:id/itinerary/building`): timed build from everyone's saved picks; says who is still swiping
-- [x] Itinerary (`/groups/:id/itinerary?day=`): summary tiles, a tab per day, your own booked flights, voted and "Suggested" stops, travel between stops, day totals, Maybe list, Edit (move and remove stops) and Save changes
-- [x] Place detail (`/groups/:id/itinerary/places/:stopId`): photo, tiles, tip, and each member's vote for a voted place
-- [x] Mock API (`/itinerary/build`, `/itinerary`, `/itinerary/stops/:id`); votes, totals and counts calculated from the data
-- [x] Checks, style guide and docs updated
-- [x] **Flow E review with the user** (approved)
-- [x] Group home look applied to the Members page and the Travel Groups list, matching Group details (the richer style is applied to Flow E only; Group details and Members stay as they are until you decide)
+### Saturday 14 November
 
-**Next-steps round (after Flow E)**
-- [x] Next step card on Group details and Members (pay is now one tap from the group page); preferences only after booking; invite link and friends note moved below; Done on the itinerary; swipe hints removed. Verified at 375 and 440px.
+- [ ] 09:10 check-in at the Cathay City main entrance. Development starts at 11:00.
+- [ ] Before 14:00: Tech Help Desk, if cloud resources are not set up.
+- [ ] Before 17:30: put the questions in PRE-02 and the technical guide, section 8, to the SME Help Desk. It does not reopen on Sunday.
+- [ ] Book the pitching workshop (14:00–15:30) and showers through the hackathon portal if wanted.
+- [ ] Build in this order: DEV-01, DATA-01, DEV-02, DEV-03, DEV-04, DEV-05, DEV-06. Prove two devices in one group before anything else.
+- [ ] The General and Tech Help Desk closes from 21:00 to 08:00. Ask anything blocking before then.
 
-**Final handover**
-- [x] Every route works by direct URL (22 routes at 375, 768, 1280px; browser Back and Forward not tested)
-- [x] Keyboard, focus and console are clean (console clean everywhere; focusability checked on Group details only; Back tap target now 44px)
-- [x] Layouts verified at 375, 768 and 1280px
-- [x] README and run instructions
-- [x] Mismatch report (`docs/mismatch-report.md`)
+### Sunday 15 November
 
-## 3. Per-step loop
+- [ ] 06:00 feature freeze. Rehearse the five-minute pitch.
+- [ ] By 08:45 email the one-pager. The hard deadline is 09:00.
+- [ ] By 10:40 submit the prototype link, the repository link and the slides PDF through the portal. The hard deadline is 11:00.
+- [ ] 10:55 be in Room 410 for the First Pitch: 5 minutes to present, 5 minutes of questions.
 
-1. Read this file, `CLAUDE.md` and the design doc.
-2. Run `check:tokens` and `build` to confirm a clean start.
-3. Propose the plan and files, and wait for approval if more than 3 files change.
-4. Build with tokens and existing components. Mock data lives in `src/api`.
-5. Run `check:tokens` and `build` again, and check the screens in the browser.
-6. Update the docs and style guide, then tick the checklist.
-7. At the end of a flow, show the changed screens and **wait for approval** before the next flow.
+Missing either deadline removes the team from the First Pitch. The full schedule is in section 6.
 
-## 4. Risks and unknowns
+## 1. Target demo and scope
 
-- The typeface is unconfirmed (Inter is a guess).
-- Shadow blur and some radii need native-resolution crops.
-- The real-app screenshots are not in the repo, so they must be re-supplied for new screens.
-- Screens with no real-app or Figma coverage get PROPOSAL treatment.
+### P0: must work for real
 
-## Appendix: original plan
+- [ ] Two authenticated users on separate devices create/join the same group and see shared changes.
+- [ ] Each member selects flights from their own origin; comparisons use complete timestamps.
+- [ ] The board shows the same selections and timing results on both devices.
+- [ ] Saved likes/passes change the generated group itinerary.
+- [ ] Shared activities fit group availability, opening windows, travel time, duration, and the demo budget.
+- [ ] Reloading the app preserves shared state; a non-member cannot read or change private trip data.
 
-Written at the start of the project. Since then Node was installed and Flow A was completed. Kept as written.
+### Demo defaults
 
----
+- Destination: Tokyo; destination airport: HND only.
+- Three travellers: Gaudi/HKG, Clara/SHA, Kabe/SIN, using separate demo accounts.
+- Travel window: 21–24 November 2026; round trips and one adult per member.
+- Rank one member's flight options against existing selections; no joint flight-combination optimizer.
+- Use clearly labelled fictional flight offers and curated activities initially. Live inventory is optional.
+- Booking, payment, fare holds, and tickets remain simulations; collect no card or passport data.
+- Use deterministic JavaScript rules, meaning the same inputs produce the same result. No LLM or machine learning is required.
+- Do not expand into multi-city search, real reservations, ticket issuance, seat holds, or a new visual design.
 
-# (Original) Plan: Cathay prototype to a React + Vite app
+### Current state confirmed from code
 
-I created and changed no files this turn.
+- [x] React/Vite app with group setup, invitations, flight selection, board, simulated booking, preferences, and itinerary screens.
+- [x] Async API wrappers and an existing REST-shaped contract in `docs/api-contract.md`.
+- [x] Browser mock database in `src/api/mock/`, persisted in localStorage; this is not shared across devices.
+- [x] Flight comparison calculates latest minus earliest clock time and excludes members without selections.
+- [x] Preferences count saved votes; strict majority places enter the plan and minority picks enter “Maybe”.
+- [x] Basic itinerary assembly, editing, estimated costs, and fixed travel durations exist.
+- [ ] Full-date flight comparisons, genuine authentication, shared storage, and conflict-aware itinerary scheduling are not implemented.
+- [ ] Correct stale documentation: API timing text contradicts itself; older notes describe routes, storage keys, and itinerary behavior that have changed.
 
-## 1. Environment and project state
+## 2. Preparation before the event
 
-- **Node.js is not installed** (`node`, `npm`, `npx`, `nvm`, `fnm` and `volta` are all missing).
-- **Homebrew 7.0.1** is installed on this Apple-silicon Mac, so `brew install node` (current LTS) is the straightforward fix. It changes your system, so approving this plan also approves that install. If you'd rather use the nodejs.org installer, tell me.
-- The original prototype now sits in `frontend/` (`index.html` plus 77 files in `assets/`). I will not touch it.
-- The new app goes in a sibling folder, `cathay-app/`. Assets are copied from `frontend/assets`.
+**Gate:** confirm the hackathon rules before preparing code, datasets, accounts, or integrations. The on-day email does not establish which pre-event work or reuse of the existing prototype is permitted. Until clarified, use this section as a preparation checklist, not permission to implement early.
 
-## 2. Inventory of existing screens
+### PRE-01 · Rules, access, and team responsibilities · P0
 
-The prototype has 31 screens plus 3 design-only component frames. They are grouped by flow below.
+- [ ] Confirm whether the existing React prototype can be reused and what must be developed during the 24-hour stage.
+- [ ] Confirm permitted pre-event setup, sample data, libraries, and third-party services.
+- [ ] Confirm how to email the one-pager, its required format/template, the portal upload fields, and repository access requirements.
+- [ ] Assign owners for backend, algorithms/data, frontend integration, and demo/submission; one person can cover multiple roles.
+- [ ] Confirm every teammate can run the repository and knows where the API contract lives.
+- [ ] Record organizer answers in the README or team notes.
 
-| # | Flow | Screens (prototype order) | Interactions to make work |
-|---|---|---|---|
-| A | Group setup | Create group; Members & invite (empty); Members & invite (link copied); Invite view; Members & invite (3 members) | Form fields and travel-date dropdown; copy and share invite link; Join and Decline; Pick flight → |
-| B | Flight booking | Book a Trip search; Outbound results; Outbound results (lowest fare selected); Outbound fare options (Light, Essential, Flex); Return results; Return fare options | Return and One way tabs; Passengers and Class; arrival-window slider; date chips; cabin tabs; selecting a flight and a fare; "view more condition" |
-| C | Group board and payment | Board (List); Board (Timeline); Book now sheet; Payment hold; Booking confirmed | List and Timeline toggle; Book now → Confirm & pay; 20:00 hold countdown; Pay now; Change flight |
-| D | Preferences | Tokyo group details (ready); 4 categories (Food, Scenery, Culture, Shopping) × 2 states (undecided, decided); Preferences saved | Swipe cards with Pass and Like buttons, "LIKED" and "PASSED" stamps, progress bar, Next suggestion, Save preferences; Generate Itinerary |
-| E | Itinerary | Building itinerary; Final itinerary (4 days); Place detail sheet; Tokyo group details (final) | Timed build screen; day tabs; place card → sheet; Maybe list; Edit and Save Changes; View the Itinerary and View Booking |
-| – | Design-only frames | Two countdown frames (19:59, 19:58); return-flight card variants | Become the countdown component and the flight-card selected state, not routes |
+**Done when:** allowed preparation and submission requirements are written down, and every workstream has an owner.
 
-## 3. Proposed routes (React Router)
+### PRE-02 · Questions for Cathay technical mentors · P0
 
-```
-/                                   → redirect to /groups
-/groups/new                         Create group
-/groups/:id/invite                  Members & invite (empty, copied and 3-member states come from data)
-/invite/:code                       Invite view (join or decline)
-/groups/:id                         Board, with ?view=list|timeline
-/groups/:id/flights/search          Search
-/groups/:id/flights/outbound        Results → …/outbound/fares
-/groups/:id/flights/return          Results → …/return/fares
-/groups/:id/book                    Board with Book now sheet
-/groups/:id/payment                 Payment hold
-/groups/:id/confirmed               Booking confirmed
-/groups/:id/details                 Tokyo group details
-/groups/:id/preferences/:category   food | scenery | culture | shopping
-/groups/:id/preferences/saved
-/groups/:id/itinerary/building
-/groups/:id/itinerary               plus /itinerary/places/:placeId (sheet)
-*                                   Not found
-```
+- [ ] Ask whether Cathay provides a flight dataset or sandbox and which origins/destinations it covers.
+- [ ] Separately verify schedule lookup, price lookup, available inventory, reservations, ticket issuance, and seat holds. Do not infer one capability from another.
+- [ ] Ask about authentication, credentials, allowed uses, caching, request limits, access expiry, and demo-data attribution.
+- [x] Review the local `../OAG Developer Portal Guide.pdf`. Reviewed 10 November: participants get free self-service access at developers.oag.com. The Flight Info API gives schedules, seat capacity and status (1,000 requests per 30 days, 10 results per request); the Connections API shares that quota; the Master Data API allows 100 requests. OAG's field reference shows local and UTC departure and arrival times and no prices, fares or bookable seats. Detail: `docs/technical-guide.md`, section 5.
+- [ ] Register on the OAG portal and run one test query (`CX`, `HKG` to `HND`, 2026-11-21). The team's access and the real response format are still unverified.
+- [ ] Check in OAG whether Cathay's Shanghai and Singapore flights to Tokyo connect through Hong Kong (open decision D2).
+- [ ] Ask whether using Supabase alongside provided AWS/GCP resources is permitted. A cloud account does not establish airline API access.
+- [ ] Note that resource setup details arrive on 14 November; if not already requested, the email directs teams to the Tech Help Desk before 14:00 that day.
 
-Sheets are nested routes, so Back closes them and direct URLs work.
+### PRE-03 · Learn and prepare fallback materials · P0
 
-## 4. Shared components and folder structure
+- [ ] Understand frontend vs server vs database; HTTP requests; authentication; database access rules; timestamps with time zones; basic sorting and scheduling.
+- [ ] Where permitted, prepare the three demo accounts and the flight/place fixtures described below.
+- [ ] Preserve the current mock demo and write instructions to start it locally.
+- [ ] Prepare a short fallback recording, where permitted, and label it as a recorded demo.
+- [ ] Agree on the fallback: local mock mode demonstrates one browser only; it does not prove shared-device functionality.
 
-```
-cathay-app/
-  index.html  vite.config.js  package.json
-  public/ or src/assets/        copied icons and photos
-  src/
-    main.jsx  App.jsx  routes.jsx
-    styles/   tokens.css (the prototype's :root), base.css, plus one CSS file per component or feature
-    components/
-      layout/  PhoneFrame, StatusBar, PageHeader, BottomNav, Sheet, Scrim
-      ui/      Button, Chip, Avatar, AvatarStack, Field, Tabs, Card, ProgressBar, Countdown, Toast
-      domain/  FlightCard, FareCard, MemberRow, PlaceCard, TripBanner, BonusTeaser
-    features/  groups, flights, board, payment, preferences, itinerary   (pages plus feature CSS)
-    data/      trip.js, members.js, flights.js, fares.js, places.js, itinerary.js, copy.js
-    state/     TripProvider.jsx (useReducer, persisted to localStorage, with a "reset demo" action)
-    hooks/     useCountdown, useClipboard
-```
+## 3. Architecture and minimum data
 
-Dependencies: `react`, `react-dom`, `react-router-dom`, `vite`, `@vitejs/plugin-react`. Nothing else.
+### Chosen starting stack
 
-## 5. Mock data and simulated behaviour
+| Part | Choice and responsibility |
+| --- | --- |
+| Frontend | Existing React/Vite app on the existing Vercel project; render UI and call `src/api` wrappers |
+| Identity | Supabase Auth; email/password sign-in using pre-created demo accounts, without email delivery during the pitch |
+| Database | Supabase Postgres; store groups, selections, votes, and itinerary versions |
+| Own API | One Supabase Edge Function with routes matching the existing contract; validate identity, membership, inputs, and transitions |
+| Algorithms | Pure JavaScript functions called by the server, independently testable with fixed inputs |
+| Shared updates | Poll active group screens every 5 seconds; refresh after local writes and when returning to the tab |
+| Flight/place/routing providers | None required for the first end-to-end demo; use labelled fixtures and a curated travel-time matrix |
 
-- **No backend, login or real payments.** Pay now is simulated with a short delay.
-- **Content lives in `src/data/`.** All people are fictional (Clara, Gaudi, Kabe) and can be swapped for an API later.
-- **Shared trip state** keeps selections consistent: group details, chosen flights and fares, paid or unpaid, likes and passes.
-- **Avatar colours by person:** Kabe teal, Gaudi steel, Clara sand on every screen (was by list position).
-- **Zero-group start + calendar (Nov 21–24):** the demo now begins with no groups; Create group's Travel dates opens the new `CalendarSheet` (`GET /date-windows`, fares calculated from flight data); demo dates moved from Nov 7–10 to Nov 21–24; Kyoto/Fuji photos and the three sample groups removed; mock db key bumped to `cathay-mock-db-v4`.
-- **Other members** (Gaudi booked, Kabe picked) start from seeded data, and the payment hold countdown is real.
-- **Itinerary generation** is a timed 3-second build screen, and the itinerary itself is the designed mock one. Your likes and passes drive the "Your liked places" list on the Preferences saved screen.
-- **Copy link** uses the real clipboard with a fallback, and shows the designed "Link Copied" feedback.
-- **Forms:** group name and destination are required, the travel dates need a valid range, and errors show inline.
+Supabase provides the proposed database, identity, and function capabilities; account availability and limits still need checking. Sources: [architecture](https://supabase.com/docs/guides/getting-started/architecture), [password authentication](https://supabase.com/docs/guides/auth/passwords), [function authentication](https://supabase.com/docs/guides/functions/auth).
 
-## 6. Missing assets, unclear behaviour and assumptions
+**API distinction:** `/groups`, `/flights`, `/preferences`, and `/itinerary` are endpoints we implement. A flight or routing provider would be a third-party service our server calls; it does not replace our group backend.
 
-1. **Home, My Trips and Profile tabs** have no designed screens. I'll route them to a minimal "Not part of this demo" page. Tell me if you'd rather the tabs be inert.
-2. **Whose view?** The prototype mixes Gaudi (creator) and Clara (joiner). I'll treat Clara as the signed-in user after joining.
-3. **Desktop** has no design. I'll show the 440px phone layout centred on the prototype's dark canvas, and full-width on phones.
-4. **No designs exist for:** the travel-date picker, the Passengers and Class dropdown, the Share invite sheet, the ⋯ menu, itinerary Edit mode, or "Choose another flight". I'll use simple, on-brand native controls and ask before any material design change.
-5. **Flight results and fare screens** are absolutely positioned in the prototype. I'll rebuild them as data-driven components that keep the same percentage-based geometry, so they look the same but become real components.
-6. **Fonts** (Inter only; Lexend was removed as unused) stay on the Google Fonts link, which needs internet. Self-hosting via `@fontsource` would add dependencies, so tell me if you want that.
-7. The known 1px quirk from before (the empty check box in the Kabe row on Preferences saved) stays excluded.
+### DATA-01 · Define the minimum schema and fixtures · P0
 
-## 7. First flow for review
+- [ ] Store trip `startDate`/`endDate` separately from `datesLabel`; display labels must not be parsed to recover business data.
+- [ ] Use airport codes plus named time zones: HKG/Asia_Hong_Kong, SHA/Asia_Shanghai, SIN/Asia_Singapore, HND/Asia_Tokyo.
+- [ ] Store departure and arrival as separate complete timestamps; derive duration from absolute instants.
+- [ ] Store money as integer minor units with an explicit currency; calculate HKD flights separately from JPY activities.
+- [ ] Use stable IDs, foreign keys, and uniqueness constraints so repeated joins/votes/selections do not create duplicates.
 
-I recommend **Flow A: Group setup**, which is 5 screens:
+| Table / dataset | Minimum contents | Origin and refresh |
+| --- | --- | --- |
+| Profiles | Auth user ID, display name, origin airport | User-entered/seeded; changes when edited |
+| Groups | ID, creator, destination airport, trip dates, shared per-person budget | User-entered; changes when edited |
+| Group members | Group ID, user ID, join time | Created by validated joining; unique group/user |
+| Invitations + responses | Group, random code/token, optional expiry; per-user decline response | Server-generated; never a substitute for member authorization |
+| Flight offers | Stable offer ID, airports, departure/arrival instants, cabin/fare, price/currency, source, optional expiry | Fictional fixtures initially; live offers must be refreshed/revalidated if later integrated |
+| Flight selections | Group, user, direction, offer ID, selected fare/price snapshot | User-selected; unique group/user/direction |
+| Preferences | Group, user, place, like/pass; explicit saved/readiness state | User-entered; changing a vote clears readiness |
+| Places | ID, coordinates, date-specific opening windows/closures, duration, estimated cost/currency, source | Curated demo data; verify real facts before claiming live accuracy |
+| Travel-time matrix | From/to place or shared city hub, mode, estimated minutes, source | Curated estimates; refresh if a real routing provider is added |
+| Itineraries | Group, revision, input version, generated time, days/stops with start/end instants | Calculated; regenerate/revalidate when inputs change |
+| Demo bookings | Group/user, status, selection snapshot, hold expiry, simulated reference | Server-calculated simulation; no payment-card information |
 
-Create group → Members & invite (empty, copy link) → Invite view (Join or Decline) → Members & invite (3 members).
+- [ ] Provide at least three fictional outbound and return options per origin, including a coordinated option, a cheaper poor match, and an overnight case.
+- [ ] Make fictional flight identifiers and price labels explicit; do not imply the current generated CX schedules are real.
+- [ ] Start with the four existing voted activities; add only enough curated optional stops to demonstrate scheduling.
+- [ ] Include airport-to-hub and hub-to-airport times plus directional travel estimates between candidate places.
+- [ ] Keep user input, provider facts, calculated results, and fictional fixtures distinguishable through a source label and documentation.
 
-It sets up everything the rest depends on: Vite scaffold, tokens, router, PhoneFrame, StatusBar, PageHeader, BottomNav, Button, Chip and Field components, the shared state store, form validation and copy feedback. After you review it, flows B to E follow in that order.
+**Done when:** seed data can recreate the same three-person scenario and the schema supports every P0 flow.
 
-## 8. Verification at handover
+**Progress note, 11 November 2026.** First migration written: `supabase/migrations/20261111000000_initial_schema.sql` creates `airports`, `profiles`, `groups`, `group_members`, `flight_selections` and `votes`, with real dates, full timestamps, integer money with a currency, and uniqueness rules. Not yet in the schema: invitation responses (decline), flight offers, places, travel times, itineraries and demo bookings. The migration was run on the real project on 11 November, and `npm run check:backend` confirmed all six tables exist and are closed to visitors. Nothing above is ticked because the remaining tables and the fixtures do not exist yet. `supabase/seed/demo_profiles.sql` adds the three demo profiles once their sign-in accounts exist; it is tested locally only.
 
-I'll run `npm run build` and a preview server, then check:
-- every route by direct URL, plus browser Back and Forward;
-- form validation and state consistency across a full run-through;
-- layouts at 375px, 768px and 1280px, compared against the prototype and Figma screenshots;
-- keyboard operation, focus states and console errors.
+## 4. Build tasks in dependency order
 
-I'll report anything that doesn't match.
+### DEV-01 · Baseline and API contract · P0 · First
+
+- [x] Run `npm run check:tokens` and `npm run build`; record any existing failures. *11 November: both pass, no failures.*
+- [ ] Keep pages calling `src/api`; do not import database/provider code into feature screens.
+- [ ] Update `docs/api-contract.md` for authentication, full timestamps, comparison coverage, itinerary times, and input/revision versions.
+- [ ] Preserve existing response fields where possible; add canonical timestamps and derive legacy display values during migration.
+- [ ] Preserve `{ code, message, fields }` errors and make validation errors visible in the existing UI.
+- [ ] Add an explicit mock/shared data-mode setting; keep the mock demo isolated and visibly labelled.
+- [x] Add `.env.example` containing variable names only; exclude local credentials from version control. *11 November: `.env.example` added; `.env.local` is ignored by the repository's root `.gitignore`.*
+
+**Done when:** frontend and backend owners agree on request/response examples without redesigning the app.
+
+### DEV-02 · Shared backend, identity, and membership · P0 · After DEV-01/DATA-01
+
+- [ ] Set up Supabase, apply versioned database migrations, and seed the three demo profiles/accounts when event rules permit.
+- [ ] Add a minimal sign-in/sign-out flow; preserve the intended invite URL through sign-in.
+- [ ] Implement `/me`, group creation/list/detail, date windows, invitation preview, join, decline, and invite-copied endpoints.
+- [ ] Validate access tokens on the server; derive the caller from the verified session, never a submitted `userId`.
+- [ ] Add database row-level security: members read their group; users change only their own selections/votes; only the creator edits the shared itinerary.
+- [ ] Implement create/join as controlled atomic operations; validate invite codes before adding members and make repeat joins safe.
+- [ ] Limit pre-join invitation preview to the information needed to decide whether to join; do not expose the full flight board or votes.
+- [ ] Test both allowed and denied database/API operations, including a user trying to insert their own membership without a valid invitation.
+- [ ] Change `src/api/http.js` to fetch the configured backend URL with the session token, handle non-2xx responses, and retain request deduplication.
+- [ ] Configure browser cross-origin access for localhost and the actual deployed frontend; verify preflight requests.
+- [ ] Use the Edge Function base URL directly so the existing Vercel SPA rewrite does not return HTML for API calls.
+- [ ] Build copied invite links from the app's own origin plus `/invite/:code`; remove the Cathay-owned placeholder domain.
+- [ ] Hide person-switching, force-error, and mock-reset controls in shared mode; clear cached user data on sign-out.
+
+Keep provider secrets and administrative database keys server-side. Browser-visible configuration may contain only the intended public project key, URL, and mode settings. Sources: [row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security), [function authentication](https://supabase.com/docs/guides/functions/auth), [browser CORS](https://supabase.com/docs/guides/functions/cors).
+
+**Done when:** device A creates a group, device B signs in as another user and joins through its link, and both see the same membership after reload. A third non-member is denied private group data.
+
+**Progress note, 11 November 2026.** Started on branch `claude/cathay-together-html-7352d8`, before the event; whether pre-event work may be used is still unconfirmed (PRE-01).
+
+- Done: `@supabase/supabase-js` installed. Row-level security written for the six tables in the first migration: members read their own group, each person changes only their own flight choices and votes, and nobody can create a group or add a membership from the browser.
+- Verified locally only: `supabase/tests/access_rules.sql` passes on a throwaway Postgres 15 with stand-ins for Supabase's roles and `auth.uid()`. It covers a visitor, a member, a non-member and a person with no groups.
+- Added: `npm run check:backend`, which confirms the URL and publishable key work and that each table exists and is closed to visitors. Tested against a pretend server only, not against the real project.
+- Run on the real project (11 November): the migration. `check:backend` passes against it.
+- Added, same day: a data-mode setting (`npm run dev` = mock, `npm run dev:shared` = Supabase); `src/api/http.js` now sends requests to `src/api/shared/handlers.js` in shared mode; `GET /me` reads the profile from the database; a sign-in screen at `/sign-in` (a PROPOSAL design built from the Create group form); every other screen redirects a signed-out visitor to it and keeps the intended address in `?next=`; the "Demo only" panel on the invitation page is hidden in shared mode.
+- Verified in the browser: in shared mode `/groups` redirects to `/sign-in?next=%2Fgroups`, and an empty form shows both field errors without contacting Supabase. In mock mode `/sign-in` redirects to `/groups` and the demo is unchanged. `check:tokens` and the build pass.
+- **Not verified: an actual sign-in.** It needs the three demo accounts, which do not exist yet. The signed-in view, sign-out and the wrong-password message are therefore untested.
+- Not done: demo accounts, create/join/list endpoints (every screen except sign-in answers "not connected yet" in shared mode), the "Simulated invitations" panel on the groups page in shared mode, and a visible label for mock mode. No item above is ticked yet.
+
+### DEV-03 · Correct flight comparison and shared board · P0 · After DEV-02
+
+- [ ] Move flight catalogue lookup and timing calculation behind the shared API; keep the calculation itself a pure function.
+- [ ] Compare outbound destination arrival instants and return destination departure instants.
+- [ ] Calculate `spreadMinutes = (latestInstant - earliestInstant) / 60000`; a spread equal to the window is within it.
+- [ ] Exclude missing selections; return `timing: null` when there is no other selected member and show selection coverage.
+- [ ] Rank within-window flights by price then spread; rank outside-window flights by overshoot then price; use stable IDs for final ties.
+- [ ] Save outbound/return choices per authenticated member and validate their origin, destination, dates, cabin, and fare.
+- [ ] Reject a return departing before the outbound arrival; do not rely on UI validation alone.
+- [ ] Update board grouping to use full timestamps, including dates; do not merge equal clock times on different days.
+- [ ] Keep HND-only validation explicit. Multiple airports require common meeting-point travel calculations and are deferred.
+- [ ] Explain when other members' existing selections already exceed the timing window and no single new choice can fix it.
+- [ ] Update API timing documentation to consistently exclude members without choices.
+
+**Worked fixture:** Gaudi arrives 15:00 and Kabe 15:40 on 21 November at HND. Clara's 15:20 option yields 40 minutes; 16:10 yields 70 minutes; 17:00 yields 120 minutes. All times are Tokyo local time and fictional.
+
+**Done when:** API, result cards, and board agree for same-day, cross-date, and overnight fixtures.
+
+### DEV-04 · Shared preferences and recommendation rules · P0 · After DEV-02
+
+- [ ] Implement preference read, choice update, and save endpoints using shared storage.
+- [ ] Count only saved votes from joined members; unsaved votes remain drafts.
+- [ ] Require one like/pass response per candidate before a member can mark preferences saved.
+- [ ] Changing a saved vote clears readiness and marks any existing itinerary stale.
+- [ ] Keep strict majority: `likes * 2 > joinedMemberCount` makes a place eligible for shared scheduling.
+- [ ] Put liked places without a majority into “Maybe”; a pass is a soft preference, not a veto or hard restriction.
+- [ ] Keep ties in “Maybe”; order eligible places by likes, then use travel/cost and stable ID to resolve scheduling ties.
+- [ ] Show whose preferences are represented; retain minority picks so the group can discuss them rather than hiding them.
+- [ ] If every place is passed, show no voted recommendations and offer clearly labelled optional ideas without inventing support.
+- [ ] Keep generation blocked while a joined member is not ready; invitations alone do not block the group.
+
+**Done when:** two devices show the same saved/readiness state and changing a saved vote changes the next generated result.
+
+### DEV-05 · Conflict-aware itinerary scheduling · P0 · After DEV-03/DEV-04
+
+Use a greedy heuristic: examine promising activities in a fixed order and add each only if it fits. This is manageable for a small demo; it is not a globally optimal route solver.
+
+- [ ] Choose a single shared Tokyo city hub as the itinerary's start/end location and document it in fixture data.
+- [ ] Compute the shared start as the latest of each member's arrival + airport-exit buffer + airport-to-hub travel.
+- [ ] Compute the shared end as the earliest of each member's return departure - airport buffer - hub-to-airport travel.
+- [ ] Use configurable fictional defaults: 90 minutes for arrival formalities, 180 minutes before departure, and 60 minutes each way between HND and the hub. Label these as demo assumptions, not airline guarantees.
+- [ ] Intersect each day's 09:00–21:00 planning window with shared availability; require all joined members' outbound/return selections before generating a complete group plan.
+- [ ] Use a shared per-person activity/transport budget, default JPY 15,000 for the trip; exclude flights/hotels and state what the estimate includes.
+- [ ] Evaluate majority candidates in vote order; within ties prefer less added travel, then lower cost, then stable ID.
+- [ ] For each candidate, include travel from the previous location, wait until opening if needed, and accept only if the entire visit and required return to the hub fit the daily window and remaining budget.
+- [ ] Check date-specific closures and visit durations; never treat a label such as “Morning” as an opening-hours constraint.
+- [ ] Store exact start/end times, travel minutes, estimated cost, and scheduling reasons for each stop.
+- [ ] Put infeasible majority picks into an unscheduled list with a reason; keep minority picks in “Maybe”. Distinguish optional filler suggestions from voted stops.
+- [ ] If there is no shared availability, return a useful conflict message rather than a fabricated itinerary.
+- [ ] Revalidate creator edits and reordering on the server; reject edits that introduce timing, opening-hours, or budget conflicts.
+- [ ] Record input versions; membership, flights, or saved preferences changing must flag the itinerary for revalidation. Do not silently overwrite manual edits.
+- [ ] Retain each viewer's personal flight cards as context while using the whole group's availability for shared activities.
+
+**Done when:** the latest arriving friend can reach the first shared activity, the earliest departing friend can reach the airport, and every scheduled stop satisfies the fixture's opening/travel/budget constraints.
+
+### DEV-06 · Shared refresh, integration, and demo booking · P0/P1 · After DEV-02–05
+
+- [ ] Poll active group, flight comparison, board, readiness, and itinerary views every 5 seconds; stop polling when unmounted/hidden and refresh on focus.
+- [ ] Keep immediate refresh after local mutations; do not rely on the existing in-memory change bus for remote updates.
+- [ ] Preserve last successful data during temporary failures and show a stale/retry indicator; current silent refresh behavior must not hide connection loss indefinitely.
+- [ ] Prevent slower old responses from overwriting newer data and prevent repeated clicks from creating duplicate writes.
+- [ ] Use an itinerary revision check when saving edits; reject stale edits with a reload message.
+- [ ] Keep the existing next-step journey coherent: pick flights → simulated booking → preferences → itinerary. Make the demo booking endpoints work before testing this complete journey.
+- [ ] Store simulated booking transitions/expiry on the server, snapshot the chosen offers, and return an existing confirmation on a repeated successful pay request.
+- [ ] Reject expired holds and changed selections; reset the demo booking when flights change rather than showing a ticket for the old choices.
+- [ ] Label payment, holds, and confirmations as simulated; do not describe a countdown as a real airline inventory hold.
+- [ ] Add Realtime subscriptions only as P1 if polling is already reliable; retain polling as fallback.
+
+**Done when:** a remote selection/vote appears within 10 seconds on a healthy connection and the current frontend journey completes without using mock-person switching.
+
+### DEV-07 · Optional provider integration · P1 · Only after P0 passes
+
+- [ ] Timebox flight-provider access investigation to 60 minutes; stop if credentials, coverage, or usable responses are unavailable.
+- [ ] Use a mentor-provided sandbox first; evaluate OAG only after confirming actual team access with a test query (the guide was read on 10 November, see PRE-02).
+- [ ] If OAG is used, fetch each route and date once, save the result as labelled fixtures, and never call it on every search. About 18 requests cover three origins, two directions and three dates.
+- [ ] Record official documentation links, account requirements, costs, quotas, permitted caching, expiry, coverage, and a successful sample response.
+- [ ] Map provider responses into the existing flight-offer model; keep provider-specific code behind one server adapter.
+- [ ] Call credentialed providers from the server and avoid logging secrets. Handle timeout, rate limit, and empty results.
+- [ ] If only schedules are available, label fares as fictional; do not claim live availability or booking.
+- [ ] Keep curated place data and routing estimates as the default. Add a place/routing API only if necessary, with the same access/billing/coverage checks.
+- [ ] Fall back explicitly to labelled fixtures; never silently present old or fictional data as live.
+
+**Done when:** one verified provider result can be demonstrated without threatening the existing demo. Otherwise defer the integration.
+
+## 5. Test and reliability checklist
+
+### TEST-01 · Focused automated checks · P0
+
+Add tests for algorithm correctness and shared data/access behavior; do not spend the event writing snapshot tests for unchanged screens.
+
+- [ ] Flight comparison: 40/70/120-minute examples; exact 60-minute boundary; 61 minutes; no other choices; one other choice; changed selection.
+- [ ] Dates: 21 November 23:50 to 22 November 00:20 equals 30 minutes; same clock on adjacent days is 24 hours apart; different offsets representing one instant compare equally.
+- [ ] Board: same timestamps group together; same clock on different dates remains separate; candidate and board spreads agree after selection.
+- [ ] Preferences: 2/3 likes qualifies, 1/3 does not, a 1/2 tie stays “Maybe”, draft votes do not count, all-pass creates no majority picks.
+- [ ] Scheduler: closed venue; insufficient visit time; travel makes a stop infeasible; exhausted budget; late arrival; early departure; no shared interval; required flight missing.
+- [ ] Editing: removing/reordering revalidates times; changed input marks stale; two editors cannot silently overwrite a newer revision.
+- [ ] Access: missing/expired session, invalid invite, non-member access, editing another person's selection/vote, and creator-only itinerary editing.
+- [ ] Concurrent writes: repeated join creates one membership; different users' votes survive simultaneous updates; repeated demo pay creates one confirmation.
+- [ ] Add and document the selected test command, then run it. The repository currently has no automated test suite.
+
+### TEST-02 · End-to-end demo and regression · P0
+
+- [ ] Start with a clean demo dataset; sign in on two separate physical devices or isolated browser profiles.
+- [ ] Create a group, copy its own-domain invite, join, choose flights, inspect the board, simulate booking, save preferences, and generate an itinerary.
+- [ ] Refresh both devices; check that identities remain distinct and data agrees.
+- [ ] Change a flight and vote remotely; verify timing, readiness, and itinerary stale state update.
+- [ ] Disconnect/reconnect one device; verify connection feedback, no false saved state, and recovery.
+- [ ] Check invite deep links, route reloads, Back/Forward, error/retry, and sign-out/sign-in as another user.
+- [ ] Check changed screens at 375px and 440px; spot-check desktop, keyboard focus, and console errors.
+- [ ] Run `npm run check:tokens`, `npm run build`, and the new focused tests after implementation.
+- [ ] Keep design tokens and reusable components; update the design-system docs/style guide only if those change.
+- [ ] Keep a repeatable demo-reset/seed procedure restricted to the team; never expose an unauthenticated shared-database reset.
+- [ ] Test the locally served mock fallback before relying on it; distinguish it from the shared online demo.
+
+**Release gate:** all P0 success checks in section 1 pass, known limitations are documented, and a teammate can repeat the demo from the README.
+
+## 6. Suggested 24-hour work schedule and submissions
+
+This is a timeboxed team schedule, not a promise that every optional feature fits. Meals, breaks, and any staggered rest must be covered by the team's handoffs. Follow live organizer updates if timings change.
+
+| Hong Kong time | Target / checkpoint |
+| --- | --- |
+| 14 Nov, 09:10 | Check-in; team development room N7.4 |
+| 14 Nov, 11:00–12:00 | Development begins; confirm rules/resources, contract, scope, and fixtures |
+| 14 Nov, 12:00–17:00 | Backend/auth/groups + timestamp/vote algorithm work by assigned owners; prove two-device joining first |
+| 14 Nov, 17:00–20:00 | Shared flight selection/board; connect preferences and demo booking |
+| 14 Nov, 20:00–15 Nov, 01:00 | Itinerary scheduling and end-to-end integration; cut optional providers if P0 is incomplete |
+| 15 Nov, 01:00–06:00 | Correctness/access tests, device checks, recovery, README; finish one-pager and slides alongside development |
+| 15 Nov, 06:00–08:30 | Feature freeze; rehearse five-minute demo; finish fallback and submission files |
+| 15 Nov, by 08:45 | Internal target: email the one-pager and verify it was sent |
+| 15 Nov, 09:00 | HARD one-pager deadline |
+| 15 Nov, 09:00–10:30 | Final fixes/retests, presentation PDF, repository/README links, portal upload and verification |
+| 15 Nov, by 10:40 | Internal target: all remaining materials submitted; preserve submitted versions |
+| 15 Nov, 10:55 | Be ready for First Pitch in Room 410 |
+| 15 Nov, 11:00 | HARD final-work deadline; no later changes or new materials |
+
+### SUBMIT-01 · Technical handover and pitch · P0
+
+- [ ] README includes prototype URL, repository link, setup/run/test instructions, environment variable names, seed/demo steps, architecture, and data sources.
+- [ ] Document exactly what is shared/real, calculated, simulated, estimated, and deferred.
+- [ ] Include a small user-flow/architecture diagram in the technical handover if useful; derive it from the final implemented behavior.
+- [ ] Rehearse a five-minute pitch and prepare for five minutes of Q&A, including algorithm limitations and provider assumptions.
+- [ ] Prepare the one-page poster and email it by the organizer deadline using the confirmed destination/format.
+- [ ] Export presentation slides as PDF and check the exported pages.
+- [ ] Submit prototype/repository links in the requested README text/Markdown form plus the slides PDF through the portal.
+- [ ] Verify judge access to the prototype/repository, uploads, links, and submission confirmation before leaving for Room 410.
+- [ ] Record the submitted commit and artifact filenames; do not change or submit new materials after 11:00.
+
+## 7. Cut list and next action
+
+**P2 / after the hackathon:** joint flight optimization, multiple destination airports, real payments/ticketing, global place coverage, live disruption handling, complex route solvers, LLM-generated plans, public signup polish, and broad UI redesign.
+
+If time is tight, cut provider integration and Realtime first. Keep shared-device state, correct flight comparisons, votes affecting the plan, and basic conflict checks. If shared state cannot be completed, present the local experience transparently as a prototype and list the missing capability.
+
+**Next action:** complete PRE-01 (rules and reuse permission). At the permitted development start, begin DEV-01, DATA-01, and DEV-02. Do not start optional APIs before two devices can join the same shared group.
+
+When completing a task, tick only its verified items and add a short dated note with validation results and remaining blockers.

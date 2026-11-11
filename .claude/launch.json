@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cathay-shared",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "cathay-app", "run", "dev:shared", "--", "--port", "5183", "--strictPort"],
+      "port": 5183
+    },
+    {
+      "name": "cathay-mock",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "cathay-app", "run", "dev", "--", "--port", "5184", "--strictPort"],
+      "port": 5184
+    }
+  ]
+}

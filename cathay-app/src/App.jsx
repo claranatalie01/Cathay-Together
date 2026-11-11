@@ -4,6 +4,8 @@ import { ToastProvider } from './components/ui/Toast';
 import ComingSoonPage from './features/ComingSoonPage';
 import NotFoundPage from './features/NotFoundPage';
 import { ResetPage } from './demo';
+import RequireSession from './features/auth/RequireSession';
+import SignInPage from './features/auth/SignInPage';
 import DesignSystemPage from './design-system/DesignSystemPage';
 import GroupsPage from './features/groups/GroupsPage';
 import CreateGroupPage from './features/groups/CreateGroupPage';
@@ -51,6 +53,10 @@ export default function App() {
         {/* Style guide: its own wide page, no phone frame and no demo panel. */}
         <Route path="design-system" element={<DesignSystemPage />} />
         <Route element={<AppShell />}>
+          {/* Shared backend only: sign in first. In mock mode this redirects to /groups. */}
+          <Route path="sign-in" element={<SignInPage />} />
+          {/* Everything below needs a signed-in person (always true in mock mode). */}
+          <Route element={<RequireSession />}>
           <Route index element={<Navigate to="/groups" replace />} />
           <Route path="reset" element={<ResetPage />} />
           <Route path="groups" element={<GroupsPage />} />
@@ -74,6 +80,7 @@ export default function App() {
           <Route path="groups/:groupId/*" element={<ComingSoonPage later />} />
           <Route path="coming-soon/:tab" element={<ComingSoonPage />} />
           <Route path="*" element={<NotFoundPage />} />
+          </Route>
         </Route>
       </Routes>
     </ToastProvider>

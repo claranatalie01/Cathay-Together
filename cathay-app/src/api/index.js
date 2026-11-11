@@ -4,5 +4,7 @@ export * from './flights';
 export * from './preferences';
 export * from './itinerary';
 export * from './users';
+export { isShared } from './config';
+export { onSessionChanged, signIn, signOut } from './session';
 export { ApiError } from './errors';
 export { onDataChanged } from './events';
