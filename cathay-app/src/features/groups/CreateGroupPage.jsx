@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, createGroup, getDateWindows } from '../../api';
+import { ApiError, createGroup, discoverPlaces, getDateWindows } from '../../api';
 import Screen from '../../components/layout/Screen';
 import StatusBar from '../../components/layout/StatusBar';
 import PageHeader from '../../components/layout/PageHeader';
@@ -89,6 +89,9 @@ export default function CreateGroupPage() {
     try {
       // Typed variations of a supported destination are stored in their canonical form.
       const group = await createGroup({ ...values, destination: DESTINATIONS[0] });
+      // Start the web search now, so the swipe cards are ready by the time the group reaches preferences.
+      // Not awaited: the preferences page waits on the same search if it is still running.
+      discoverPlaces(group.id).catch(() => {});
       navigate(`/groups/${group.id}/invite`);
     } catch (error) {
       if (error instanceof ApiError && error.fields) {

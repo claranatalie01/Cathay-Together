@@ -34,7 +34,8 @@ export default function PreferencePage() {
   const needsDiscovery = Boolean(view?.needsDiscovery);
   useDocumentTitle(copy.title);
 
-  // AI planner on: the first person here triggers the web search that creates the group's swipe deck.
+  // AI planner on: the search starts when the group is created. If it is still running here, this
+  // waits on that same search (see discoverPlaces); it only starts a new one if the first one failed.
   useEffect(() => {
     if (!needsDiscovery) return undefined;
     let cancelled = false;
@@ -76,7 +77,12 @@ export default function PreferencePage() {
     if (discoverError) {
       return frame(<ErrorState error={discoverError} title={copy.discoverFailedTitle} onRetry={() => setDiscoverTry((n) => n + 1)} />);
     }
-    return frame(<StateMessage mark="…" title={copy.discoveringTitle} text={copy.discoveringText} role="status" />);
+    return frame(
+      <>
+        <p className="prefs__status" role="status">{copy.discoveringTitle}</p>
+        <LoadingState variant="detail" as="div" />
+      </>,
+    );
   }
 
   const { places, choices, counts } = view;

@@ -10,12 +10,22 @@ export function getPreferences(groupId) {
   return request('GET', `/groups/${enc(groupId)}/preferences`);
 }
 
-// AI planner only (`needsDiscovery` is true in getPreferences): searches the web for places this group
-// can swipe on. Slow (up to a minute or two). Rejects with planner_unreachable / agent_failed (424).
-export async function discoverPlaces(groupId) {
-  const result = await request('POST', `/groups/${enc(groupId)}/preferences/discover`);
-  notifyDataChanged();
-  return result;
+// AI planner only: searches the web for places this group can swipe on. Slow (up to a minute or two).
+// Started when the group is created. A call made while that search is still running shares it, so
+// the preferences page waits on the same search instead of starting another one.
+// Rejects with planner_unreachable / agent_failed (424).
+const searching = new Map();
+export function discoverPlaces(groupId) {
+  if (!searching.has(groupId)) {
+    const call = request('POST', `/groups/${enc(groupId)}/preferences/discover`)
+      .then((result) => {
+        notifyDataChanged();
+        return result;
+      })
+      .finally(() => searching.delete(groupId));
+    searching.set(groupId, call);
+  }
+  return searching.get(groupId);
 }
 
 // Records Pass or Like for one suggestion. `choice` is 'like' or 'pass'.
