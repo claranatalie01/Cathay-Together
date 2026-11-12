@@ -1,65 +1,157 @@
 # Cathay Together architecture
 
-Cathay Together is a React and Vite prototype for coordinating a group trip to Tokyo Haneda (HND). The group creation form offers 21–24 November 2026. Travellers choose their own flights and fares, compare the group's landing and take-off times, simulate payment, then build a shared itinerary from their votes.
+## Three-minute walkthrough
 
-## Data flow and modes
+Cathay Together coordinates a group trip to Tokyo Haneda (HND) on 21–24 November 2026. Each traveller picks their own flights and fare, then the group turns saved place votes into a shared itinerary.
 
-React Router maps the screens in [`App.jsx`](src/App.jsx). Feature screens use the async functions in [`src/api`](src/api). [`request()`](src/api/http.js) dispatches the method and path to handlers inside the browser and coalesces simultaneous identical GETs. [`config.js`](src/api/config.js) selects shared mode only for the exact value `VITE_DATA_MODE=shared`. Everything else selects mock mode.
+```mermaid
+flowchart LR
+    signIn["Sign-in"] --> group["Create or join group"]
+    group --> picks["Flight picks"]
+    picks --> hold["20-minute hold"]
+    hold -->|"Simulate payment"| swipes["Place swipes"]
+    swipes -->|"Everyone saves"| itinerary["Itinerary"]
+```
 
-| Mode | Identity and persistence | How requests are answered |
+- **What runs where.** React and Vite run the screens and algorithms in the browser. Mock mode saves to one browser. Shared mode uses Supabase Auth and Postgres so signed-in devices see the same trip.
+- **What the demo calculates.** Real CX and UO schedules from a bundled OAG snapshot feed flight suggestions for lowest price, closest timing and the best trade-off. The board shows each traveller's picks. Fares, seats, holds, payments and tickets are simulated.
+- **What shapes the itinerary.** A strict majority puts a place in the scheduling queue. The scheduler fits it around flights, opening hours and estimated travel. Minority picks and winners that cannot fit go to Maybe.
+
+[Run the demo](README.md#run-it) · [Runtime modes](#data-flow-and-runtime-modes) · [Flight ranking](#group-flight-combination-suggestions) · [Itinerary rules](#itinerary-generation) · [Schema and payloads](DATA_DICTIONARY.md)
+
+## Data flow and runtime modes
+
+```mermaid
+flowchart TD
+    screens["React Router screens"] --> api["src/api and request()"]
+    api --> mode{"VITE_DATA_MODE equals shared?"}
+    mode -->|"Default or any other value"| mock["Mock handlers"]
+    mode -->|"Exact value: shared"| shared["Shared handlers"]
+    mock <-->|"Read and save demo state"| local[("Browser localStorage")]
+    shared <-->|"Session, table queries and RPCs"| supabase["Supabase JS client"]
+    supabase <--> auth["Supabase Auth"]
+    supabase <--> postgres[("Postgres with RLS")]
+    mock --> builders["Common flight and itinerary builders"]
+    shared --> builders
+```
+
+| Mode | Identity and persistence | Handler behaviour |
 | --- | --- | --- |
-| `mock` | Built-in demo personas and a browser-local database under `cathay-mock-db-v4` | [Mock handlers](src/api/mock/handlers.js) operate on the local store and simulate latency. The demo controls can switch personas, add demo members and force the next request to fail. |
-| `shared` | Supabase Auth and Postgres. Signed-in devices read and change the same trip. | [Shared handlers](src/api/shared/handlers.js) call the Supabase JS client directly. `flightContext()` rebuilds each saved selection from its offer ID, cabin, fare and member airport. `tripContext()` adds member state and fetches votes or a saved plan when needed. |
+| `mock` | Built-in personas and browser-local state under `cathay-mock-db-v4`. | [Mock handlers](src/api/mock/handlers.js) simulate latency. Demo controls switch personas, add demo members and force the next request to fail. |
+| `shared` | Supabase Auth and Postgres. Signed-in devices read and change the same trip. | [Shared handlers](src/api/shared/handlers.js) call the Supabase JS client directly. `flightContext()` rebuilds saved selections from offer ID, cabin, fare and member airport. `tripContext()` adds member state and loads votes or a saved plan when needed. |
 
-Both modes call `flightsFor()`, `makeSelection()`, `suggestionsFor()`, `boardFor()`, `bookingFor()`, `responseFor()`, `buildItinerary()` and the itinerary response and edit helpers from [`src/api/mock`](src/api/mock). In shared mode these builders receive Supabase-backed state. Booking state transitions use separate storage and clocks in each mode.
+- **Dispatch.** React Router maps screens in [`App.jsx`](src/App.jsx). Screens use the async functions in [`src/api`](src/api). [`request()`](src/api/http.js) dispatches by method and path in the browser and coalesces identical concurrent GETs. [`config.js`](src/api/config.js) selects the mode.
+- **Common calculations.** Both modes use `flightsFor()`, `makeSelection()`, `suggestionsFor()`, `boardFor()`, `bookingFor()`, `responseFor()`, `buildItinerary()` and the itinerary response and edit helpers from [`src/api/mock`](src/api/mock). Shared mode feeds them Supabase-backed state. Booking transitions use mode-specific storage and clocks.
+- **Refresh.** While signed in and visible in shared mode, [`RequireSession`](src/features/auth/RequireSession.jsx) emits a refresh event every five seconds. [`useAsync()`](src/hooks/useAsync.js) listens and quietly re-reads data. Local actions also emit refresh events.
 
 ## Sign-in and group membership
 
-1. [`RequireSession`](src/features/auth/RequireSession.jsx) sends a signed-out visitor to `/sign-in?next=…`, preserving the original route and query, including invite links. [`signIn()`](src/api/session.js) calls Supabase `signInWithPassword()` and the auth subscription supplies session state. The session survives reloads. Mock mode supplies a demo session.
-2. [`RequireProfile`](src/features/auth/RequireProfile.jsx) calls `getCurrentUser()` and redirects on `profile_not_found` to `/welcome?next=…`. [Welcome](src/features/auth/WelcomePage.jsx) saves a display name and home airport via `PUT /me`. Its optional nearest-airport suggestion uses browser geolocation and `distanceKm()` locally. The saved profile contains the selected airport code.
-3. The form sends the group name, Tokyo destination and demo date-window ID. Shared `create_group()` generates a six-character code and inserts both the group and its creator's membership in one transaction. The Members page shares a link on the current app origin at `/invite/<code>`.
-4. A signed-in invitee with a profile can call `preview_invitation()` through that route. The response includes group and member summary fields. Group flights, bookings, votes and the itinerary still require membership. `join_group()` checks the group/code pair for a new member, normalizes the code, and makes repeat joins safe. `mark_invite_copied()` records that a member copied the link. In shared mode, declining lives in an in-memory set for the current tab and disappears on reload. Mock invitations and their statuses live in the local store.
+1. **Restore the destination after sign-in.** [`RequireSession`](src/features/auth/RequireSession.jsx) sends signed-out visitors to `/sign-in?next=…` with the original route and query, including invite links. [`signIn()`](src/api/session.js) calls Supabase `signInWithPassword()`. The auth subscription supplies session state and the session survives reloads. Mock mode supplies a demo session.
+2. **Complete a first-time profile.** [`RequireProfile`](src/features/auth/RequireProfile.jsx) calls `getCurrentUser()` and redirects on `profile_not_found` to `/welcome?next=…`. [Welcome](src/features/auth/WelcomePage.jsx) sends the display name and selected airport code via `PUT /me`. Its optional nearest-airport suggestion uses browser geolocation and local `distanceKm()`.
+3. **Create and invite.** The form sends a group name, Tokyo destination and demo date-window ID. Shared `create_group()` generates a six-character code and inserts the group and creator membership in one transaction. Members shares `/invite/<code>` on the current app origin.
+4. **Preview and join.** A signed-in invitee with a profile can call `preview_invitation()` for a group and member summary. Group flights, bookings, votes and the plan require membership. `join_group()` normalizes the code, checks the group/code pair for new members and makes repeat joins safe.
+5. **Track invite actions.** `mark_invite_copied()` records a member's copy action. A shared decline lives in an in-memory set for the current tab until reload. Mock invitations and statuses persist in the local store.
 
 ## Flights and group ranking
 
-[The OAG snapshot](src/data/oagSnapshot.json) supplies real CX and UO flight numbers and scheduled times. [`realJourneys()`](src/api/mock/realFlights.js) and [`buildJourneys()`](src/algorithms/connections.js) generate direct journeys for Hong Kong and same-carrier connections via HKG for other origins. A connection uses the shortest valid layover from 90 through 480 minutes, with second legs on the same or following local date. The app invents HKD fares and seat counts. Premium Economy and Business search results use CX itineraries only.
+- **Catalogue.** The [OAG snapshot](src/data/oagSnapshot.json) supplies CX and UO flight numbers and scheduled times. [`realJourneys()`](src/api/mock/realFlights.js) and [`buildJourneys()`](src/algorithms/connections.js) build direct journeys for Hong Kong and same-carrier journeys via HKG for other origins.
+- **Connections and cabins.** A connection takes the shortest valid layover from 90 through 480 minutes. The second leg departs on the first leg’s local departure date or the next date.
+- **Cabins.** Premium Economy and Business searches show CX itineraries only. The catalogue generates HKD fares and seat counts.
+- **Selections.** Each member saves one flight and fare per direction. Search offers a one-way option. Starting a booking hold requires both legs.
+- **Individual results.** [`othersTimes()` and `withTiming()`](src/api/mock/flightData.js) compare the candidate with other members who picked that direction. Once another member has picked, results sort by spread. The app compares the full spread for every candidate with no user-set arrival window.
+  - **Displayed times.** `groupWindow` carries only other members’ displayed times. The arrival-window slider appears only as a specimen in the style guide.
+- **Time comparison.** [`meetingInstant()` and `spreadMinutes()`](src/algorithms/arrivalWindow.js) use the last arrival outbound and the first departure on return. Spread is `round((latest − earliest) / 60000)` for epoch milliseconds, or zero with fewer than two instants. Clock strings are for display.
+- **Older selections.** `legInstants()` reconstructs instants from the flight date, local clocks and airport offsets when stored instants are absent. It advances arrival by full days until arrival follows departure.
 
-Each member selects an outbound and a return leg with their own fare. The app stores one selection per member and direction. The search has a one-way option, but the booking hold requires both legs. With existing picks, [`othersTimes()` and `withTiming()`](src/api/mock/flightData.js) compare a candidate with the other members who have picked that direction. The results page sorts by spread once there is someone to compare with. There is no user-set arrival window. The `groupWindow` response field only carries other members' displayed times. The range slider still appears as a specimen in the style guide.
+### Group flight combination suggestions
 
-[`meetingInstant()` and `spreadMinutes()`](src/algorithms/arrivalWindow.js) use full timestamps. The meeting instant is the final arrival outbound and the initial departure on the return. Spread is `round((latest − earliest) / 60000)` minutes for epoch millisecond inputs. Clock strings are display values. For older selections, `legInstants()` reconstructs instants from the date, local times and airport offsets, advancing arrival by full days until it follows departure.
+```mermaid
+flowchart LR
+    candidates["1. Candidate Gathering"] --> product["2. Cartesian Product and Pareto Filter"]
+    product --> scoring["3. Scoring and Tie-Breaking"]
+```
 
-### Group suggestions
+1. **Candidate gathering.** [`suggestionsFor()`](src/api/mock/flightData.js) works one direction at a time. For each unpicked member, it uses their home airport, the group start date outbound or end date on return, and the viewer's selected cabin at its lowest fare tier. Picked members keep their flight, date, cabin and fare price.
+   - **Per-member extra.** A fixed pick has zero extra. Otherwise `extra` is the difference from that member's cheapest candidate.
+2. **Cartesian product and Pareto filter.** [`rankCombinations()`](src/algorithms/combinations.js) tries every combination with one option per member. It returns zero combinations for an empty group or any member with no options. Each combination gets `total` (sum of HKD prices) and `spreadMinutes` (spread of meeting instants).
+   - **Pareto filter.** For Best of Both, drop a combination if another costs no more and has no larger spread, with a strict improvement on either measure.
+3. **Scoring and tie-breaking.** Rank the combinations by the rules below. The final tie-break is the concatenated flight IDs (joined with `|`).
 
-[`suggestionsFor()`](src/api/mock/flightData.js) ranks one direction at a time. In the app, unpicked members' flights use the group's start or end date, each member's home airport, and the cabin selected by the viewer at its lowest fare tier. Picked members keep their saved flight, date, cabin and fare price. Their extra cost is zero. For other members, extra cost is the difference from their own cheapest candidate.
+| Label | Choose by | Ties before flight IDs |
+| --- | --- | --- |
+| Cheapest | Lowest `total` across all combinations | Smaller spread |
+| Closest | Smallest `spreadMinutes` across all combinations | Lower total |
+| Best of Both | Lowest `priceShare + timeShare` among Pareto survivors | Scores within `1e-9` tie. Smaller spread wins, then lower total. |
 
-[`rankCombinations()`](src/algorithms/combinations.js) enumerates the Cartesian product of one option per member. It returns no combinations if any member has no candidate. For each combination, `total` is the sum of its HKD prices and `spreadMinutes` is the spread of its meeting instants.
+- **Price share.** `priceShare = (total − cheapest.total) / (closest.total − cheapest.total)`.
+- **Time share.** `timeShare = (spread − closest.spread) / (cheapest.spread − closest.spread)`. In this formula, `spread` is `spreadMinutes`. A zero-width range contributes zero on either axis.
+- **Display and selection.** A combination that wins multiple rules appears once with all its labels. `others` excludes those featured entries, sorts by the same balance score and tie-breaks, and defaults to 30 entries. It can include dominated combinations. A suggestion opens the viewer's own fare choice. Each member saves their own flight.
 
-- **Cheapest** minimizes total, then spread.
-- **Closest** minimizes spread, then total.
-- **Best of both** drops combinations for which another is at least as cheap and at least as close, with a strict improvement in either measure. On the remaining combinations it minimizes `priceShare + timeShare`. `priceShare = (total − cheapest.total) / (closest.total − cheapest.total)`. `timeShare = (spread − closest.spread) / (cheapest.spread − closest.spread)`. Here `spread` denotes the `spreadMinutes` field. A zero-width range contributes zero. Scores within `1e-9` tie, then smaller spread wins, followed by lower total.
+**Worked example.** A is fixed at HKD 2,000 and lands at 10:00. B has four outbound candidates. All arrival times are Tokyo local on the same day.
 
-The concatenated flight IDs break any remaining ties. A featured combination that wins multiple rules gets all its labels on one entry. The other combinations are ordered by the same balance score and limited to 30 by default. That list can include dominated combinations. A suggestion opens the viewer's own fare choice. Each member still saves their own selection.
+| B's arrival | B's fare (HKD) | Total (HKD) | Spread | Balance score | Result |
+| --- | ---: | ---: | ---: | --- | --- |
+| 11:00 | 1,000 | 3,000 | 60 min | `0 + 60/60 = 1.00` | Cheapest |
+| 10:15 | 1,100 | 3,100 | 15 min | `100/300 + 15/60 ≈ 0.58` | Best of Both |
+| 10:00 | 1,300 | 3,300 | 0 min | `300/300 + 0 = 1.00` | Closest |
+| 10:50 | 1,200 | 3,200 | 50 min | `200/300 + 50/60 = 1.50` | Dominated by the 10:15 option |
+
+A's extra is zero. B's extra in Best of Both is HKD 100 above B's HKD 1,000 cheapest flight.
 
 ## Board, simulated payment and swipes
 
-[`boardFor()`](src/api/mock/boardHandlers.js) builds list and timeline views from the members' selections. Timeline points group equal instants and sort across dates. Shared member status is derived in SQL as `booked` after payment, `picked` with both directions selected, or `browsing` otherwise.
+- **Board.** [`boardFor()`](src/api/mock/boardHandlers.js) builds list and timeline views from member selections. The timeline groups equal instants and sorts across dates. Shared SQL derives status as `booked` after payment, `picked` with both directions selected, or `browsing` otherwise.
+- **Payment.** Shared mode uses the database clock for the 20-minute hold and totals the caller's stored `price_minor` values on payment. Mock mode uses the browser clock. Both produce demo tickets and collect zero card details. See the [booking RPC transitions](DATA_DICTIONARY.md#public-rpcs).
+- **Place votes.** Members swipe `like` or `pass` on 11 curated Tokyo places. [`responseFor()`](src/api/mock/preferenceHandlers.js) builds choices and readiness. Shared mode passes the full catalogue to `save_preferences()`. The `votes_unsave_preferences` trigger clears readiness on a vote write. Mock mode mirrors this in its store.
 
-In shared mode, `get_booking()` returns the caller's booking. `start_booking()` requires both flights and an unpaid trip, then starts a 20-minute hold using the database clock or reuses a live hold. `release_booking()` clears an unpaid hold when the member chooses to change flights. `pay_booking()` requires an unexpired hold, totals the caller's stored `price_minor` values, clears the hold and writes a simulated booking reference and ticket number. Mock mode simulates these transitions with the browser clock. The hold, prices and ticket are demo data. Payment collects no card details.
+## Itinerary generation
 
-The preference screens write a `like` or `pass` for each of the 11 curated Tokyo places. [`responseFor()`](src/api/mock/preferenceHandlers.js) builds the viewer's choices and group readiness. The shared app calls `save_preferences()` with the complete place list. Changing a vote clears readiness via the `votes_unsave_preferences` trigger. Mock mode mirrors this behavior in its local store. `buildItinerary()` requires all members to have saved. Any member can generate or edit the group's plan in the app.
+```mermaid
+flowchart LR
+    votes["Saved votes and majority ranking"] -->|"Look up travel estimates"| matrix["Cached travel time matrix"]
+    geo["Place coordinates"] -->|"Precompute estimates"| matrix
+    matrix --> scheduler["Greedy scheduler"]
+    limits["Flight times and opening windows"] --> scheduler
+    scheduler --> plan["Day plan and Maybe list"]
+```
 
-## Itinerary pipeline
+### Travel-time rules
 
-1. **Travel times.** [`placeGeo.js`](src/data/placeGeo.js) supplies OpenStreetMap coordinates. In [`travel.js`](src/algorithms/travel.js), `distanceKm()` uses Haversine with Earth radius 6,371 km. `travelMinutes()` multiplies that distance by 1.3. For adjusted distance `d ≤ 1.2 km`, the estimate is `60 × d / 5` minutes on foot. Otherwise it is `10 + 60 × d / 25` minutes by transit. The result is `max(5, ceil(minutes / 5) × 5)`. `travelTable()` caches the estimates by place pair in the itinerary builder. Missing pairs, including suggested fillers, get a flat 20-minute gap. Displayed airport-to-city and city-to-airport connectors use a flat 60 minutes.
-2. **Votes.** [`votesFor()`](src/api/mock/itineraryData.js) counts likes from saved preferences and uses all group members as the denominator. [`rankVotes()`](src/algorithms/itinerary.js) requires `liked × 2 > total`. Winners go in descending like count, using catalogue order for ties. At least one like without a majority goes to Maybe. Places with zero likes are dropped.
-3. **Available time.** `groupFreeTime()` computes trip minutes since midnight in Tokyo on the first trip date. The free interval starts 90 minutes after the latest chosen outbound arrival and ends 180 minutes before the earliest chosen return departure. These offsets are the full airport allowances used by the scheduler. A missing direction leaves that side of the interval open to the trip boundary. `allowedWindow()` intersects the free interval with 08:00–21:30 Tokyo time and the place's opening window. Opening times come from the curated `open` and `close` estimates in [`placeData.js`](src/api/mock/placeData.js). `closedDays()` applies weekday closures encoded from OSM in `placeGeo.js`, currently Shinjuku Gyoen on Mondays. Raw OSM hours for Shinjuku Gyoen, Sensō-ji, Tokyo Tower and Zōjō-ji are reference metadata. © OpenStreetMap contributors.
-4. **Greedy placement.** [`schedule()`](src/algorithms/itinerary.js) tries the day with the fewest voted stops first, preferring middle days on trips longer than two days when counts tie, then earlier days. `findStart()` tries a place's preferred time when set, then the window opening and times just after earlier stops with travel. Candidate starts round up to 15-minute boundaries. Stops must fit their full duration with travel around neighbors and avoid closed days. Earlier placements stay fixed. A winner that fits nowhere is recorded in `didNotFit` and appears in Maybe.
-5. **Gap fillers.** After placing voted stops, `schedule()` tries predefined fillers on their assigned day and within their morning (08:00–12:00), afternoon (12:00–17:30) or evening (17:30–21:30) slot. It skips a filler if a voted stop starts in that slot or the filler cannot fit the same time and travel constraints.
-6. **Check, save and render.** `buildPlan()` records [`checkPlan()`](src/algorithms/itinerary.js) findings in `plan.problems`, including duplicate or unknown stops, duration, closures, time bounds, missing travel gaps and majority violations. The shared handler upserts the resulting JSON to one `itineraries` row per group. `assemble()` adds the viewer's flight cards and travel connectors on read, and computes estimated JPY totals from stop costs and a daily allowance.
+[OpenStreetMap coordinates](src/data/placeGeo.js) feed [`travel.js`](src/algorithms/travel.js). `travelTable()` caches estimates by place pair in the itinerary builder.
+
+| Case | Rule |
+| --- | --- |
+| Distance | `distanceKm()` uses Haversine with Earth radius 6,371 km. Adjusted distance `d = 1.3 × distanceKm(a, b)`. |
+| Walk, `d ≤ 1.2 km` | Raw minutes `60 × d / 5` at 5 km/h. |
+| Transit, `d > 1.2 km` | Raw minutes `10 + 60 × d / 25`, with 10 minutes of overhead and 25 km/h in transit. |
+| Estimated pair | `travelMinutes()` returns `max(5, ceil(rawMinutes / 5) × 5)`. |
+| Unknown pair | Flat 20-minute gap, including pairs with suggested fillers. |
+| Airport connectors | Flat 60 minutes for displayed airport-to-city and city-to-airport connectors. Flight buffers below bound the scheduler's availability. |
+
+### Scheduling rules
+
+| Decision | Exact rule |
+| --- | --- |
+| Vote ranking | Count likes from saved preferences. The denominator includes all group members. A winner satisfies `liked × 2 > total`. Sort by descending likes, then catalogue order. A non-winner with at least one like goes to Maybe. Zero likes drops the place. |
+| Trip clock | Trip minutes are measured from 00:00 Tokyo time on the first trip date. For example, day two at 09:30 is `1440 + 570 = 2010`. |
+| Flight buffers | Start 90 minutes after the latest selected outbound arrival. End 180 minutes before the earliest selected return departure. A direction with zero picks leaves that side open to the trip boundary. These are the full airport allowances for scheduling. |
+| Daily window | Intersect group availability, 08:00–21:30 Tokyo time and the place's curated `open` and `close`. Exclude closed days. |
+| Day order | Fewest voted stops first. Break ties by preferring middle days on trips longer than two days, then earlier days. |
+| Start times | Try the preferred time first when set (13:00 for Afternoon, 17:30 for Evening, none for Morning). Then try the window opening and existing stops' end times plus travel, earliest first. Clamp to the window opening and round up to 15 minutes. |
+| Fit | The full visit must fit within the window and leave the required travel time around other stops. Earlier placements stay fixed. |
+| Filler slots | Morning 08:00–12:00, afternoon 12:00–17:30, evening 17:30–21:30. Skip if a voted stop starts in that slot, or if the filler cannot fit on its assigned day with the same time and travel rules. |
+
+1. **Check readiness and rank votes.** `buildItinerary()` requires every member to have saved and reports `not_ready` with the waiting members otherwise. [`votesFor()`](src/api/mock/itineraryData.js) tallies saved votes. [`rankVotes()`](src/algorithms/itinerary.js) separates majority winners from Maybe.
+2. **Prepare travel and time windows.** `buildPlan()` uses the cached matrix and `groupFreeTime()` to derive availability from saved legs. `allowedWindow()` intersects the windows. `closedDays()` translates the encoded weekday closures into trip day indices.
+   - **Hours and closures.** [`placeData.js`](src/api/mock/placeData.js) holds curated opening times. [`placeGeo.js`](src/data/placeGeo.js) encodes Shinjuku Gyoen's Monday closure. Raw OSM hours for Shinjuku Gyoen, Sensō-ji, Tokyo Tower and Zōjō-ji are reference metadata. © OpenStreetMap contributors.
+3. **Place winners greedily.** [`schedule()`](src/algorithms/itinerary.js) tries days in the order above. `findStart()` takes the first valid start on the first day that fits. If none fits, the winner is recorded in `didNotFit` and shown in Maybe.
+4. **Fill gaps.** `schedule()` tries the predefined fillers in their assigned slots after the voted stops. It then sorts each day's stops by start time.
+5. **Check, save and render.** `buildPlan()` stores [`checkPlan()`](src/algorithms/itinerary.js) findings in `plan.problems`, including day count, duplicate or unknown stops, duration, closures, time bounds, travel gaps, majority violations and unaccounted-for winners. The shared handler upserts one JSON plan per group in `itineraries`.
+   - **Viewer-specific display.** `assemble()` adds the viewer's flights or placeholders and the travel connectors on read. Estimated daily JPY cost is the sum of stop costs plus a ¥1,000 allowance on the first and last days and ¥500 on middle days.
 
 ## Security and demo constraints
 
-- **Database access.** Row-level security (RLS) filters direct reads. Profiles allow self-writes, flight selections and votes allow members to write their own rows, and any member can upsert their group's itinerary as themselves. Groups and memberships change through checked RPCs. Booking reads and writes go through RPCs exclusively. The public RPCs run as `SECURITY DEFINER` and check the caller via `auth.uid()`. The [data dictionary](DATA_DICTIONARY.md) lists each permission and function.
-- **Refresh.** While signed in and visible in shared mode, `RequireSession` emits a refresh event every five seconds. [`useAsync()`](src/hooks/useAsync.js) listens and quietly re-reads data. The app also emits refresh events after local actions.
-- **Flight enforcement.** The app handler validates the chosen offer and rejects flight changes after payment. Database grants and RLS still allow a member to write their own flight selections, subject to schema constraints. They do not enforce catalogue prices or a post-payment lock. The itinerary budget field is also descriptive. The scheduler has no budget cap.
-- **Itinerary enforcement.** The database checks membership, author ID and that `plan` is a JSON object. Generation records checker findings without gating the write. Manual edits validate the day lists and stop IDs, then `retimePlan()` calls `retimeDay()`. That path does not rerun `checkPlan()` or reject a resulting closure or time-window violation.
+- **Database boundary.** Row-level security (RLS) filters direct reads. Users can write their own profile, and members can write their own selections and votes. Any member can upsert their group's itinerary as themselves. Groups and memberships use checked RPCs for app writes. Booking access is RPC-only. Public RPCs use `SECURITY DEFINER` and check the caller via `auth.uid()`. See [direct table access](DATA_DICTIONARY.md#direct-table-access).
+- **Flight validation.** The handler validates the offer and blocks edits after payment. Database grants and RLS allow members to write their own selections subject to schema constraints. Catalogue prices and the post-payment lock are enforced at the app layer.
+- **Itinerary validation.** The database checks membership, author ID and that `plan` is a JSON object. Generation records checker findings and saves even if it finds problems. `budget_per_person_jpy` is descriptive and there is no scheduler budget cap.
+- **Manual edits.** Any member can generate or edit the plan in the app. Edits validate the day lists and stop IDs, then `retimePlan()` calls `retimeDay()`. This path skips `checkPlan()` and can save closure or time-window violations. Older plans without `free` keep their existing times.
