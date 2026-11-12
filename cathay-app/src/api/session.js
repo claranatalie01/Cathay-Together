@@ -1,9 +1,4 @@
-// Sign-in, sign-out and "who is signed in". Shared mode only: the mock backend
-// has its own pretend current person and needs no sign-in.
-//
-// A session is the proof that someone signed in. Supabase keeps it in this
-// browser's storage, so a reload does not sign the person out.
-import { isShared } from './config';
+// Supabase keeps the session in browser storage so a reload preserves sign-in.
 import { ApiError } from './errors';
 import { notifyDataChanged } from './events';
 import { clearPendingGets } from './http';
@@ -55,10 +50,6 @@ export async function signOut() {
 // Calls back with { userId } or null, once straight away and again on every
 // sign-in or sign-out. Returns a function that stops listening.
 export function onSessionChanged(callback) {
-  if (!isShared) {
-    callback({ userId: 'mock' });
-    return () => {};
-  }
   let active = true;
   let stop = () => {};
   getSupabase().then(

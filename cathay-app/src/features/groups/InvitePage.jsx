@@ -11,7 +11,6 @@ import ErrorState from '../../components/ui/ErrorState';
 import LoadingState from '../../components/ui/LoadingState';
 import Sheet from '../../components/ui/Sheet';
 import StateMessage from '../../components/ui/StateMessage';
-import { DemoControls } from '../../demo';
 import { COPY } from '../../data/copy';
 import { INVITE_PHOTO } from '../../data/trip';
 import { useAsync } from '../../hooks/useAsync';
@@ -66,7 +65,6 @@ export default function InvitePage() {
           <Button to="/groups/new" variant="secondary">
             {copy.unavailable.create}
           </Button>
-          <DemoControls context="invite" />
         </StateMessage>,
       );
     }
@@ -121,7 +119,6 @@ export default function InvitePage() {
             {copy.actionFailed}
           </p>
         )}
-        <DemoControls context="invite" group={group} />
       </StateMessage>,
     );
   }
@@ -168,7 +165,6 @@ export default function InvitePage() {
             </p>
           )}
         </div>
-        <DemoControls context="invite" group={group} />
       </main>
       <BottomNav variant="groups" />
       <Sheet open={confirmOpen} onClose={closeConfirm} title={copy.sheet.title} titleId="decline-title">

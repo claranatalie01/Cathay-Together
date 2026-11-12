@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { assemble } from '../api/mock/itineraryData.js';
+import { assemble } from '../api/shared/itineraryData.js';
 import { retimeResearchedPlan } from '../api/shared/itineraryEdits.js';
+import { applyItineraryEdit } from '../api/shared/itineraryResponses.js';
 
 const date = '2026-11-21';
 const place = (id, start) => ({ id, kind: 'place', placeId: id, start, end: start + 30, minutes: 30 });
@@ -40,4 +41,24 @@ test('removing a stop rechecks the newly adjacent pair before saving', () => {
   };
   retimeResearchedPlan(plan, [{ date, stopIds: ['a', 'b'] }], [], {});
   assert.equal(plan.stops.b.start - plan.stops.a.end, 100);
+});
+
+test('an older shared plan keeps its saved suggested stop when reordered', () => {
+  const plan = {
+    free: { freeFrom: 540, freeUntil: null },
+    days: [{ date, stopIds: ['suggested-ramen', 'place-food'] }],
+    stops: {
+      'suggested-ramen': { id: 'suggested-ramen', kind: 'place', suggestedId: 'ramen', minutes: 60, name: 'Neighbourhood ramen' },
+      'place-food': { id: 'place-food', kind: 'place', placeId: 'food', minutes: 90 },
+    },
+    maybe: [],
+  };
+
+  applyItineraryEdit(plan, { days: [{ date, stopIds: ['place-food', 'suggested-ramen'] }] });
+
+  const { days } = assemble({ plan, votes: {}, dates: [date] });
+  const stops = days[0].items.filter((stop) => stop.kind === 'place');
+  assert.deepEqual(stops.map((stop) => [stop.id, stop.startTime]), [['place-food', '09:00'], ['suggested-ramen', '11:00']]);
+  assert.equal(stops[1].name, 'Neighbourhood ramen');
+  assert.equal(stops[1].travelBefore.minutes, 20);
 });

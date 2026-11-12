@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { getBooking, isShared } from '../../api';
+import { getBooking } from '../../api';
 import BottomNav from '../../components/layout/BottomNav';
 import PageHeader from '../../components/layout/PageHeader';
 import Screen from '../../components/layout/Screen';
@@ -103,7 +103,7 @@ export default function ConfirmedPage() {
         <TripLeg selection={booking.outbound} direction="outbound" compact />
         <TripLeg selection={booking.return} direction="return" compact />
       </section>
-      {isShared && <BonusMiles key={`${groupId}:${booking.ticket.reference}`} />}
+      <BonusMiles key={`${groupId}:${booking.ticket.reference}`} />
       <div className="payment__actions">
         <Button size="lg" variant="secondary" onClick={() => downloadTicket(booking)}>
           <img src="/assets/ui-download.svg" alt="" />

@@ -1,13 +1,13 @@
 # Cathay Together demo
 
-React 19 + Vite 8 + react-router-dom 7 demo app: a phone-sized (440 px) "Travel Groups" flow that must match the real Cathay Pacific Android app. Mock API in `src/api/mock`, with browser storage under `cathay-mock-db-v4`. Shared itinerary generation lives in `server/itinerary/`. Run `npm test` for JavaScript and `.venv/bin/python -m pytest server/tests` for Python.
+React 19 + Vite 8 + react-router-dom 7 demo app: a phone-sized (440 px) "Travel Groups" flow that must match the real Cathay Pacific Android app. The app uses Supabase for sign-in and shared trip state. Request handlers live in `src/api/shared`, and itinerary generation lives in `server/itinerary/`. Run `npm test` for JavaScript and `.venv/bin/python -m pytest server/tests` for Python.
 
 **Start every session by reading `plan.md` (the master plan and progress checklist), then update its checklist when you finish a task.**
 
 ## Commands
 
 - `npm run dev` : dev server (style guide at `/design-system`)
-- `npm test` : runs the algorithm tests in `src/algorithms` (arrival window, itinerary scheduler). Keep those files free of browser code and import them with the `.js` ending so Node can run them
+- `npm test` : runs the algorithm tests in `src/algorithms` (flight timing and ranking, itinerary edits and transfer display). Keep those files free of browser code and import them with the `.js` ending so Node can run them
 - `npm run check:tokens` : must pass before you finish any change (also runs on `npm run build`)
 - `npm run check:backend` : checks the Supabase URL and publishable key in `.env` (the one git-ignored environment file; names in `.env.example`) and that each table exists and is closed to visitors. Database tables live in `supabase/migrations`; never put the secret key in the repo
 - `npm run icons:inventory` : regenerate `src/design-system/iconInventory.js` after adding or changing any SVG in `public/assets`

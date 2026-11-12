@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
-import { ApiError, getCurrentUser, isShared, signIn, signOut } from '../../api';
+import { useSearchParams } from 'react-router-dom';
+import { ApiError, getCurrentUser, signIn, signOut } from '../../api';
 import Screen from '../../components/layout/Screen';
 import StatusBar from '../../components/layout/StatusBar';
 import PageHeader from '../../components/layout/PageHeader';
@@ -169,9 +169,6 @@ export default function SignInPage() {
   const [searchParams] = useSearchParams();
   const { status, userId } = useSession();
   useDocumentTitle(copy.title);
-
-  // The mock backend has no sign-in.
-  if (!isShared) return <Navigate to="/groups" replace />;
 
   return (
     <Screen>

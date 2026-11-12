@@ -6,7 +6,7 @@
 //   osmHours     opening hours exactly as OpenStreetMap writes them, or null when the map has none
 //
 // Only three places have hours on the map. For the rest, the hours in
-// src/api/mock/placeData.js are still our own estimates and must be shown as estimates.
+// src/data/legacyPlaces.js are still our own estimates and must be shown as estimates.
 // Where OpenStreetMap's hours disagree with the estimate, the estimate is NOT changed here:
 // `note` records the difference so a person decides.
 //

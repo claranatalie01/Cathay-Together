@@ -1,4 +1,4 @@
-// Flight booking calls (Flow B). Same rules as groups.js: async, REST-shaped, mock for now.
+// Flight search, fares and selections.
 import { notifyDataChanged } from './events';
 import { request } from './http';
 

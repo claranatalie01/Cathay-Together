@@ -49,7 +49,6 @@ Figma defined only three shared styles (v1.0 section 1): colour style "Dark" `#1
 | Style guide page | `src/design-system/` (route `/design-system`) |
 | Token checker | `scripts/check-tokens.mjs` (`npm run check:tokens`, also runs before `npm run build`) |
 | Measurements behind this document | `docs/screenshot-audit.md` |
-| Demo panel | `src/demo/`. **Not part of the design system** |
 
 ## 3. Tokens
 

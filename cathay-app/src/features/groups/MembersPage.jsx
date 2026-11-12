@@ -14,7 +14,6 @@ import LoadingState from '../../components/ui/LoadingState';
 import Chip from '../../components/ui/Chip';
 import StateMessage from '../../components/ui/StateMessage';
 import { useToast } from '../../components/ui/Toast';
-import { DemoControls } from '../../demo';
 import { COPY } from '../../data/copy';
 import { fallbackTo } from '../../data/photos';
 import { TRIP_PHOTO } from '../../data/trip';
@@ -308,7 +307,6 @@ export default function MembersPage({ details = false }) {
         </div>
       </aside>
 
-    {!details && <DemoControls context="members" group={group} />}
     </main>,
   );
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, deleteGroup, getGroups, isShared, leaveGroup, signOut } from '../../api';
+import { ApiError, deleteGroup, getGroups, leaveGroup, signOut } from '../../api';
 import Screen from '../../components/layout/Screen';
 import StatusBar from '../../components/layout/StatusBar';
 import PageHeader from '../../components/layout/PageHeader';
@@ -12,7 +12,6 @@ import LoadingState from '../../components/ui/LoadingState';
 import Sheet from '../../components/ui/Sheet';
 import StateMessage from '../../components/ui/StateMessage';
 import { useToast } from '../../components/ui/Toast';
-import { DemoControls } from '../../demo';
 import { COPY } from '../../data/copy';
 import { photoFor } from '../../data/trip';
 import { memberSummary } from './groupSelectors';
@@ -76,7 +75,7 @@ export default function GroupsPage() {
     }
   };
 
-  const accountAction = isShared && (
+  const accountAction = (
     <button className="groups__sign-out" type="button" onClick={switchAccount} disabled={signingOut} aria-busy={signingOut || undefined}>
       <img src="/assets/ui-sign-out-teal.svg" alt="" />
       <span>{signingOut ? COPY.signIn.signingOut : COPY.signIn.signOut}</span>
@@ -100,7 +99,6 @@ export default function GroupsPage() {
     return frame(
       <StateMessage mark="+" title={copy.emptyTitle} text={copy.emptyText}>
         <Button ref={createButton} onClick={() => navigate('/groups/new')}>{copy.create}</Button>
-        <DemoControls context="groups" />
       </StateMessage>,
     );
   }
@@ -174,7 +172,6 @@ export default function GroupsPage() {
       <Button ref={createButton} to="/groups/new" className="groups__create">
         {copy.create}
       </Button>
-      <DemoControls context="groups" />
     </main>,
     selected && (
       <Sheet open onClose={closeRemoval} title={removal.title} titleId="remove-group-title" descriptionId="remove-group-description" className="groups__remove-sheet">

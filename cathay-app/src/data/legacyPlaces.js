@@ -1,12 +1,5 @@
-// The Tokyo suggestions the group votes on. The first four (one per category) are from the
-// original Cathay Together prototype; the next seven were added so that votes decide more.
-// Fictional demo content: budgets are rough yen estimates, not real prices, and the
-// scheduling fields are approximate:
-//   visitMinutes  how long the itinerary allows for the visit
-//   open / close  hours the itinerary may schedule it in
-//   cost          one yen figure per person used in the totals
-// The seven added places reuse the app's existing Tokyo photos.
-export const PLACES = [
+// Original Tokyo cards for shared trips with legacy votes. Keep their IDs and display fields.
+export const LEGACY_PLACES = [
   {
     id: 'food',
     visitMinutes: 90,
@@ -217,12 +210,3 @@ export const PLACES = [
     alt: 'Tokyo Tower at dusk seen down a street, with a train passing in front',
   },
 ];
-
-export const PLACE_IDS = PLACES.map((place) => place.id);
-
-// Members who are already "picked" or "booked" start with saved preferences (demo seed).
-export const SEED_CHOICES = {
-  gaudi: { food: 'like', scenery: 'pass', culture: 'like', shopping: 'pass', ameyoko: 'like', yokocho: 'like', shibuya: 'like', tower: 'pass', roppongi: 'pass', zojoji: 'pass', azabudai: 'pass' },
-  kabe: { food: 'pass', scenery: 'like', culture: 'like', shopping: 'like', ameyoko: 'pass', yokocho: 'like', shibuya: 'like', tower: 'like', roppongi: 'pass', zojoji: 'like', azabudai: 'pass' },
-  clara: { food: 'like', scenery: 'pass', culture: 'like', shopping: 'pass', ameyoko: 'pass', yokocho: 'pass', shibuya: 'like', tower: 'like', roppongi: 'like', zojoji: 'pass', azabudai: 'pass' },
-};

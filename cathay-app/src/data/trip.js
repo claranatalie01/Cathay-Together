@@ -1,7 +1,11 @@
 // Trip options and imagery. The demo only supports Tokyo, 21–24 November 2026.
 export const DESTINATIONS = ['Tokyo, Japan'];
 
-export const DATE_OPTIONS = [{ value: 'nov-21-24', label: 'Nov 21–24, 2026', available: true }];
+export const DATE_WINDOWS = {
+  'nov-21-24': { label: 'Nov 21–24, 2026', start: '2026-11-21', end: '2026-11-24', available: true },
+};
+
+export const DATE_OPTIONS = Object.entries(DATE_WINDOWS).map(([value, { label, available }]) => ({ value, label, available }));
 
 export const DEFAULT_GROUP_VALUES = {
   name: 'Tokyo together',

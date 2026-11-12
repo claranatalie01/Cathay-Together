@@ -62,15 +62,6 @@ export const shortRange = (from, to) => {
   return `(${a.day}) ${a.d} ${a.month} - (${b.day}) ${b.d} ${b.month}`;
 };
 
-// "Nov 21–24, 2026" -> { start: '2026-11-21', end: '2026-11-24' }
-export function windowOf(datesLabel) {
-  const match = /^([A-Za-z]{3}) (\d+)[–-](\d+), (\d{4})$/.exec(datesLabel);
-  if (!match) return { start: '2026-11-21', end: '2026-11-24' };
-  const month = String(MONTHS.indexOf(match[1]) + 1).padStart(2, '0');
-  const pad = (n) => String(n).padStart(2, '0');
-  return { start: `${match[4]}-${month}-${pad(match[2])}`, end: `${match[4]}-${month}-${pad(match[3])}` };
-}
-
 const homeFactor = (code) => HOME_AIRPORTS[code]?.price ?? 1;
 
 export function cabinsFor(homeCode) {
@@ -211,8 +202,7 @@ export function withTiming(flights, { direction, others }) {
 // There is no time window: see combinations.js for how "best of both" is decided.
 // A member who has chosen is kept exactly as chosen: their own flight, date, cabin and fare
 // price, whatever the cabin control says. Everyone else is placed from their own airport, in
-// `cabin`, at the lowest fare of that cabin. Used by both the mock and the shared backend, so they
-// answer alike.
+// `cabin`, at the lowest fare of that cabin.
 // Shown beside a suggested flight: whether the landing is on the day after take-off (outbound
 // only; a return is shown by its take-off) and how many stops it has. A connection's flight
 // number is two numbers joined by " + ".
@@ -301,23 +291,4 @@ export function makeSelection({ home, flightId, cabin, fare }) {
     arriveAt: flight.arriveAt,
     flightNo: flight.flightNo,
   };
-}
-
-// Demo choices for members who are already "picked" or "booked" in the seed data, so every screen
-// shows the same flights for them. [position in the day's outbound list, position in the return list]
-const SEED_PICKS = { gaudi: [0, 1], kabe: [1, 0], clara: [0, 1] };
-
-export function seedSelectionFor({ userId, home, status, window }) {
-  const picks = SEED_PICKS[userId];
-  if (!picks) return null;
-  const fare = status === 'booked' ? 'essential' : 'light';
-  const outList = flightsFor({ home, direction: 'outbound', date: window.start, cabin: 'economy' });
-  const backList = flightsFor({ home, direction: 'return', date: window.end, cabin: 'economy' });
-  if (!outList.length || !backList.length) return null;
-  // Real schedules can leave only one option: wrap round so there is always a flight to pick.
-  const out = outList[picks[0] % outList.length];
-  const back = backList[picks[1] % backList.length];
-  const outbound = makeSelection({ home, flightId: out.id, cabin: 'economy', fare });
-  const ret = makeSelection({ home, flightId: back.id, cabin: 'economy', fare });
-  return outbound && ret ? { outbound, return: ret } : null;
 }

@@ -1,8 +1,8 @@
 # LOGIC.md
 
-Flight ranking and the mock itinerary are deterministic JavaScript. Shared itinerary generation uses the Python planner, external research and a model. Sources: `src/algorithms/combinations.js`, `arrivalWindow.js`, `travel.js`, `itinerary.js`, and the data in `src/data/placeGeo.js`. Tests sit beside them (`npm test`).
+JavaScript ranks group flights using a saved OAG snapshot. **Flight fares are simulated.**
 
-Flight times and numbers come from a saved OAG schedule snapshot. **Flight fares are simulated.** Mock coordinates come from OpenStreetMap, with curated opening-hour estimates. Shared cards use researched evidence and Geoapify coordinates when available.
+The Python planner researches venues, estimates transfers and drafts a shared itinerary. JavaScript renders the saved plan and checks manual edits.
 
 ---
 
@@ -10,7 +10,7 @@ Flight times and numbers come from a saved OAG schedule snapshot. **Flight fares
 
 ### 1.1 Inputs and who is "fixed"
 
-`suggestionsFor()` in `src/api/mock/flightData.js` builds one entry per group member for one direction (outbound or return) and hands them to `rankCombinations()`:
+`suggestionsFor()` in `src/api/shared/flightData.js` builds one entry per group member for one direction (outbound or return) and hands them to `rankCombinations()`:
 
 | Member state | Flights tried for them | Price used |
 |---|---|---|
@@ -111,87 +111,15 @@ G1 C1 K1 and G2 C2 K2 tie at 1.000, so the **smaller spread wins**: Best of both
 
 ---
 
-## 2. Mock itinerary scheduler
+## 2. Shared AI itinerary planner
 
-No machine learning and no language model. The same votes always give the same plan, and `checkPlan()` can prove a plan valid.
-
-### 2.1 Travel time between places (`travel.js`, `placeGeo.js`)
-
-`PLACE_GEO` holds real `lat`/`lon` for the 11 voted places (OpenStreetMap, looked up 11 Nov 2026; credit "© OpenStreetMap contributors"). `travelMinutes(a, b)` is an **estimate**, not a timetable (no train data):
-
-1. `distanceKm`: the haversine great-circle distance, `R = 6371 km`.
-2. Multiply by `DETOUR = 1.3` (streets are not straight).
-3. If the result is at most `WALK_LIMIT_KM = 1.2`: walk at `5 km/h`.
-   Otherwise: `10 min` for waiting and reaching the station, plus the distance at `25 km/h` (`TRANSIT_OVERHEAD_MIN`, `TRANSIT_KMH`).
-4. Round **up** to a whole 5 minutes, minimum 5: `max(5, ceil(minutes / 5) * 5)`.
-
-`travelTable(geo)` precomputes every pair. Examples from the real table: Tokyo Tower to Zōjō-ji is 5 minutes (about 300 m); Sensō-ji to Shinjuku Gyoen is 40.
-
-### 2.2 Votes
-
-`hasMajority(vote)` is `liked * 2 > total`: a **strict** majority.
-
-| Group | Liked by | Result |
-|---|---|---|
-| 3 people | 2 | in |
-| 4 people | 2 | not in (exactly half) |
-| 4 people | 3 | in |
-| any | at least 1 but no majority | "maybe" (listed, never scheduled) |
-| any | 0 | dropped |
-
-`rankVotes(places, votes)` returns `winners` (most liked first; place order breaks ties) and `maybe`.
-
-### 2.3 The scheduler, step by step (`schedule()` in `itinerary.js`)
-
-Times are **trip minutes**: minutes since 00:00 Tokyo time on day 1. 09:30 on day 2 is 1,440 + 570 = 2,010.
-
-1. **Votes.** `rankVotes` splits winners from maybes (2.2).
-2. **Free time** (`groupFreeTime` in `src/api/mock/itineraryData.js`, from everyone's saved flights, using full instants):
-   - `freeFrom` = latest landing + `afterLanding` (90 minutes)
-   - `freeUntil` = earliest take-off − `beforeTakeoff` (180 minutes)
-   - every day is further limited to `dayStart` 08:00 to `dayEnd` 21:30
-   - members without flights are left out; with no flights there is no limit.
-   `allowedWindow(day, item, free, rules)` is the intersection of the day band, the place's opening hours and the free time.
-3. **Greedy placement of winners**, most-liked first, never moving anything already placed. Days are tried in this order: fewest voted stops first, then middle days before the first and last (`isEdge`, when the trip has more than 2 days), then earliest. On each day `findStart()` returns the earliest start that satisfies all of:
-   - inside the group's free time and the day band;
-   - inside the place's open and close times (preferred start, `prefer`, is tried first: afternoon places from 13:00, evening from 17:30);
-   - not on a day listed in `closedOn`;
-   - no clash with a stop already there, leaving the travel gap on both sides (below);
-   - start times rounded up to `step` = 15 minutes.
-   Candidate starts are only the window opening, the preferred time, and just after each existing stop, which are the only moments that can be the earliest valid one.
-   A winner that fits on no day goes into `unplaced` ("did not fit"). It is reported, never squeezed in.
-4. **Fillers** (suggested stops nobody voted on) are placed on their own day only. A filler is skipped (`skippedFillers`) if a voted place already starts in its part of the day (morning, afternoon or evening: `SLOT_HOURS`) or if nothing fits.
-5. **Verification.** `checkPlan(plan, inputs)` re-reads the finished timetable and returns a list of every rule broken. An empty list is the proof of validity. It checks: day count, duplicates, duration, closed days, start/end inside the allowed window, voted stops having a majority, the travel gap before each stop, and that every winner is either scheduled or listed as `unplaced`.
-
-**Travel gap.** `gapBetween(travel, rules)` returns the minutes needed between two stops: the `travel(fromId, toId)` estimate for two voted places, otherwise the flat `rules.travelGap` = 20 minutes (fillers have no coordinates; the airport legs are not scheduled).
-
-**Closed days.** `closedOn` is built per place from `PLACE_GEO[id].closedWeekdays` and the trip dates (`closedDays()` in `itineraryData.js`). Shinjuku Gyoen is closed on Mondays; with a Sat 21 Nov start, Monday 23 Nov is trip day index 2, so the garden is never placed there.
-
-**Editing.** After a person removes or reorders stops, `retimeDay()` keeps their order and repacks the day (start at the later of the window opening and the previous stop's end plus its gap, rounded to 15 minutes). It respects opening times where the order allows; whatever the order makes impossible is left for `checkPlan` to report.
-
-### 2.4 Example
-
-Everyone likes all 11 places, trip Sat 21 to Tue 24 Nov, no flight limits. One result of the real builder: Shinjuku Gyoen 13:00 on day 1 (the only open day it fits besides day 2, never Monday), Shibuya 17:30 day 1; Tsukiji 08:00, Ameyoko 13:00, Azabudai 15:00, Roppongi 17:30 on day 2; `checkPlan` returns `[]`.
-
-### 2.5 Known trade-offs and boundaries
-
-- **Greedy, no backtracking.** Winners are placed once, best first, and never moved. A different order could sometimes fit one more place; the method guarantees valid and repeatable, not optimal.
-- **Flat buffers.** A fixed 20 minutes applies wherever coordinates are missing (all fillers). The airport legs shown on the itinerary are a flat 60 minutes, for display only; the 90-minute and 180-minute rules are what constrain scheduling.
-- **Travel time is an estimate.** Straight line times 1.3, one average train speed, no timetables or waiting at specific stations.
-- **Opening hours are mostly estimates.** `placeData.js` supplies `open`/`close` for all places. OpenStreetMap's hours text exists for only Shinjuku Gyoen, Sensō-ji, Tokyo Tower and Zōjō-ji, and it is **not parsed**: only the structured `closedWeekdays` is used. Where the map and the estimate differ, `note` in `PLACE_GEO` records it; no hours are overwritten automatically.
-- **Single day length.** Everything is limited to 08:00 to 21:30, including places that open earlier or close later.
-- **Validation lives in the app.** The database stores the plan; `checkPlan` runs in the browser and the database does not re-check it.
-
-
-## 3. Shared AI itinerary planner
-
-### 3.1 Research and readiness
+### 2.1 Research and readiness
 
 1. **Search.** `explorer_agent()` uses Tavily, with a dedicated query for named restaurants and cafés. `curator_agent()` builds cards from cited evidence, matches photos by their descriptions and supplies exact venue names where possible.
 2. **Geocode.** `enrich_coordinates()` looks for a name match near the destination and checks the provider’s confidence. It keeps the accepted point and its source. Existing shared groups with legacy votes use the bundled `server/legacy_places.json`.
 3. **Save votes.** A member saves one choice per deck card. The planner uses every current member’s saved votes. `split_cards()` prioritizes `likes × 2 ≥ total`, then allows lower-ranked liked places. For example, two likes out of four qualify. If no place qualifies, it works from all places with a like. With zero likes across the deck, the planner returns `nothing_to_plan`.
 
-### 3.2 Draft, geocode meals and review
+### 2.2 Draft, geocode meals and review
 
 | Step | Current rule |
 | --- | --- |
@@ -205,10 +133,13 @@ Everyone likes all 11 places, trip Sat 21 to Tue 24 Nov, no flight limits. One r
 
 **Worked transfer.** A 1.42 km straight-line leg becomes 1.85 km of estimated street distance. That takes about 14.4 minutes with the transit formula, rounded up to **15 minutes**. The label reads “15 min estimated transfer” with the same icon used for walking estimates.
 
-### 3.3 Save, read and edit
+### 2.3 Save, read and edit
 
 - **Save one group plan.** `finish_trip_planner_job()` verifies the original input snapshot before saving. The plan includes `review`, `sources`, `transfers` and the input `fingerprint`. A rebuild can replace the saved plan and its manual edits.
 - **Reuse the saved transfer table.** `savedTransferMinutes()` uses the card ID, or the stop ID for a generic meal. The displayed totals and `retimeResearchedPlan()` use this same table.
 - **Open the plan.** The build endpoint checks the input fingerprint. The current itinerary screen can open an existing plan before calling that endpoint.
+
+- **Edit an older shared plan.** [`retimePlan()`](src/api/shared/itineraryData.js) uses the stored earliest start, the place opening time, and coordinate-based estimates where known. [`retimeDay()`](src/algorithms/itinerary.js) preserves the requested order, uses a 20-minute fallback and rounds starts up to 15 minutes. A legacy plan without `free` retains its times.
+- **Read a legacy transfer.** When an older non-AI plan has no saved transfer table, [`travelTable()`](src/algorithms/travel.js) precomputes pairs among the 11 original places. Tokyo Tower to Zōjō-ji is 5 minutes. Sensō-ji to Shinjuku Gyoen is 40 minutes. Airport connectors show 60 minutes.
 
 Sources include [`pipeline.py`](server/itinerary/pipeline.py), [`geocoding.py`](server/itinerary/geocoding.py), [`travel.py`](server/itinerary/travel.py), [`checks.py`](server/itinerary/checks.py), and [`app.py`](server/app.py).

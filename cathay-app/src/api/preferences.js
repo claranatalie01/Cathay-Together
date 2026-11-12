@@ -1,4 +1,4 @@
-// Itinerary preferences (Flow D). Same rules as groups.js: async, REST-shaped, mock for now.
+// Place swipe choices and group readiness.
 import { notifyDataChanged } from './events';
 import { request } from './http';
 

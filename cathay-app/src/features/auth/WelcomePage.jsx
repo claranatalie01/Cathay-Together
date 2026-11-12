@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { ApiError, getHomeAirports, isShared, saveProfile } from '../../api';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ApiError, getHomeAirports, saveProfile } from '../../api';
 import { distanceKm } from '../../algorithms/travel.js';
 import Screen from '../../components/layout/Screen';
 import StatusBar from '../../components/layout/StatusBar';
@@ -163,8 +163,6 @@ export default function WelcomePage() {
   const [searchParams] = useSearchParams();
   const list = useAsync(() => getHomeAirports(), []);
   useDocumentTitle(copy.title);
-
-  if (!isShared) return <Navigate to="/groups" replace />;
 
   return (
     <Screen>

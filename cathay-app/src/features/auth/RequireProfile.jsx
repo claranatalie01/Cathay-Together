@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { ApiError, getCurrentUser, isShared } from '../../api';
+import { ApiError, getCurrentUser } from '../../api';
 import Screen from '../../components/layout/Screen';
 import StatusBar from '../../components/layout/StatusBar';
 import LoadingState from '../../components/ui/LoadingState';
 
 // Sits inside RequireSession. A person who has signed in but has no profile yet (no name and
 // home airport) is sent to the welcome screen, then returned to where they were going.
-// Any other problem is left for the screen itself to report. Mock mode always has a profile.
+// Any other problem is left for the screen itself to report.
 export default function RequireProfile() {
   const { pathname, search } = useLocation();
-  const [state, setState] = useState(isShared ? 'checking' : 'ready');
+  const [state, setState] = useState('checking');
 
   useEffect(() => {
-    if (!isShared) return undefined;
     let current = true;
     getCurrentUser().then(
       () => current && setState('ready'),

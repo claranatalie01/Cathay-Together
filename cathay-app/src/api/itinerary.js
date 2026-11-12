@@ -1,4 +1,4 @@
-// Itinerary (Flow E). Same rules as groups.js: async, REST-shaped, mock for now.
+// Shared itinerary generation, reading and editing.
 import { notifyDataChanged } from './events';
 import { request } from './http';
 

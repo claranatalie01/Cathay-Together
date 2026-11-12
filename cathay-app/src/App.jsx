@@ -3,7 +3,6 @@ import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import ComingSoonPage from './features/ComingSoonPage';
 import NotFoundPage from './features/NotFoundPage';
-import { ResetPage } from './demo';
 import RequireSession from './features/auth/RequireSession';
 import RequireProfile from './features/auth/RequireProfile';
 import SignInPage from './features/auth/SignInPage';
@@ -52,18 +51,17 @@ export default function App() {
   return (
     <ToastProvider>
       <Routes>
-        {/* Style guide: its own wide page, no phone frame and no demo panel. */}
+        {/* Style guide: its own wide page outside the phone frame. */}
         <Route path="design-system" element={<DesignSystemPage />} />
         <Route element={<AppShell />}>
-          {/* Shared backend only: sign in first. In mock mode this redirects to /groups. */}
+          {/* Sign in before opening group routes. */}
           <Route path="sign-in" element={<SignInPage />} />
-          {/* Everything below needs a signed-in person (always true in mock mode). */}
+          {/* Everything below needs a signed-in person. */}
           <Route element={<RequireSession />}>
           {/* Signed in but no name and home airport yet: shown once, outside the profile check. */}
           <Route path="welcome" element={<WelcomePage />} />
           <Route element={<RequireProfile />}>
           <Route index element={<Navigate to="/groups" replace />} />
-          <Route path="reset" element={<ResetPage />} />
           <Route path="groups" element={<GroupsPage />} />
           <Route path="groups/new" element={<CreateGroupPage />} />
           <Route path="groups/:groupId/invite" element={<MembersPage key="members" />} />
