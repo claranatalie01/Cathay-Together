@@ -253,6 +253,7 @@ export function assemble({ plan, selection, votes, dates, places = PLACES }) {
     builtAt: plan.builtAt,
     builtBy: plan.builtBy,
     usesOpenStreetMap: plan.transfers?.usesOpenStreetMap,
+    usesGeoapify: plan.transfers?.usesGeoapify,
     days,
     maybe,
     summary: { places: placeCount, voted: days.reduce((n, d) => n + d.items.filter((i) => i.source === 'voted').length, 0), days: days.length, costPerPerson: totalCost, avgTravelMinutes: days.length ? Math.round(totalTravel / days.length) : 0, firstDate: dates[0], lastDate: dates[dates.length - 1] },

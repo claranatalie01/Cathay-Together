@@ -30,7 +30,7 @@ Leave `VITE_DATA_MODE` unset or set it to `mock`. The demo starts with Gaudi as 
 
 1. For a fresh Supabase project, run the files in [`supabase/migrations/`](supabase/migrations) in filename order, once each, in the Supabase SQL Editor. For an existing project, apply its pending migrations.
 2. Create confirmed email/password users in Supabase Authentication. A user without a profile enters their name and home airport on their first sign-in. To prefill the three demo profiles, create users with the email handles listed in [`demo_profiles.sql`](supabase/seed/demo_profiles.sql) and run that seed after the migrations.
-3. Copy [`.env.example`](.env.example) to `.env.local` if you do not already have one. Set the Supabase URL and publishable key in `.env.local`.
+3. Copy [`.env.example`](.env.example) to `.env` (the one environment file) if you do not already have one. Set the Supabase URL and publishable key in `.env`.
 4. Run `npm run check:backend` to verify connectivity and check that the tables and RPCs are closed to signed-out visitors. Run `npm run dev:shared` and sign in. To try a shared trip, copy an invitation link from Members and open it on a second device or browser session with a different account. Use an app URL reachable by both devices.
 
 `npm run dev:shared` sets `VITE_DATA_MODE=shared` for the dev server. In a second terminal, start Stacia’s Python planner from `cathay-app/` with Python 3.12:
@@ -57,7 +57,7 @@ For production, apply [`20261112020000_researched_itineraries.sql`](supabase/mig
 | `GOOGLE_PLACES_API_KEY` | Optional server key for ratings enrichment. |
 | `OAG_SUBSCRIPTION_KEY` | Optional local credential for `npm run fetch:oag`, which refreshes `src/data/oagSnapshot.json`. Both modes can run from the checked-in snapshot. |
 
-Set server keys as Vercel **Secrets** or in the git-ignored `server/.env` for local development. Keep them out of `VITE_` variables. The Python service verifies the caller’s Supabase session and membership before contacting Tavily or Poe. Keep the OAG subscription key in the git-ignored local environment and use its unprefixed name.
+Set server keys as Vercel **Secrets** or in the git-ignored `.env` for local development (the same file the front end uses; only `VITE_` names reach the browser). Keep them out of `VITE_` variables. The Python service verifies the caller’s Supabase session and membership before contacting Tavily or Poe. Keep the OAG subscription key in the git-ignored local environment and use its unprefixed name.
 
 Shared mode prepares the latest trip after sign-in and researches other trips as they are opened or created. Trips with existing swipes or plans retain their original deck. Existing plans open as saved, and the planner saves a new plan only after every traveller saves their choices. Research and planning errors offer a retry. The mock workflow uses its local deck and scheduler.
 

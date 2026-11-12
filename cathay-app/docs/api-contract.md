@@ -342,7 +342,7 @@ The local and legacy decks keep their existing IDs, including `food`, `scenery`,
 
 Researched cards use a Tavily image when its description matches the place. `photoSource` and `photoSourceUrl` record the source when available. Bundled category photos cover unmatched or broken links. Older researched decks can refresh their photo fields in place, preserving their IDs and saved choices.
 
-Researched cards can also carry `coordinates` as `{ lat, lon }` and a `coordinateSource` link. The server looks up documented venue names and aliases in Wikidata and leaves the point empty when the match is missing or ambiguous.
+Researched cards can also carry `coordinates` as `{ lat, lon }` and a `coordinateSource` link. The server looks up each venue name with Geoapify's geocoding API (`GEOAPIFY_API_KEY`), keeps a result only when it lies near the destination and its name matches the venue, and otherwise leaves the point empty (the planner then assumes 30 minutes for that transfer). `coordinateSource` is `https://www.geoapify.com/` for these points, and the itinerary response's `usesGeoapify` and `usesOpenStreetMap` flags say which credits to show.
 
 ### `PUT /groups/:id/preferences/choices`
 

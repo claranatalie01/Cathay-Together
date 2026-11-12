@@ -92,23 +92,34 @@ def run_plan(context: dict, raw_cards, raw_sources, model: str | None = None, ll
     llm = llm or llm_module.make_llm_client()
     eligible = liked + maybe  # only places somebody liked can be scheduled
     transfers = transfer_estimates(eligible)
-    feedback = ""
+    attempts, feedback, last_problem = [], "", ""
     for attempt in range(1, config.MAX_REVIEW_ATTEMPTS + 2):
         try:
             raw = scheduler_agent(llm, model, context, liked, maybe, sources, transfers, feedback)
             schedule = normalize_schedule(raw, dates, eligible, known)
             review = quality_check_agent(llm, model, context, schedule, eligible, sources, transfers)
         except InvalidDraft as exc:
-            feedback = reason = str(exc)
+            feedback = last_problem = str(exc)
             continue
         except Exception as exc:  # noqa: BLE001
+            if attempts:
+                break  # a failed redraft keeps the draft we already have
             if isinstance(exc, AgentError):
                 raise
             raise _wrap(exc) from exc
+        review["attempts"] = attempt
+        attempts.append((schedule, review))
         if review["approved"]:
-            review["attempts"] = attempt
-            plan = to_app_plan(schedule, prepare_places(cards), sources, review, context["destination"])
-            return {"plan": {**plan, "transfers": transfers}}
+            break
         feedback = feedback_text(review)
-        reason = review.get("rule_error") or "The itinerary reviewer flagged a problem with the draft."
-    raise PlanConstraints(reason)
+    if not attempts:
+        raise PlanConstraints(last_problem or "The planner could not produce a readable draft.")
+    # Never block the group on a rule: show the draft with the fewest rule errors, with its issues listed.
+    schedule, review = min(reversed(attempts), key=lambda pair: _errors(pair[1]))
+    review["attempts"] = len(attempts)
+    plan = to_app_plan(schedule, prepare_places(cards), sources, review, context["destination"])
+    return {"plan": {**plan, "transfers": transfers}}
+
+
+def _errors(review: dict) -> int:
+    return sum(1 for issue in review.get("issues", []) if issue.get("severity") == "error")

@@ -104,14 +104,32 @@ def _day_issues(day, number, last, cards_by_id, context, arrival, departure, tra
                 needed = transfer_minutes(transfers, previous_place, stop)
                 if gap < needed:
                     origin = stop_name(previous_place, cards_by_id)
+                    # A warning, not an error: the estimate is rough, and a tight transfer should not stop a plan.
                     issues.append(_issue(
-                        "error", number, f"{origin} to {name} needs {needed} minutes of travel, but only {gap} are available.",
+                        "warning", number, f"{origin} to {name} needs {needed} minutes of travel, but only {gap} are available.",
                         f"Leave at least {needed} minutes clear before {name}, or move a stop to another day.",
                     ))
         if stop["type"] != "free":
             previous_place = stop
         previous_end = stop["start"] + stop["minutes"]
     return issues
+
+
+def _left_out_issues(schedule: dict, cards: list[dict]) -> list[dict]:
+    """A place at least half the group liked that is not in the plan. A warning: it may truly not fit."""
+    scheduled = {s["card_id"] for day in schedule["days"] for s in day["stops"] if s["type"] == "activity"}
+    out = []
+    def share(card):
+        return card.get("like_count", 0) / max(card.get("total_members", 1), 1)
+
+    for card in sorted(cards, key=share, reverse=True):
+        liked, total = card.get("like_count", 0), card.get("total_members", 1)
+        if liked >= 1 and liked * 2 >= total and card["id"] not in scheduled:
+            out.append(_issue(
+                "warning", None, f"{card['name']} was liked by {liked} of {total} but is not in the plan.",
+                "Add it to a day with room, or leave it out only if it cannot fit a shared window, its opening hours or the pace limit.",
+            ))
+    return out
 
 
 def deterministic_checks(schedule: dict, cards: list[dict], context: dict, transfers: dict | None = None) -> list[dict]:
@@ -122,6 +140,7 @@ def deterministic_checks(schedule: dict, cards: list[dict], context: dict, trans
     for number, day in enumerate(days, start=1):
         issues += _day_issues(day, number, len(days), cards_by_id, context, arrival, departure, transfers)
         total += sum(stop_cost(s, cards_by_id) for s in day["stops"])
+    issues += _left_out_issues(schedule, cards)
     budget = context.get("budget_per_person", config.DEFAULT_BUDGET_PER_PERSON)
     if total > budget:
         issues.append(_issue("error", None, f"Estimated cost ¥{total:,} per person is over the ¥{budget:,} budget.", "Swap a paid stop for a free one."))

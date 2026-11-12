@@ -14,13 +14,13 @@
 // Flights from other airlines are not fetched: the demo is for Cathay, and HK Express is part of
 // the Cathay Group. Cathay and HK Express have no direct flights to Haneda from the other airports.
 //
-// The key: OAG_SUBSCRIPTION_KEY in cathay-app/.env.local (git-ignored). It is never printed.
+// The key: OAG_SUBSCRIPTION_KEY in cathay-app/.env (git-ignored). It is never printed.
 // Limits (organiser guide): 1,000 requests per 30 days and 10 results per request. This script
 // follows the "next page" link and stops at MAX_REQUESTS so it cannot use the quota up.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const envPath = fileURLToPath(new URL('../.env.local', import.meta.url));
+const envPath = fileURLToPath(new URL('../.env', import.meta.url));
 const outPath = fileURLToPath(new URL('../src/data/oagSnapshot.json', import.meta.url));
 
 const HOME_AIRPORTS = ['SHA', 'PVG', 'SIN', 'TPE', 'ICN', 'MNL', 'BKK', 'KUL', 'CAN'];

@@ -125,41 +125,79 @@ def test_plan_retries_with_exact_windows_when_flights_erase_first_and_last_days(
     assert plan["days"][1]["stopIds"]
 
 
-def test_plan_reports_an_actual_rule_when_both_drafts_fail():
+def test_plan_keeps_the_best_draft_when_both_drafts_break_a_rule():
+    bad = good_plan()
+    bad["days"][1]["stops"][0]["start"] = "07:00"  # before the 08:00 window: a rule error
+    plan = pipeline.run_plan(CONTEXT, voted_cards(), SOURCES, "m", llm=FakeLLM([bad, bad]))["plan"]
+    assert plan["days"][1]["stopIds"], "the group still gets a plan"
+    assert plan["review"]["approved"] is False and plan["review"]["attempts"] == 2
+    assert any("outside 08:00–21:30" in i["message"] for i in plan["review"]["issues"])
+    assert plan["review"]["summary"] == "" and plan["review"]["suggestions"] == []
+
+
+def test_plan_prefers_the_draft_with_fewer_rule_errors():
+    worse = good_plan()
+    worse["days"][1]["stops"][0]["start"] = "07:00"
+    worse["days"][1]["stops"][2]["start"] = "06:00"  # more rules broken
+    better = good_plan()
+    better["days"][1]["stops"][0]["start"] = "07:00"
+
+    def error_count(*drafts):
+        plan = pipeline.run_plan(CONTEXT, voted_cards(), SOURCES, "m", llm=FakeLLM(list(drafts)))["plan"]
+        return sum(1 for i in plan["review"]["issues"] if i["severity"] == "error")
+
+    assert error_count(better, better) < error_count(worse, worse)
+    assert error_count(worse, better) == error_count(better, better)  # the redraft is the better one: kept
+    assert error_count(better, worse) == error_count(better, better)  # the first draft is the better one: kept
+
+
+def test_plan_keeps_the_first_draft_when_the_redraft_fails():
     bad = good_plan()
     bad["days"][1]["stops"][0]["start"] = "07:00"
-    with pytest.raises(PlanConstraints, match="outside 08:00–21:30"):
-        pipeline.run_plan(CONTEXT, voted_cards(), SOURCES, "m", llm=FakeLLM([bad, bad]))
+    plan = pipeline.run_plan(CONTEXT, voted_cards(), SOURCES, "m", llm=FakeLLM([bad, "not json at all"]))["plan"]
+    assert plan["days"][1]["stopIds"] and plan["review"]["attempts"] == 1
 
 
-def test_plan_revises_a_short_transfer_and_saves_the_checked_estimate():
+def test_plan_with_no_readable_draft_still_fails_clearly():
+    with pytest.raises(PlanConstraints):
+        pipeline.run_plan(CONTEXT, voted_cards(), SOURCES, "m", llm=FakeLLM([{"days": []}, {"days": []}]))
+
+
+def test_plan_accepts_a_short_transfer_with_a_warning_and_saves_the_estimate():
     cards = voted_cards()
     cards[0]["coordinates"] = {"lat": 0, "lon": 0}
-    cards[1]["coordinates"] = {"lat": 0, "lon": 0.07}
-    bad = good_plan()
-    activity = {"type": "activity", "card_id": "card_bbbbbbbb", "start": "10:50", "minutes": 60}
-    bad["days"][1]["stops"][2] = activity
-    bad["days"][1]["stops"][1]["start"] = "12:45"
-    revised = good_plan()
-    revised["days"][1]["stops"][2] = {**activity, "start": "11:05"}
-    revised["days"][1]["stops"][1]["start"] = "12:45"
+    cards[1]["coordinates"] = {"lat": 0, "lon": 0.07}  # 35 minutes apart
+    short = good_plan()
+    short["days"][1]["stops"][2] = {"type": "activity", "card_id": "card_bbbbbbbb", "start": "10:50", "minutes": 60}
+    short["days"][1]["stops"][1]["start"] = "12:45"  # only 20 minutes after the first activity ends
+    plan = pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([short, REVIEW_OK]))["plan"]
+    assert plan["review"]["approved"] is True and plan["review"]["attempts"] == 1
+    warnings = [i["message"] for i in plan["review"]["issues"] if i["severity"] == "warning"]
+    assert any("needs 35 minutes of travel, but only 20 are available" in m for m in warnings)
+    assert plan["transfers"]["between"]["card_aaaaaaaa"]["card_bbbbbbbb"] == 35
 
-    class CheckTransferPrompt(FakeLLM):
+
+def test_a_majority_liked_place_left_out_is_flagged_but_does_not_block():
+    cards = voted_cards()
+    plan_without = good_plan()
+    plan_without["days"][1]["stops"] = [s for s in plan_without["days"][1]["stops"] if s.get("card_id") != "card_aaaaaaaa"]
+    plan = pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([plan_without, REVIEW_OK]))["plan"]
+    notes = [i["message"] for i in plan["review"]["issues"]]
+    assert "Tsukiji was liked by 2 of 2 but is not in the plan." in notes
+    assert plan["review"]["approved"] is True
+
+
+def test_scheduler_prompt_tells_the_model_to_include_liked_places_and_the_default_timeout_is_60():
+    seen = []
+
+    class Spy(FakeLLM):
         def create(self, messages, **kwargs):
-            prompt = messages[-1]["content"]
-            if "PREVIOUS DRAFT FEEDBACK" in prompt:
-                assert "needs 35 minutes of travel, but only 20 are available" in prompt
-            if "DRAFT ITINERARY" in prompt:
-                assert "35 min estimated transfer" in prompt
+            seen.append(messages[-1]["content"])
             return super().create(messages=messages, **kwargs)
 
-    llm = CheckTransferPrompt([bad, revised, REVIEW_OK])
-    plan = pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=llm)["plan"]
-    assert plan["review"]["attempts"] == 2
-    assert plan["transfers"]["between"]["card_aaaaaaaa"]["card_bbbbbbbb"] == 35
-    assert plan["stops"]["place-card_bbbbbbbb"]["startTime"] == "11:05"
-    with pytest.raises(PlanConstraints, match="needs 35 minutes of travel, but only 20 are available"):
-        pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([bad, bad]))
+    pipeline.run_plan(CONTEXT, voted_cards(), SOURCES, "m", llm=Spy([good_plan(), REVIEW_OK]))
+    assert "include these, ordered by group consensus" in seen[0]
+    assert pipeline.config.llm_timeout() == 60.0
 
 
 def test_plan_with_nothing_liked_is_rejected():

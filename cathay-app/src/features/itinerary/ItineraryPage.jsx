@@ -148,6 +148,7 @@ export default function ItineraryPage() {
               <p className="itinerary__total-note">
                 {data.builtBy === 'ai' ? copy.researchedTravel(day.totals.travelMinutes) : copy.allowance(day.totals.allowance, day.totals.travelMinutes)}
                 {data.usesOpenStreetMap && <> · <a href="https://www.openstreetmap.org/copyright">{OSM_CREDIT}</a></>}
+                {data.usesGeoapify && <> · <a href="https://www.geoapify.com/">Powered by Geoapify</a></>}
               </p>
             </div>
           )}

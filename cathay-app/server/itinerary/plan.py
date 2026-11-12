@@ -124,6 +124,13 @@ def to_app_plan(schedule: dict, places: list[dict], sources: list[dict], review:
             for i in dict.fromkeys(cited)
             if i in by_source
         ],
-        "review": {k: review[k] for k in ("approved", "summary", "issues", "suggestions", "attempts")},
+        # A draft that failed a rule never reached the model reviewer, so it has no summary or suggestions.
+        "review": {
+            "approved": bool(review.get("approved")),
+            "summary": review.get("summary") or "",
+            "issues": review.get("issues", []),
+            "suggestions": review.get("suggestions", []),
+            "attempts": review.get("attempts", 1),
+        },
         "builtBy": "ai",
     }

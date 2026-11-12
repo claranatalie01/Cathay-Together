@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks the connection to the shared backend (Supabase) without printing any key.
-//   1. Reads VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY from .env.local.
+//   1. Reads VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY from .env.
 //   2. Confirms the project answers and accepts the key.
 //   3. Confirms each table exists and that a visitor who is not signed in can read nothing.
 // Run with: npm run check:backend
@@ -24,7 +24,7 @@ const FUNCTIONS = {
   pay_booking: { target_group: '00000000-0000-0000-0000-000000000000' },
   save_preferences: { target_group: '00000000-0000-0000-0000-000000000000', place_ids: ['x'] },
 };
-const envPath = fileURLToPath(new URL('../.env.local', import.meta.url));
+const envPath = fileURLToPath(new URL('../.env', import.meta.url));
 
 // Minimal .env reader: NAME=value lines, # comments, optional quotes.
 function readEnvFile(path) {

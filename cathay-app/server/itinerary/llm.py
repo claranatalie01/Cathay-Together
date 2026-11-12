@@ -43,7 +43,7 @@ def make_llm_client() -> OpenAI:
     return OpenAI(
         api_key=key,
         base_url=config.env("POE_BASE_URL", "https://api.poe.com/v1/"),
-        timeout=25,
+        timeout=config.llm_timeout(),
         max_retries=0,
     )
 

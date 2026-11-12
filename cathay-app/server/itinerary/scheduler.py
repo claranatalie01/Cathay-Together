@@ -109,7 +109,7 @@ TRIP DAYS AND SHARED WINDOWS (local times with the flight buffers already applie
 FLIGHT DETAILS:
 {_flight_text(context)}
 
-LIKED ACTIVITIES (consider in order of group consensus and include only those that fit):
+LIKED ACTIVITIES (include these, ordered by group consensus; leave one out only if it cannot fit a shared window, its opening hours, a closed day or the pace limit):
 {json.dumps([_compact(c) for c in liked], ensure_ascii=False)}
 
 MAYBE ACTIVITIES (only if time permits):

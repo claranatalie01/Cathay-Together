@@ -37,11 +37,13 @@ def transfer_estimates(cards: list[dict]) -> dict:
                 minutes = estimate_minutes(a, b)
                 between.setdefault(from_id, {})[to_id] = minutes
                 between.setdefault(to_id, {})[from_id] = minutes
-    uses_osm = any(
-        card["id"] in between and (card.get("coordinateSource") or "").startswith("https://www.openstreetmap.org/")
-        for card in cards
-    )
-    return {"fallbackMinutes": FALLBACK_MINUTES, "between": between, "usesOpenStreetMap": uses_osm}
+    def used_from(prefix: str) -> bool:
+        return any(card["id"] in between and (card.get("coordinateSource") or "").startswith(prefix) for card in cards)
+
+    uses_geoapify = used_from("https://www.geoapify.com/")
+    # Geoapify's data is OpenStreetMap's, so both credits are needed whenever its points were used.
+    uses_osm = uses_geoapify or used_from("https://www.openstreetmap.org/")
+    return {"fallbackMinutes": FALLBACK_MINUTES, "between": between, "usesOpenStreetMap": uses_osm, "usesGeoapify": uses_geoapify}
 
 
 def transfer_minutes(estimates: dict, previous_place: dict, stop: dict) -> int:

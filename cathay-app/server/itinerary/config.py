@@ -1,13 +1,12 @@
-"""Settings for the itinerary agents and local server environment."""
+"""Settings for the itinerary agents and local server environment. Reads only cathay-app/.env."""
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 APP_DIR = Path(__file__).resolve().parents[2]
+# One environment file for everything: cathay-app/.env (git-ignored, names in .env.example).
 load_dotenv(APP_DIR / ".env")
-load_dotenv(APP_DIR / ".env.local")
-load_dotenv(APP_DIR / "server" / ".env")
 
 MAX_SEARCHES = 8
 RESULTS_PER_SEARCH = 5
@@ -24,7 +23,8 @@ DAY_START = 8 * 60
 DAY_END = 21 * 60 + 30
 PLANNER_MAX_TOKENS = 8000
 DEFAULT_BUDGET_PER_PERSON = 15000  # JPY for activities + meals
-MAX_REVIEW_ATTEMPTS = 1
+MAX_REVIEW_ATTEMPTS = 1  # one redraft after a failed check; the best draft is kept either way
+LLM_TIMEOUT_SECONDS = 60  # one model call. Raise LLM_TIMEOUT_SECONDS in .env if drafts time out
 
 CATEGORIES = ("food", "culture", "nature", "shopping", "nightlife", "adventure", "relaxation")
 TIMES_OF_DAY = ("morning", "afternoon", "evening", "any")
@@ -52,3 +52,10 @@ def env(name: str, default: str = "") -> str:
 
 def default_model() -> str:
     return env("POE_MODEL", "GPT-4o-Mini")
+
+
+def llm_timeout() -> float:
+    try:
+        return max(5.0, float(env("LLM_TIMEOUT_SECONDS", str(LLM_TIMEOUT_SECONDS))))
+    except ValueError:
+        return float(LLM_TIMEOUT_SECONDS)
