@@ -152,7 +152,7 @@ export default function BoardPage() {
           {viewerAction === 'pick' && <Button size="lg" to={`/groups/${groupId}/flights/search`}>{copy.pickFlights}</Button>}
         </div>
       </main>
-      <BookSheet open={sheet === 'book'} onClose={() => setParam({ sheet: null })} booking={booking.data} busy={busy} onConfirm={confirmPay} />
+      <BookSheet open={sheet === 'book'} onClose={() => setParam({ sheet: null })} booking={booking.data} loadState={booking} busy={busy} onConfirm={confirmPay} />
     </>,
   );
 }

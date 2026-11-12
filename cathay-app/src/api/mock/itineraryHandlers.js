@@ -17,7 +17,8 @@ function context(params) {
   return { group, user, dates: datesBetween(win.start, win.end), votes: votesFor(group, names), names };
 }
 
-function bodyFor(ctx) {
+// What the itinerary screens read. `ctx` is { group, user, dates, votes }.
+export function bodyFor(ctx) {
   const { group, user, dates, votes } = ctx;
   if (!group.itinerary) throw new ApiError(404, 'itinerary_not_built', 'The itinerary has not been built yet.');
   return {
@@ -27,13 +28,55 @@ function bodyFor(ctx) {
   };
 }
 
+// Builds a new plan from everyone's saved swipes. Refuses until every member is ready.
+// `ctx.names` is { [userId]: name }.
+export function buildItinerary(ctx) {
+  const waiting = ctx.group.members.filter((m) => !ctx.group.preferences?.[m.userId]?.saved).map((m) => ctx.names[m.userId]);
+  if (waiting.length) throw new ApiError(422, 'not_ready', `Waiting for ${waiting.join(', ')} to finish swiping.`, { waiting });
+  return { ...buildPlan({ dates: ctx.dates, votes: ctx.votes, selections: ctx.group.selections }), builtAt: Date.now() };
+}
+
+// Applies "remove and reorder" to a plan in place: body is { days: [{ date, stopIds: [] }] }.
+export function applyItineraryEdit(plan, body) {
+  if (!plan) throw new ApiError(404, 'itinerary_not_built', 'The itinerary has not been built yet.');
+  const seen = new Set();
+  const next = plan.days.map((day) => {
+    const sent = (body?.days ?? []).find((d) => d.date === day.date);
+    if (!sent || !Array.isArray(sent.stopIds)) throw new ApiError(422, 'validation_failed', 'Send every day with its stops.');
+    sent.stopIds.forEach((id) => {
+      if (!plan.stops[id] || seen.has(id)) throw new ApiError(422, 'validation_failed', 'A stop in that plan is not valid.');
+      seen.add(id);
+    });
+    return { ...day, stopIds: sent.stopIds };
+  });
+  plan.days = next;
+  retimePlan(plan);
+}
+
+// One stop, with each member's vote for a voted place. `initials` is { [userId]: 'G' }.
+export function stopBody(ctx, stopId, initials) {
+  const full = bodyFor(ctx);
+  for (const day of full.days) {
+    const stop = day.items.find((item) => item.id === stopId && item.kind === 'place');
+    if (!stop) continue;
+    const place = stop.placeId ? PLACES.find((p) => p.id === stop.placeId) : null;
+    return {
+      group: full.group,
+      day: { index: day.index, label: day.label },
+      stop: { ...stop, budget: place?.budget ?? stop.costLabel, durationBest: place ? `${place.duration} · ${place.bestTime}` : (stop.minutes === 60 ? '1 hr' : `${Math.round(stop.minutes / 6) / 10} hrs`), tip: place?.tip ?? null },
+      votes: stop.placeId ? ctx.votes[stop.placeId].votes.map((v) => ({ ...v, initial: initials[v.userId], isViewer: v.userId === ctx.user.id })) : null,
+    };
+  }
+  throw new ApiError(404, 'stop_not_found', 'That stop is not in the itinerary.');
+}
+
+const DEMO_INITIALS = Object.fromEntries(Object.entries(USERS).map(([id, u]) => [id, u.initial]));
+
 export const itineraryRoutes = [
   // POST /groups/:id/itinerary/build – needs everyone ready; builds (or rebuilds) the plan
   ['POST', '/groups/:id/itinerary/build', ({ params }) => {
     const ctx = context(params);
-    const waiting = ctx.group.members.filter((m) => !ctx.group.preferences?.[m.userId]?.saved).map((m) => ctx.names[m.userId]);
-    if (waiting.length) throw new ApiError(422, 'not_ready', `Waiting for ${waiting.join(', ')} to finish swiping.`, { waiting });
-    ctx.group.itinerary = { ...buildPlan({ dates: ctx.dates, votes: ctx.votes, selections: ctx.group.selections }), builtAt: Date.now() };
+    ctx.group.itinerary = buildItinerary(ctx);
     saveDb();
     return { status: 200, body: bodyFor(ctx) };
   }],
@@ -44,20 +87,7 @@ export const itineraryRoutes = [
   // PUT /groups/:id/itinerary  { days: [{ date, stopIds: [] }] } – remove and reorder stops
   ['PUT', '/groups/:id/itinerary', ({ params, body }) => {
     const ctx = context(params);
-    const plan = ctx.group.itinerary;
-    if (!plan) throw new ApiError(404, 'itinerary_not_built', 'The itinerary has not been built yet.');
-    const seen = new Set();
-    const next = plan.days.map((day) => {
-      const sent = (body?.days ?? []).find((d) => d.date === day.date);
-      if (!sent || !Array.isArray(sent.stopIds)) throw new ApiError(422, 'validation_failed', 'Send every day with its stops.');
-      sent.stopIds.forEach((id) => {
-        if (!plan.stops[id] || seen.has(id)) throw new ApiError(422, 'validation_failed', 'A stop in that plan is not valid.');
-        seen.add(id);
-      });
-      return { ...day, stopIds: sent.stopIds };
-    });
-    plan.days = next;
-    retimePlan(plan);
+    applyItineraryEdit(ctx.group.itinerary, body);
     saveDb();
     return { status: 200, body: bodyFor(ctx) };
   }],
@@ -65,22 +95,6 @@ export const itineraryRoutes = [
   // GET /groups/:id/itinerary/stops/:stopId – one stop, with each member's vote for a voted place
   ['GET', '/groups/:id/itinerary/stops/:stopId', ({ params }) => {
     const ctx = context(params);
-    const full = bodyFor(ctx);
-    for (const day of full.days) {
-      const stop = day.items.find((item) => item.id === params.stopId && item.kind === 'place');
-      if (stop) {
-        const place = stop.placeId ? PLACES.find((p) => p.id === stop.placeId) : null;
-        return {
-          status: 200,
-          body: {
-            group: full.group,
-            day: { index: day.index, label: day.label },
-            stop: { ...stop, budget: place?.budget ?? stop.costLabel, durationBest: place ? `${place.duration} · ${place.bestTime}` : (stop.minutes === 60 ? '1 hr' : `${Math.round(stop.minutes / 6) / 10} hrs`), tip: place?.tip ?? null },
-            votes: stop.placeId ? ctx.votes[stop.placeId].votes.map((v) => ({ ...v, initial: USERS[v.userId].initial, isViewer: v.userId === ctx.user.id })) : null,
-          },
-        };
-      }
-    }
-    throw new ApiError(404, 'stop_not_found', 'That stop is not in the itinerary.');
+    return { status: 200, body: stopBody(ctx, params.stopId, DEMO_INITIALS) };
   }],
 ];

@@ -7,7 +7,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const TABLES = ['airports', 'profiles', 'groups', 'group_members', 'flight_selections', 'votes'];
+const TABLES = ['airports', 'profiles', 'groups', 'group_members', 'flight_selections', 'votes', 'bookings', 'itineraries'];
 // Database functions the app calls to create, join and read groups.
 const FUNCTIONS = {
   list_my_groups: {},
@@ -16,6 +16,11 @@ const FUNCTIONS = {
   create_group: { group_name: 'check', trip_start: '2026-11-21', trip_end: '2026-11-24' },
   join_group: { target_group: '00000000-0000-0000-0000-000000000000', code: 'AAAAAA' },
   mark_invite_copied: { target_group: '00000000-0000-0000-0000-000000000000' },
+  get_booking: { target_group: '00000000-0000-0000-0000-000000000000' },
+  start_booking: { target_group: '00000000-0000-0000-0000-000000000000' },
+  release_booking: { target_group: '00000000-0000-0000-0000-000000000000' },
+  pay_booking: { target_group: '00000000-0000-0000-0000-000000000000' },
+  save_preferences: { target_group: '00000000-0000-0000-0000-000000000000', place_ids: ['x'] },
 };
 const envPath = fileURLToPath(new URL('../.env.local', import.meta.url));
 

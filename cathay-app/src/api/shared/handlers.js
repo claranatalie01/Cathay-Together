@@ -2,7 +2,7 @@
 // Same shape as src/api/mock/handlers.js: [method, path pattern, handler], and each
 // handler returns { status, body } as described in docs/api-contract.md.
 //
-// Connected so far: GET /me, the flight endpoints and the group endpoints (list, create, open, join, decline,
+// Connected so far: GET /me, the group, flight, board, booking, preference and itinerary endpoints (list, create, open, join, decline,
 // invite preview, invite copied, date windows). Every other request answers
 // "not connected yet" (see http.js) until its endpoint is added here.
 //
@@ -32,6 +32,12 @@ import {
   tabLabel,
   withTiming,
 } from '../mock/flightData';
+// The same builders the mock uses, fed with real data, so both modes answer alike.
+import { boardFor, bookingFor } from '../mock/boardHandlers';
+import { applyItineraryEdit, bodyFor as itineraryBody, buildItinerary, stopBody } from '../mock/itineraryHandlers';
+import { datesBetween, votesFor } from '../mock/itineraryData';
+import { PLACE_IDS } from '../mock/placeData';
+import { responseFor as preferencesBody } from '../mock/preferenceHandlers';
 
 const UNREACHABLE = () => new ApiError(503, 'service_unavailable', 'The service is temporarily unavailable.');
 
@@ -58,6 +64,10 @@ const REFUSALS = {
   invite_not_found: [404, 'This invitation link is not valid.'],
   invalid_invite_code: [403, 'That invite code does not match this group.'],
   validation_failed: [422, 'Some fields need attention.'],
+  no_flights: [409, 'Choose your outbound and return flights first.'],
+  already_booked: [409, 'You have already booked this trip.'],
+  hold_expired: [410, 'Your payment time ran out. Start again to hold your fare.'],
+  choices_incomplete: [422, 'Choose Pass or Like for every suggestion first.'],
 };
 
 // Calls one database function and returns its JSON answer.
@@ -268,7 +278,7 @@ async function flightContext(params) {
     const chosen = makeSelection({ home: member.airport, flightId: row.offer_id, cabin: row.cabin, fare: row.fare });
     if (chosen) (selections[row.user_id] ??= {})[row.direction] = chosen;
   }
-  return { supabase, userId, id, home: me.airport, window: { start: raw.startDate, end: raw.endDate }, group: { members: raw.members, selections } };
+  return { supabase, userId, id, raw, home: me.airport, window: { start: raw.startDate, end: raw.endDate }, group: { members: raw.members, selections } };
 }
 
 const directionOfFlight = (flightId) => (flightId.startsWith('return') ? 'return' : 'outbound');
@@ -373,6 +383,10 @@ const flightRoutes = [
     if (!base) throw new ApiError(404, 'flight_not_found', 'That flight is no longer available.');
     const chosen = makeSelection({ home, flightId: base.id, cabin: body?.cabin, fare: body?.fare });
     if (!chosen) throw new ApiError(422, 'validation_failed', 'Choose a cabin and a fare.', { fare: 'Choose a fare.' });
+    // A paid trip is not changed from here. (Checked in the app only; the database does not stop it yet.)
+    if (group.members.find((m) => m.userId === userId)?.status === 'booked') {
+      throw new ApiError(409, 'already_booked', 'You have already booked this trip.');
+    }
     const direction = directionOfFlight(base.id);
     // One row per person and direction: choosing again replaces the earlier choice.
     const { error } = await supabase.from('flight_selections').upsert(
@@ -396,6 +410,158 @@ const flightRoutes = [
   }],
 ];
 
+// ---- Board, booking, preferences, itinerary ----------------------------------------------------
+// These screens were built against the mock's "group" object. tripContext() loads the real rows
+// and arranges them in that same shape, then the mock's own builders produce the answer.
+//   want.votes      also load everyone's swipes
+//   want.itinerary  also load the saved plan
+async function tripContext(params, want = {}) {
+  const base = await flightContext(params);
+  const { supabase, userId, id, raw } = base;
+  const shown = toGroup(raw, userId);
+  const people = Object.fromEntries(shown.members.map((m) => [m.userId, { id: m.userId, name: m.name, initial: m.initial, airport: m.airport }]));
+  const group = {
+    id,
+    name: shown.name,
+    destination: shown.destination,
+    datesLabel: shown.datesLabel,
+    creatorId: shown.creatorId,
+    members: raw.members.map((m) => ({ userId: m.userId, status: m.status })),
+    invitations: [],
+    selections: base.group.selections,
+    bookings: {},
+    preferences: Object.fromEntries(raw.members.map((m) => [m.userId, { choices: {}, saved: Boolean(m.preferencesSaved) }])),
+    itinerary: null,
+  };
+  if (want.votes) {
+    const votes = await rows(supabase.from('votes').select('user_id, place_id, choice').eq('group_id', id));
+    votes.forEach((v) => {
+      if (group.preferences[v.user_id] && PLACE_IDS.includes(v.place_id)) group.preferences[v.user_id].choices[v.place_id] = v.choice;
+    });
+  }
+  if (want.itinerary) {
+    const [saved] = await rows(supabase.from('itineraries').select('plan').eq('group_id', id));
+    group.itinerary = saved?.plan ?? null;
+  }
+  const names = Object.fromEntries(Object.values(people).map((p) => [p.id, p.name]));
+  return {
+    supabase,
+    userId,
+    id,
+    group,
+    people,
+    names,
+    user: { id: userId },
+    dates: datesBetween(raw.startDate, raw.endDate),
+    votes: want.votes ? votesFor(group, names) : null,
+  };
+}
+
+// The booking screens' answer, from the database's booking record. Times are milliseconds.
+function bookingBody(ctx, record) {
+  ctx.group.bookings[ctx.userId] = {
+    hold: record.holdExpiresAt ? { expiresAt: record.holdExpiresAt } : undefined,
+    ticket: record.paidAt
+      ? { reference: record.reference, ticketNumber: record.ticketNumber, paidAt: record.paidAt, total: record.totalMinor / 100 }
+      : undefined,
+  };
+  return bookingFor(ctx.group, ctx.userId, record.serverNow);
+}
+
+// A booking change, then the fresh state (the member's status may have just become "booked").
+const bookingAction = (name) => async ({ params }) => {
+  const id = groupId(params);
+  const { supabase } = await context();
+  const record = await call(supabase, name, { target_group: id });
+  return { status: 200, body: bookingBody(await tripContext(params), record) };
+};
+
+const saveItinerary = async (ctx) => {
+  const { error } = await ctx.supabase
+    .from('itineraries')
+    .upsert({ group_id: ctx.id, plan: ctx.group.itinerary, updated_by: ctx.userId, updated_at: new Date().toISOString() }, { onConflict: 'group_id' });
+  if (error) throw UNREACHABLE();
+};
+
+const tripRoutes = [
+  // GET /groups/:id/board – "View everyone's flights"
+  ['GET', '/groups/:id/board', async ({ params }) => {
+    const ctx = await tripContext(params);
+    return { status: 200, body: boardFor(ctx.group, ctx.userId, ctx.people) };
+  }],
+
+  // GET /groups/:id/booking – the signed-in member's trip, total and payment state
+  ['GET', '/groups/:id/booking', async ({ params }) => {
+    const ctx = await tripContext(params);
+    return { status: 200, body: bookingBody(ctx, await call(ctx.supabase, 'get_booking', { target_group: ctx.id })) };
+  }],
+
+  // The hold and the pretend payment are decided by the database (its clock, its total).
+  ['POST', '/groups/:id/booking/start', bookingAction('start_booking')],
+  ['POST', '/groups/:id/booking/release', bookingAction('release_booking')],
+  ['POST', '/groups/:id/booking/pay', bookingAction('pay_booking')],
+
+  // GET /groups/:id/preferences – the places, the caller's swipes and who is ready
+  ['GET', '/groups/:id/preferences', async ({ params }) => {
+    const ctx = await tripContext(params, { votes: true, itinerary: true });
+    return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people) };
+  }],
+
+  // PUT /groups/:id/preferences/choices  { placeId, choice } – one swipe, one row in `votes`
+  ['PUT', '/groups/:id/preferences/choices', async ({ params, body }) => {
+    if (!PLACE_IDS.includes(body?.placeId) || !['like', 'pass'].includes(body?.choice)) {
+      throw new ApiError(422, 'validation_failed', 'Choose Pass or Like for a suggestion.', { choice: 'Choose Pass or Like.' });
+    }
+    const ctx = await tripContext(params, { votes: true, itinerary: true });
+    const { error } = await ctx.supabase
+      .from('votes')
+      .upsert({ group_id: ctx.id, user_id: ctx.userId, place_id: body.placeId, choice: body.choice, updated_at: new Date().toISOString() }, { onConflict: 'group_id,user_id,place_id' });
+    if (error) throw UNREACHABLE();
+    // The database has just un-marked "saved" for this member (a trigger); mirror that here.
+    const mine = ctx.group.preferences[ctx.userId];
+    mine.choices[body.placeId] = body.choice;
+    mine.saved = false;
+    return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people) };
+  }],
+
+  // POST /groups/:id/preferences/save – the database checks every place has an answer
+  ['POST', '/groups/:id/preferences/save', async ({ params }) => {
+    const ctx = await tripContext(params, { votes: true, itinerary: true });
+    await call(ctx.supabase, 'save_preferences', { target_group: ctx.id, place_ids: PLACE_IDS });
+    ctx.group.preferences[ctx.userId].saved = true;
+    return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people) };
+  }],
+
+  // POST /groups/:id/itinerary/build – needs everyone ready; saved once so every phone shows the same plan
+  ['POST', '/groups/:id/itinerary/build', async ({ params }) => {
+    const ctx = await tripContext(params, { votes: true, itinerary: true });
+    ctx.group.itinerary = buildItinerary(ctx);
+    await saveItinerary(ctx);
+    return { status: 200, body: itineraryBody(ctx) };
+  }],
+
+  // GET /groups/:id/itinerary
+  ['GET', '/groups/:id/itinerary', async ({ params }) => {
+    const ctx = await tripContext(params, { votes: true, itinerary: true });
+    return { status: 200, body: itineraryBody(ctx) };
+  }],
+
+  // PUT /groups/:id/itinerary  { days: [{ date, stopIds }] } – remove and reorder stops
+  ['PUT', '/groups/:id/itinerary', async ({ params, body }) => {
+    const ctx = await tripContext(params, { votes: true, itinerary: true });
+    applyItineraryEdit(ctx.group.itinerary, body);
+    await saveItinerary(ctx);
+    return { status: 200, body: itineraryBody(ctx) };
+  }],
+
+  // GET /groups/:id/itinerary/stops/:stopId
+  ['GET', '/groups/:id/itinerary/stops/:stopId', async ({ params }) => {
+    const ctx = await tripContext(params, { votes: true, itinerary: true });
+    const initials = Object.fromEntries(Object.values(ctx.people).map((p) => [p.id, p.initial]));
+    return { status: 200, body: stopBody(ctx, params.stopId, initials) };
+  }],
+];
+
 export const routes = [
   // GET /me – the signed-in person, read from their row in `profiles`.
   ['GET', '/me', async () => {
@@ -405,4 +571,5 @@ export const routes = [
   ...profileRoutes,
   ...groupRoutes,
   ...flightRoutes,
+  ...tripRoutes,
 ];

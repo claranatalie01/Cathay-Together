@@ -32,7 +32,7 @@ function hash(text) {
 }
 
 // Points on one timeline column: members sharing a time share a point.
-function column({ group, direction, viewerId }) {
+function column({ group, direction, viewerId, people }) {
   const key = direction === 'outbound' ? 'arriveTime' : 'departTime';
   const byTime = new Map();
   let date = null;
@@ -45,7 +45,7 @@ function column({ group, direction, viewerId }) {
     // so a landing after midnight sits after one before it.
     const instant = meetingInstant(chosen, direction);
     const point = byTime.get(instant) ?? { time, minutes: Math.round(instant / 60000) + UTC_OFFSET_HOURS[DESTINATION_AIRPORT.code] * 60, names: [], includesViewer: false };
-    point.names.push(member.userId === viewerId ? 'You' : USERS[member.userId].name);
+    point.names.push(member.userId === viewerId ? 'You' : people[member.userId].name);
     point.includesViewer = point.includesViewer || member.userId === viewerId;
     byTime.set(instant, point);
   });
@@ -67,10 +67,12 @@ function legOf(selection, direction) {
 
 const STATUS_ORDER = { booked: 0, picked: 1, browsing: 2 };
 
-function boardFor(group, viewerId) {
+// `people` is { [userId]: { id, name, initial, airport } }. The mock passes its demo users; the
+// shared backend passes the group's real members, so both build the same board.
+export function boardFor(group, viewerId, people = USERS) {
   const members = group.members
     .map((member, index) => {
-      const user = USERS[member.userId];
+      const user = people[member.userId];
       const chosen = group.selections?.[member.userId] ?? {};
       const hasFlights = Boolean(chosen.outbound && chosen.return);
       return {
@@ -92,11 +94,11 @@ function boardFor(group, viewerId) {
   (group.invitations ?? [])
     .filter((invite) => invite.status === 'pending')
     .forEach((invite) => {
-      const user = USERS[invite.userId];
+      const user = people[invite.userId];
       members.push({ userId: user.id, name: user.name, initial: user.initial, airport: user.airport, status: 'invited', isViewer: false, hasFlights: false, arrive: null, leave: null });
     });
-  const arrivals = column({ group, direction: 'outbound', viewerId });
-  const departures = column({ group, direction: 'return', viewerId });
+  const arrivals = column({ group, direction: 'outbound', viewerId, people });
+  const departures = column({ group, direction: 'return', viewerId, people });
   const viewer = members.find((m) => m.isViewer);
   return {
     group: { id: group.id, name: group.name, destination: group.destination, datesLabel: group.datesLabel },
@@ -114,10 +116,10 @@ function boardFor(group, viewerId) {
 }
 
 // The signed-in member's trip: chosen flights, what they cost, and where payment stands.
-function bookingFor(group, userId) {
+// `now` is the clock the hold is measured against (the shared backend passes the database's).
+export function bookingFor(group, userId, now = Date.now()) {
   const selection = group.selections?.[userId] ?? {};
   const record = group.bookings?.[userId] ?? {};
-  const now = Date.now();
   const hold = record.hold && record.hold.expiresAt > now ? record.hold : null;
   const base = sum(selection);
   const member = memberOf(group, userId);

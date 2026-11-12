@@ -18,15 +18,17 @@ function memberContext(params) {
   return { group, user };
 }
 
-function responseFor(group, user) {
+// `people` is { [userId]: { name, initial, airport } }: demo users in the mock, real members in
+// the shared backend.
+export function responseFor(group, user, people = USERS) {
   const mine = group.preferences[user.id] ?? { choices: {}, saved: false };
   const readiness = [...group.members]
     .sort((a, b) => (a.userId === user.id ? -1 : b.userId === user.id ? 1 : 0) || (a.userId === group.creatorId ? -1 : b.userId === group.creatorId ? 1 : 0))
     .map((member) => ({
       userId: member.userId,
-      name: USERS[member.userId].name,
-      initial: USERS[member.userId].initial,
-      airport: USERS[member.userId].airport,
+      name: people[member.userId].name,
+      initial: people[member.userId].initial,
+      airport: people[member.userId].airport,
       isViewer: member.userId === user.id,
       isCreator: member.userId === group.creatorId,
       ready: Boolean(group.preferences[member.userId]?.saved),

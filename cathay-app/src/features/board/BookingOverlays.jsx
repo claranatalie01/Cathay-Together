@@ -1,4 +1,6 @@
 import Button from '../../components/ui/Button';
+import ErrorState from '../../components/ui/ErrorState';
+import LoadingState from '../../components/ui/LoadingState';
 import Price from '../../components/ui/Price';
 import Sheet from '../../components/ui/Sheet';
 import { getCurrentUser } from '../../api';
@@ -45,11 +47,19 @@ export function TripLeg({ selection, direction, compact = false }) {
 }
 
 // "Book now": the viewer's own two flights and what they cost. Confirm starts the payment hold.
-export function BookSheet({ open, onClose, booking, busy, onConfirm }) {
+// `loadState` is the booking's useAsync result: a failed load says so (with Retry), instead of
+// pretending there is nothing to book.
+export function BookSheet({ open, onClose, booking, loadState, busy, onConfirm }) {
   const copy = COPY.booking;
+  const failed = loadState?.status === 'error' && !booking;
+  const loading = loadState?.status === 'loading' && !booking;
   return (
     <Sheet open={open} onClose={onClose} title={copy.sheetTitle} titleId="book-title">
-      {booking?.outbound && booking?.return ? (
+      {failed ? (
+        <ErrorState error={loadState.error} onRetry={loadState.reload} />
+      ) : loading ? (
+        <LoadingState variant="detail" />
+      ) : booking?.outbound && booking?.return ? (
         <>
           <WhoLine cabin={booking.outbound.cabinLabel} />
           <div className="booking__legs">
