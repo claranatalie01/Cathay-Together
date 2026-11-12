@@ -342,6 +342,8 @@ The local and legacy decks keep their existing IDs, including `food`, `scenery`,
 
 Researched cards use a Tavily image when its description matches the place. `photoSource` and `photoSourceUrl` record the source when available. Bundled category photos cover unmatched or broken links. Older researched decks can refresh their photo fields in place, preserving their IDs and saved choices.
 
+Researched cards can also carry `coordinates` as `{ lat, lon }` and a `coordinateSource` link. The server looks up documented venue names and aliases in Wikidata and leaves the point empty when the match is missing or ambiguous.
+
 ### `PUT /groups/:id/preferences/choices`
 
 Request: `{ "placeId": "food", "choice": "like" }` (`like` or `pass`). Saves one choice and responds with the same body as the `GET`. Changing a choice after saving sets `saved` back to `false` until the member saves again. Errors: `422 validation_failed`.
@@ -386,6 +388,16 @@ The same-origin Python endpoint accepts `{ "groupId": "<uuid>", "action": "disco
 ```
 
 `kind` is `flight-arrival`, `flight-departure`, `flight-missing` (the caller has not chosen that flight) or `place`. Costs are rough yen estimates (midpoints) and travel times are approximate. `cost` totals per day include a transport allowance (¥1,000 on the first and last day, ¥500 on others). Errors: `404 itinerary_not_built`.
+
+New shared plans store `transfers` with a symmetric `between` matrix keyed by place ID and a `fallbackMinutes` value of 30. The server gives these estimates to the AI, checks every transfer and sends any shortfall back for one revision. The itinerary reads the same estimates into `travelBefore` and the daily travel total.
+
+| Shared transfer | Minimum gap |
+| --- | --- |
+| Both coordinates known, estimated street distance up to 1.2 km | Haversine distance × 1.3, at 5 km/h |
+| Both known, estimated street distance over 1.2 km | Haversine distance × 1.3, at 25 km/h plus 10 min |
+| One or both coordinates missing, including meal suggestions | 30 min |
+
+Round up to the next five minutes, with a five-minute minimum. Check transfers between physical stops on the same day, after any intervening free-time block. Airport buffers are 90 minutes after the last arrival and three hours before the earliest departure. Shared plans have zero transport allowance. An unapproved revision returns `plan_constraints` and the app offers **Try again**.
 
 ### `PUT /groups/:id/itinerary`
 

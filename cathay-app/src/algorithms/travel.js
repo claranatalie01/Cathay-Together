@@ -42,3 +42,10 @@ export function travelTable(geo) {
     ids.map((from) => [from, Object.fromEntries(ids.filter((to) => to !== from).map((to) => [to, travelMinutes(geo[from], geo[to])]))]),
   );
 }
+
+export const isPhysicalStop = (stop) => stop.kind === 'place' && stop.suggestedId !== 'free';
+
+// Read the exact estimate saved by the shared planner, including its unknown-place fallback.
+export function savedTransferMinutes(transfers, from, to) {
+  return transfers.between[from.placeId]?.[to.placeId] ?? transfers.fallbackMinutes;
+}

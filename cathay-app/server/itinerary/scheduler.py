@@ -67,6 +67,7 @@ def scheduler_agent(
     liked: list[dict],
     maybe: list[dict],
     sources: list[dict],
+    transfers: dict,
     feedback: str = "",
 ) -> dict:
     dates = trip_dates(context)
@@ -114,6 +115,10 @@ LIKED ACTIVITIES (consider in order of group consensus and include only those th
 MAYBE ACTIVITIES (only if time permits):
 {json.dumps([_compact(c) for c in maybe], ensure_ascii=False)}
 
+MINIMUM TRANSFER MINUTES BETWEEN ACTIVITY IDS (matrix is symmetric):
+{json.dumps(transfers["between"], separators=(",", ":"))}
+Use {transfers["fallbackMinutes"]} minutes when a pair is absent, including transfers involving meal suggestions.
+
 RETRIEVED EVIDENCE (for opening hours and details):
 {json.dumps(evidence, ensure_ascii=False)}
 Use supplied card hours and costs as estimates when a previously started trip has no web sources.
@@ -125,7 +130,8 @@ RULES:
 4. Every full day has a lunch (12:00-13:30) and a dinner (18:30-20:00) as type "meal". A full day is a middle day without flight buffers cutting into it. Breakfast is optional and is skipped on the arrival day.
 5. Respect opening_hours, closed_days and best_time_of_day. Never schedule a closed day.
 6. Group geographically close activities on the same day.
-7. Leave about 30 minutes between stops for travel.
+7. Leave at least the required transfer time between each day's physical stops. Free time does
+   not change the last place. If a free block intervenes, leave the transfer gap after that block.
 8. Include one "free" slot of 60-120 minutes per full day.
 9. Activities with more votes get priority. Use each card at most once, and only card ids listed above.
 10. Keep the running cost per person under ¥{budget}.

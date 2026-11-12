@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from .itinerary import config, pipeline
+from .itinerary.geocoding import enrich_coordinates
 from .itinerary.llm import AgentError
 from .itinerary.schemas import TripContext
 
@@ -91,7 +92,7 @@ class TripStore:
                             params={"group_id": f"eq.{self.group_id}", "select": fields})
         return rows[0] if rows else None
 
-    def save_deck_photos(self, token, places):
+    def save_deck_places(self, token, places):
         rows = request_json(self.client, "PATCH", "/rest/v1/group_place_decks",
                             {**self.service, "Prefer": "return=representation"},
                             params={"group_id": f"eq.{self.group_id}", "job_token": f"eq.{token}",
@@ -139,7 +140,7 @@ def cards_for_plan(deck, inputs):
 def finished(store, action, deck):
     if action == "discover":
         return deck and (deck["legacy"] or (
-            deck["places"] and all("photoSourceUrl" in place for place in deck["places"])
+            deck["places"] and all("photoSourceUrl" in place and "coordinates" in place for place in deck["places"])
         ))
     return store.row("itineraries", "group_id")
 
@@ -161,14 +162,24 @@ def run_job(store, action):
             raise PlannerError(404, "group_not_found", "This trip is unavailable.")
         if action == "discover":
             if deck and deck["places"]:
-                places = pipeline.refresh_place_photos(deck["places"], inputs["destination"])
-                store.save_deck_photos(token, places)
+                places = deck["places"]
+                if any("photoSourceUrl" not in place for place in places):
+                    places = pipeline.refresh_place_photos(places, inputs["destination"])
+                enrich_coordinates(places, inputs["destination"])
+                store.save_deck_places(token, places)
                 return {"ready": True}
             result = pipeline.run_discover(context_for(inputs))
         else:
             if not (deck and (deck["legacy"] or deck["places"])):
                 raise PlannerError(422, "not_ready", "Prepare the suggestions and save everyone's choices first.")
-            result = pipeline.run_plan(context_for(inputs), cards_for_plan(deck, inputs), deck["sources"])["plan"]
+            cards = cards_for_plan(deck, inputs)
+            if not deck["legacy"] and any("coordinates" not in card for card in cards):
+                places = deck["places"]
+                enrich_coordinates(places, inputs["destination"])
+                if all("coordinates" in place for place in places):
+                    store.save_deck_places(token, places)
+                    cards = cards_for_plan(deck, inputs)
+            result = pipeline.run_plan(context_for(inputs), cards, deck["sources"])["plan"]
             result["builtAt"] = int(datetime.now().timestamp() * 1000)
         if not store.rpc("finish_trip_planner_job", viewer=store.viewer, token=token, operation=action, result=result,
                          expected_inputs=inputs if action == "plan" else None):

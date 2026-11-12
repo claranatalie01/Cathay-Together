@@ -4,7 +4,7 @@
 // The scheduling rules themselves are in src/algorithms/itinerary.js.
 import { instantOf, legInstants } from '../../algorithms/arrivalWindow.js';
 import { RULES, checkPlan, clockOf, minutesOf, retimeDay, schedule } from '../../algorithms/itinerary.js';
-import { travelTable } from '../../algorithms/travel.js';
+import { isPhysicalStop, savedTransferMinutes, travelTable } from '../../algorithms/travel.js';
 import { PLACE_GEO } from '../../data/placeGeo.js';
 import { PLACES } from './placeData.js';
 
@@ -209,10 +209,16 @@ export function assemble({ plan, selection, votes, dates, places = PLACES }) {
     // A timed stop shows its time after the part of the day: "Morning · 09:00–10:30".
     day.stopIds.forEach((id) => plan.stops[id] && items.push(plan.stops[id].startTime ? { ...plan.stops[id], slot: `${plan.stops[id].slot.split(' · ')[0]} · ${plan.stops[id].startTime}–${plan.stops[id].endTime}` } : plan.stops[id]));
     if (index === plan.days.length - 1 && plan.days.length > 1) items.push(selection?.return ? flightStop(selection.return, false) : { id: 'flight-departure', kind: 'flight-missing', slot: 'Afternoon', title: 'Departure' });
+    let previousPlace;
     const withTravel = items.map((item, i) => {
       const previous = items[i - 1];
       let travelBefore = null;
-      if (previous && previous.kind !== 'flight-missing' && item.kind !== 'flight-missing') {
+      if (plan.transfers) {
+        if (isPhysicalStop(item)) {
+          if (previousPlace) travelBefore = { minutes: savedTransferMinutes(plan.transfers, previousPlace, item), text: 'estimated transfer' };
+          previousPlace = item;
+        }
+      } else if (previous && previous.kind !== 'flight-missing' && item.kind !== 'flight-missing') {
         if (plan.builtBy === 'ai' && previous.kind === 'place' && item.kind === 'place') {
           const minutes = Math.min(30, item.start - previous.end);
           if (minutes > 0 && previous.suggestedId !== 'free' && item.suggestedId !== 'free') travelBefore = { minutes, text: 'Estimated transfer' };
@@ -246,6 +252,7 @@ export function assemble({ plan, selection, votes, dates, places = PLACES }) {
   return {
     builtAt: plan.builtAt,
     builtBy: plan.builtBy,
+    usesOpenStreetMap: plan.transfers?.usesOpenStreetMap,
     days,
     maybe,
     summary: { places: placeCount, voted: days.reduce((n, d) => n + d.items.filter((i) => i.source === 'voted').length, 0), days: days.length, costPerPerson: totalCost, avgTravelMinutes: days.length ? Math.round(totalTravel / days.length) : 0, firstDate: dates[0], lastDate: dates[dates.length - 1] },

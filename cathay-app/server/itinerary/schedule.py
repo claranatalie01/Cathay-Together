@@ -9,6 +9,7 @@ from datetime import date
 from . import config
 from .curator import clean_int, clean_text
 from .llm import AgentError
+from .travel import coordinate_pair, transfer_minutes
 
 TIME_RE = re.compile(r"^([01]?\d|2[0-3]):([0-5]\d)$")
 MEALS = ("breakfast", "lunch", "dinner")
@@ -47,6 +48,7 @@ def sanitize_plan_cards(raw_cards) -> list[dict]:
         category = clean_text(raw.get("category_key") or raw.get("category"), 20).lower()
         closed, cited, tags = raw.get("closed_days"), raw.get("source_ids"), raw.get("tags")
         total = clean_int(raw.get("total_members"), 1, 1, 100000)
+        coordinates = raw.get("coordinates")
         cards.append(
             {
                 "id": card_id,
@@ -68,6 +70,8 @@ def sanitize_plan_cards(raw_cards) -> list[dict]:
                 "thumb": clean_url(raw.get("thumb")),
                 "photoSource": clean_text(raw.get("photoSource") or raw.get("photo_source"), 140) or None,
                 "photoSourceUrl": clean_url(raw.get("photoSourceUrl")) or None,
+                "coordinates": coordinates if coordinate_pair(coordinates) is not None else None,
+                "coordinateSource": clean_url(raw.get("coordinateSource")) or None,
                 "like_count": clean_int(raw.get("like_count"), 0, 0, total),
                 "total_members": total,
             }
@@ -143,13 +147,14 @@ def stop_name(stop: dict, cards_by_id: dict) -> str:
     return stop.get("name") or "Free time"
 
 
-def render_schedule(schedule: dict, cards: list[dict]) -> str:
+def render_schedule(schedule: dict, cards: list[dict], transfers: dict) -> str:
     """Plain-text view of the plan, for the reviewer and for feedback."""
     cards_by_id = {c["id"]: c for c in cards}
     lines = []
     for number, day in enumerate(schedule["days"], start=1):
         weekday = date.fromisoformat(day["date"]).strftime("%A")
         lines.append(f"Day {number} - {day['date']} ({weekday}) - {day['title'] or 'No theme'}")
+        previous_place = None
         for stop in day["stops"]:
             end = stop["start"] + stop["minutes"]
             cited = ""
@@ -159,8 +164,13 @@ def render_schedule(schedule: dict, cards: list[dict]) -> str:
                 cited = " " + " ".join(f"[{s}]" for s in stop["source_ids"])
             cost = stop_cost(stop, cards_by_id)
             cost_label = "cost unverified" if stop["type"] == "meal" and not cost else f"¥{cost:,}"
+            transfer = ""
+            if stop["type"] != "free":
+                if previous_place is not None:
+                    transfer = f" · {transfer_minutes(transfers, previous_place, stop)} min estimated transfer before this stop"
+                previous_place = stop
             lines.append(
                 f"  {clock(stop['start'])}-{clock(end)} {stop['type']}: {stop_name(stop, cards_by_id)}"
-                f" ({cost_label}){cited}"
+                f" ({cost_label}){cited}{transfer}"
             )
     return "\n".join(lines)

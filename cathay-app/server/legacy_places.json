@@ -12,7 +12,12 @@
     "closed_days": [],
     "photo": "/assets/ab624.png",
     "thumb": "/assets/2c161.png",
-    "source_ids": []
+    "source_ids": [],
+    "coordinates": {
+      "lat": 35.66536,
+      "lon": 139.77053
+    },
+    "coordinateSource": "https://www.openstreetmap.org/way/606978548"
   },
   {
     "id": "scenery",
@@ -29,7 +34,12 @@
     ],
     "photo": "/assets/e1c39.png",
     "thumb": "/assets/e1c39.png",
-    "source_ids": []
+    "source_ids": [],
+    "coordinates": {
+      "lat": 35.6851,
+      "lon": 139.70989
+    },
+    "coordinateSource": "https://www.openstreetmap.org/way/15772074"
   },
   {
     "id": "culture",
@@ -44,7 +54,12 @@
     "closed_days": [],
     "photo": "/assets/culture-photo.jpg",
     "thumb": "/assets/71254.png",
-    "source_ids": []
+    "source_ids": [],
+    "coordinates": {
+      "lat": 35.71345,
+      "lon": 139.79595
+    },
+    "coordinateSource": "https://www.openstreetmap.org/way/173154847"
   },
   {
     "id": "shopping",
@@ -59,7 +74,12 @@
     "closed_days": [],
     "photo": "/assets/shopping-photo.jpg",
     "thumb": "/assets/shopping-photo.jpg",
-    "source_ids": []
+    "source_ids": [],
+    "coordinates": {
+      "lat": 35.66518,
+      "lon": 139.71256
+    },
+    "coordinateSource": "https://www.openstreetmap.org/way/375809333"
   },
   {
     "id": "ameyoko",
@@ -74,7 +94,12 @@
     "closed_days": [],
     "photo": "/assets/photos/ueno-street-dusk-cover.jpg",
     "thumb": "/assets/photos/ueno-street-dusk-thumb.jpg",
-    "source_ids": []
+    "source_ids": [],
+    "coordinates": {
+      "lat": 35.71002,
+      "lon": 139.77454
+    },
+    "coordinateSource": "https://www.openstreetmap.org/node/4496960001"
   },
   {
     "id": "yokocho",
@@ -89,7 +114,12 @@
     "closed_days": [],
     "photo": "/assets/photos/shinjuku-neon-night-cover.jpg",
     "thumb": "/assets/photos/shinjuku-neon-night-thumb.jpg",
-    "source_ids": []
+    "source_ids": [],
+    "coordinates": {
+      "lat": 35.69307,
+      "lon": 139.6995
+    },
+    "coordinateSource": "https://www.openstreetmap.org/node/4154282189"
   },
   {
     "id": "shibuya",
@@ -104,7 +134,12 @@
     "closed_days": [],
     "photo": "/assets/photos/shibuya-neon-signs-cover.jpg",
     "thumb": "/assets/photos/shibuya-neon-signs-thumb.jpg",
-    "source_ids": []
+    "source_ids": [],
+    "coordinates": {
+      "lat": 35.65948,
+      "lon": 139.70057
+    },
+    "coordinateSource": "https://www.openstreetmap.org/node/291758776"
   },
   {
     "id": "tower",
@@ -119,7 +154,12 @@
     "closed_days": [],
     "photo": "/assets/photos/tokyo-tower-blue-hour-cover.jpg",
     "thumb": "/assets/photos/tokyo-tower-blue-hour-thumb.jpg",
-    "source_ids": []
+    "source_ids": [],
+    "coordinates": {
+      "lat": 35.65856,
+      "lon": 139.74544
+    },
+    "coordinateSource": "https://www.openstreetmap.org/relation/4247312"
   },
   {
     "id": "roppongi",
@@ -134,7 +174,12 @@
     "closed_days": [],
     "photo": "/assets/photos/tokyo-skyline-night-cover.jpg",
     "thumb": "/assets/photos/tokyo-skyline-night-thumb.jpg",
-    "source_ids": []
+    "source_ids": [],
+    "coordinates": {
+      "lat": 35.66045,
+      "lon": 139.72928
+    },
+    "coordinateSource": "https://www.openstreetmap.org/way/153924771"
   },
   {
     "id": "zojoji",
@@ -149,7 +194,12 @@
     "closed_days": [],
     "photo": "/assets/photos/tokyo-tower-golden-cover.jpg",
     "thumb": "/assets/photos/tokyo-tower-golden-thumb.jpg",
-    "source_ids": []
+    "source_ids": [],
+    "coordinates": {
+      "lat": 35.65719,
+      "lon": 139.74821
+    },
+    "coordinateSource": "https://www.openstreetmap.org/way/744348814"
   },
   {
     "id": "azabudai",
@@ -164,6 +214,11 @@
     "closed_days": [],
     "photo": "/assets/photos/tokyo-tower-street-train-cover.jpg",
     "thumb": "/assets/photos/tokyo-tower-street-train-thumb.jpg",
-    "source_ids": []
+    "source_ids": [],
+    "coordinates": {
+      "lat": 35.66143,
+      "lon": 139.74195
+    },
+    "coordinateSource": "https://www.openstreetmap.org/way/741596532"
   }
 ]

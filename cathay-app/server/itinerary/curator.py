@@ -76,6 +76,7 @@ def normalize_cards(raw_cards, known_source_ids: set[str]) -> list[dict]:
             {
                 "id": f"card_{uuid.uuid4().hex[:8]}",
                 "name": name,
+                "venue_name": clean_text(raw.get("venue_name", name), 80),
                 "category": category,
                 "headline": clean_text(raw.get("headline"), 60),
                 "description": clean_text(raw.get("description"), 300),
@@ -126,6 +127,7 @@ CARD_FORMAT = """{
   "swipe_cards": [
     {
       "name": "Activity Name",
+      "venue_name": "Exact name of a single venue as stated in the evidence, or empty if none",
       "category": "food|culture|nature|shopping|nightlife|adventure|relaxation",
       "headline": "Short punchy tagline (under 60 chars)",
       "description": "1-2 sentence description from the evidence",
@@ -176,6 +178,7 @@ Return ONLY valid JSON in this exact format:
 
 RULES:
 - Only include activities with evidence from the search results
+- Give the exact venue name for coordinate lookup when the activity has one specific venue.
 - Balance categories: at least 2 food, 2 culture, and spread across others
 - Remove duplicates (same place, different names)
 - Filter out anything likely closed during {dates['start']} to {dates['end']}

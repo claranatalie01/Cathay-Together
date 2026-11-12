@@ -25,7 +25,8 @@ def test_normalize_cards_drops_uncited_duplicates_and_bad_values():
     assert cards[0]["id"].startswith("card_")
 
 
-def test_discover_returns_places_with_sources():
+def test_discover_returns_places_with_sources(monkeypatch):
+    monkeypatch.setattr(pipeline, "enrich_coordinates", lambda places, destination: None)
     cards = [raw_card("Tsukiji"), raw_card("Senso-ji", category="culture"), raw_card("Gyoen", category="nature")]
     llm = FakeLLM([{"search_queries": ["a", "b"]}, {"swipe_cards": cards}])
     out = pipeline.run_discover(CONTEXT, "GPT-4o-Mini", llm=llm, search=FakeSearch())
@@ -51,13 +52,19 @@ class SearchWithPhotos(FakeSearch):
         return super().search(query, **kwargs)
 
 
-def test_discover_and_refresh_use_matched_web_photos():
+def test_discover_and_refresh_use_matched_web_photos(monkeypatch):
+    def add_coordinates(places, destination):
+        assert destination == "Tokyo, Japan"
+        places[0]["coordinates"] = {"lat": 35.66536, "lon": 139.77053}
+
+    monkeypatch.setattr(pipeline, "enrich_coordinates", add_coordinates)
     cards = [raw_card("Tsukiji"), raw_card("Senso-ji", category="culture"), raw_card("Gyoen", category="nature")]
     llm = FakeLLM([{"search_queries": ["a", "b", "c"]}, {"swipe_cards": cards}])
     search = SearchWithPhotos()
     places = pipeline.run_discover(CONTEXT, "m", llm=llm, search=search)["places"]
     assert places[0]["photo"] == places[0]["thumb"] == "https://img.example/tsukiji.jpg"
     assert places[0]["photoSource"] == "Tavily image search"
+    assert places[0]["coordinates"] == {"lat": 35.66536, "lon": 139.77053}
     assert places[1]["photo"].startswith("/assets/")
     saved = [{key: value for key, value in place.items() if key != "photoSourceUrl"} for place in places]
     saved[0]["photo"] = "/assets/ab624.png"
@@ -123,6 +130,36 @@ def test_plan_reports_an_actual_rule_when_both_drafts_fail():
     bad["days"][1]["stops"][0]["start"] = "07:00"
     with pytest.raises(PlanConstraints, match="outside 08:00–21:30"):
         pipeline.run_plan(CONTEXT, voted_cards(), SOURCES, "m", llm=FakeLLM([bad, bad]))
+
+
+def test_plan_revises_a_short_transfer_and_saves_the_checked_estimate():
+    cards = voted_cards()
+    cards[0]["coordinates"] = {"lat": 0, "lon": 0}
+    cards[1]["coordinates"] = {"lat": 0, "lon": 0.07}
+    bad = good_plan()
+    activity = {"type": "activity", "card_id": "card_bbbbbbbb", "start": "10:50", "minutes": 60}
+    bad["days"][1]["stops"][2] = activity
+    bad["days"][1]["stops"][1]["start"] = "12:45"
+    revised = good_plan()
+    revised["days"][1]["stops"][2] = {**activity, "start": "11:05"}
+    revised["days"][1]["stops"][1]["start"] = "12:45"
+
+    class CheckTransferPrompt(FakeLLM):
+        def create(self, messages, **kwargs):
+            prompt = messages[-1]["content"]
+            if "PREVIOUS DRAFT FEEDBACK" in prompt:
+                assert "needs 35 minutes of travel, but only 20 are available" in prompt
+            if "DRAFT ITINERARY" in prompt:
+                assert "35 min estimated transfer" in prompt
+            return super().create(messages=messages, **kwargs)
+
+    llm = CheckTransferPrompt([bad, revised, REVIEW_OK])
+    plan = pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=llm)["plan"]
+    assert plan["review"]["attempts"] == 2
+    assert plan["transfers"]["between"]["card_aaaaaaaa"]["card_bbbbbbbb"] == 35
+    assert plan["stops"]["place-card_bbbbbbbb"]["startTime"] == "11:05"
+    with pytest.raises(PlanConstraints, match="needs 35 minutes of travel, but only 20 are available"):
+        pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([bad, bad]))
 
 
 def test_plan_with_nothing_liked_is_rejected():

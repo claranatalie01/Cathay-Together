@@ -15,6 +15,7 @@ import StatTile from '../../components/ui/StatTile';
 import Tabs from '../../components/ui/Tabs';
 import { useToast } from '../../components/ui/Toast';
 import { COPY } from '../../data/copy';
+import { OSM_CREDIT } from '../../data/placeGeo';
 import { useAsync } from '../../hooks/useAsync';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import './ItineraryPage.css';
@@ -144,7 +145,10 @@ export default function ItineraryPage() {
                 <img src="/assets/ui-yen-sand.svg" alt="" />
                 {copy.dayTotal(day.totals.cost, hours(day.totals.minutes))}
               </p>
-              <p className="itinerary__total-note">{data.builtBy === 'ai' ? copy.researchedTravel(day.totals.travelMinutes) : copy.allowance(day.totals.allowance, day.totals.travelMinutes)}</p>
+              <p className="itinerary__total-note">
+                {data.builtBy === 'ai' ? copy.researchedTravel(day.totals.travelMinutes) : copy.allowance(day.totals.allowance, day.totals.travelMinutes)}
+                {data.usesOpenStreetMap && <> · <a href="https://www.openstreetmap.org/copyright">{OSM_CREDIT}</a></>}
+              </p>
             </div>
           )}
         </section>

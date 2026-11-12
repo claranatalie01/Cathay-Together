@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from . import config
 from .schedule import clock, parse_clock, stop_cost, stop_name
+from .travel import transfer_estimates, transfer_minutes
 
 HOURS_RE = re.compile(r"(\d{1,2}):(\d{2})\s*(?:-|–|—|to)\s*(\d{1,2}):(\d{2})")
 
@@ -50,18 +51,13 @@ def day_window(day: str, arrival: datetime | None, departure: datetime | None) -
     return start, end
 
 
-def _stop_issues(stop, day, number, cards_by_id, weekday, arrival, departure, previous_end, previous_kind):
+def _stop_issues(stop, day, number, cards_by_id, weekday, arrival, departure):
     issues = []
     name = stop_name(stop, cards_by_id)
     end = stop["start"] + stop["minutes"]
     midnight = datetime.fromisoformat(day["date"])
     if stop["start"] < config.DAY_START or end > config.DAY_END:
         issues.append(_issue("error", number, f"{name} falls outside 08:00–21:30.", "Move it inside the day's planning window."))
-    if previous_end is not None:
-        if stop["start"] < previous_end:
-            issues.append(_issue("error", number, f"{name} overlaps the stop before it.", "Move it after the previous stop."))
-        elif stop["start"] - previous_end < 15 and "free" not in (stop["type"], previous_kind):
-            issues.append(_issue("warning", number, f"Less than 15 minutes of travel before {name}.", "Leave about 30 minutes."))
     if arrival and midnight + timedelta(minutes=stop["start"]) < arrival + timedelta(minutes=config.ARRIVAL_BUFFER_MIN):
         issues.append(_issue("error", number, f"{name} starts before everyone has landed and cleared the airport.", "Start at least 90 minutes after the last arrival."))
     if departure and midnight + timedelta(minutes=end) > departure - timedelta(minutes=config.DEPARTURE_BUFFER_MIN):
@@ -78,7 +74,7 @@ def _stop_issues(stop, day, number, cards_by_id, weekday, arrival, departure, pr
     return issues
 
 
-def _day_issues(day, number, last, cards_by_id, context, arrival, departure):
+def _day_issues(day, number, last, cards_by_id, context, arrival, departure, transfers):
     stops, issues = day["stops"], []
     midnight = datetime.fromisoformat(day["date"])
     weekday = midnight.strftime("%A")
@@ -96,19 +92,35 @@ def _day_issues(day, number, last, cards_by_id, context, arrival, departure):
             issues.append(_issue("error" if full_day else "warning", number, f"No {meal} planned.", f"Add a {meal} near the day's activities."))
     if full_day and not any(s["type"] == "free" for s in stops):
         issues.append(_issue("warning", number, "No free time planned.", "Add a 1-2 hour flexible slot."))
-    previous_end = previous_kind = None
+    previous_end = previous_place = None
     for stop in stops:
-        issues += _stop_issues(stop, day, number, cards_by_id, weekday, arrival, departure, previous_end, previous_kind)
-        previous_end, previous_kind = stop["start"] + stop["minutes"], stop["type"]
+        issues += _stop_issues(stop, day, number, cards_by_id, weekday, arrival, departure)
+        if previous_end is not None:
+            gap = stop["start"] - previous_end
+            name = stop_name(stop, cards_by_id)
+            if gap < 0:
+                issues.append(_issue("error", number, f"{name} overlaps the stop before it.", "Move it after the previous stop."))
+            elif previous_place is not None and stop["type"] != "free":
+                needed = transfer_minutes(transfers, previous_place, stop)
+                if gap < needed:
+                    origin = stop_name(previous_place, cards_by_id)
+                    issues.append(_issue(
+                        "error", number, f"{origin} to {name} needs {needed} minutes of travel, but only {gap} are available.",
+                        f"Leave at least {needed} minutes clear before {name}, or move a stop to another day.",
+                    ))
+        if stop["type"] != "free":
+            previous_place = stop
+        previous_end = stop["start"] + stop["minutes"]
     return issues
 
 
-def deterministic_checks(schedule: dict, cards: list[dict], context: dict) -> list[dict]:
+def deterministic_checks(schedule: dict, cards: list[dict], context: dict, transfers: dict | None = None) -> list[dict]:
     cards_by_id = {c["id"]: c for c in cards}
+    transfers = transfers if transfers is not None else transfer_estimates(cards)
     arrival, departure = flight_limits(context.get("flights", []))
     days, issues, total = schedule["days"], [], 0
     for number, day in enumerate(days, start=1):
-        issues += _day_issues(day, number, len(days), cards_by_id, context, arrival, departure)
+        issues += _day_issues(day, number, len(days), cards_by_id, context, arrival, departure, transfers)
         total += sum(stop_cost(s, cards_by_id) for s in day["stops"])
     budget = context.get("budget_per_person", config.DEFAULT_BUDGET_PER_PERSON)
     if total > budget:

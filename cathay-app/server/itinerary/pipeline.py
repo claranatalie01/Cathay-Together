@@ -6,6 +6,7 @@ from . import config, llm as llm_module
 from .checks import day_window, flight_limits
 from .curator import clean_text, curator_agent
 from .explorer import explorer_agent
+from .geocoding import enrich_coordinates
 from .llm import AgentError, NothingToPlan, PlanConstraints
 from .photos import attach_photos, find_place_images
 from .plan import prepare_places, to_app_plan
@@ -13,6 +14,7 @@ from .places import photo_fields
 from .reviewer import feedback_text, quality_check_agent
 from .schedule import InvalidDraft, normalize_schedule, sanitize_plan_cards
 from .scheduler import scheduler_agent, split_cards, trip_dates
+from .travel import transfer_estimates
 
 log = logging.getLogger(__name__)
 SOURCE_ID = re.compile(r"^S\d{1,3}$")
@@ -52,6 +54,7 @@ def run_discover(context: dict, model: str | None = None, llm=None, search=None)
     try:
         sources, images, search_log = explorer_agent(llm, search, model, context)
         places = curator_agent(llm, model, context, sources, images, search_client=search)
+        enrich_coordinates(places, context["destination"])
     except AgentError:
         raise
     except Exception as exc:  # noqa: BLE001
@@ -88,12 +91,13 @@ def run_plan(context: dict, raw_cards, raw_sources, model: str | None = None, ll
 
     llm = llm or llm_module.make_llm_client()
     eligible = liked + maybe  # only places somebody liked can be scheduled
+    transfers = transfer_estimates(eligible)
     feedback = ""
     for attempt in range(1, config.MAX_REVIEW_ATTEMPTS + 2):
         try:
-            raw = scheduler_agent(llm, model, context, liked, maybe, sources, feedback)
+            raw = scheduler_agent(llm, model, context, liked, maybe, sources, transfers, feedback)
             schedule = normalize_schedule(raw, dates, eligible, known)
-            review = quality_check_agent(llm, model, context, schedule, eligible, sources)
+            review = quality_check_agent(llm, model, context, schedule, eligible, sources, transfers)
         except InvalidDraft as exc:
             feedback = reason = str(exc)
             continue
@@ -104,7 +108,7 @@ def run_plan(context: dict, raw_cards, raw_sources, model: str | None = None, ll
         if review["approved"]:
             review["attempts"] = attempt
             plan = to_app_plan(schedule, prepare_places(cards), sources, review, context["destination"])
-            return {"plan": plan}
+            return {"plan": {**plan, "transfers": transfers}}
         feedback = feedback_text(review)
         reason = review.get("rule_error") or "The itinerary reviewer flagged a problem with the draft."
     raise PlanConstraints(reason)

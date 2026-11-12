@@ -19,7 +19,7 @@ REVIEW_FORMAT = """{
 }"""
 
 
-def _model_review(llm, model, context, schedule, cards, sources, rule_issues) -> dict:
+def _model_review(llm, model, context, schedule, cards, sources, rule_issues, transfers) -> dict:
     evidence = [{"id": s["id"], "title": s["title"], "excerpt": s["excerpt"][:800]} for s in sources]
     liked = [
         {k: c[k] for k in ("id", "name", "opening_hours", "closed_days", "like_count", "total_members", "source_ids")}
@@ -40,7 +40,7 @@ Pace: {context.get('pace', 'moderate')}
 Flights: {json.dumps(context.get('flights', []), ensure_ascii=False)}
 
 DRAFT ITINERARY (24h local times):
-{render_schedule(schedule, cards)}
+{render_schedule(schedule, cards, transfers)}
 
 ACTIVITIES THE GROUP LIKED:
 {json.dumps(liked, ensure_ascii=False)}
@@ -52,7 +52,8 @@ PROBLEMS ALREADY FOUND BY AUTOMATIC CHECKS (do not repeat these):
 {json.dumps([i['message'] for i in rule_issues], ensure_ascii=False)}
 
 Check only what the automatic checks cannot see:
-1. TRAVEL FEASIBILITY: is about 30 minutes realistic between neighbourhoods used back to back?
+1. TRAVEL FEASIBILITY: transfer gaps already passed the server's estimates. Flag a travel problem
+   only if the evidence shows a specific obstacle the estimates would miss.
 2. UNSUPPORTED CLAIMS: prices or hours in the plan that the evidence does not support.
 3. FAIRNESS: is an activity most of the group liked included whenever it fits?
 4. GEOGRAPHY: are the activities on one day reasonably close together?
@@ -84,13 +85,13 @@ def _clean_issue(raw) -> dict | None:
     }
 
 
-def quality_check_agent(llm, model, context, schedule, cards, sources) -> dict:
+def quality_check_agent(llm, model, context, schedule, cards, sources, transfers) -> dict:
     """Return {approved, issues, suggestions, summary}. Any 'error' issue means not approved."""
-    rule_issues = deterministic_checks(schedule, cards, context)
+    rule_issues = deterministic_checks(schedule, cards, context, transfers)
     first_error = next((issue["message"] for issue in rule_issues if issue["severity"] == "error"), None)
     if first_error:
         return {"approved": False, "issues": rule_issues, "rule_error": first_error}
-    review = _model_review(llm, model, context, schedule, cards, sources, rule_issues)
+    review = _model_review(llm, model, context, schedule, cards, sources, rule_issues, transfers)
     if not isinstance(review.get("approved"), bool):
         raise AgentError("The itinerary review was incomplete. Try again.")
     raw_issues = review.get("issues") if isinstance(review.get("issues"), list) else []
