@@ -327,6 +327,8 @@ Sizes below are Real (est.) at ±1.5 sp, from cap-height ÷ 0.71 (assumed ratio)
 | Chip `peach` (built, Flow B) | Peach fill, radius 4, "Recommended" | R (S6) |
 | Sheet + scrim (decline-invite sheet) | Structure follows the bottom sheet above | F + R |
 | Remove group | Secondary action beside Your groups with a 44 px touch target. Selection mode adds a minus marker to each eligible group card. The bottom sheet shows the selected group, Cancel, and a destructive Delete group or Leave group button. | PROPOSAL (approved) |
+| Sign out | Shared Travel groups shows a teal text action on the right of the centred app bar. The action uses a 44 px touch target. | PROPOSAL (approved) |
+| Bonus miles | Shared Booking confirmed shows a teal reward card between the ticket details and the existing actions. The underlined button shows demo redemption feedback within the card. | PROPOSAL (approved) |
 | Select travel dates sheet (`CalendarSheet`, Create group) | Real-app date sheet: × and centred title, route header (origin, plane, destination with long dates), weekday row, two months, window ends `--color-surface-brand` with inverse text, days between `--color-surface-brand-subtle`, lowest economy fare under each open day (caption-sm), other days muted at `--opacity-disabled`, demo note, Done button. Not selectable beyond the one demo window; the real app's Reset is left out because nothing can change | R + PROPOSAL |
 | State message | confirmation, building | F; real loading is the veil and mark above |
 | Skeleton, Toast, inline field error | Not visible | P |

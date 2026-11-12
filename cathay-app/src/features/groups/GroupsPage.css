@@ -66,6 +66,31 @@
   line-height: var(--leading-body);
 }
 
+.groups__sign-out {
+  max-width: 100%;
+  min-height: var(--size-touch-target);
+  padding-inline: var(--space-xs);
+  color: var(--color-text-brand);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--weight-semibold);
+  line-height: var(--text-body-sm-leading);
+}
+
+.groups__sign-out:active:not(:disabled) {
+  opacity: var(--opacity-pressed);
+}
+
+@media (hover: hover) {
+  .groups__sign-out:hover:not(:disabled) {
+    text-decoration: underline;
+  }
+}
+
+.groups__sign-out:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: progress;
+}
+
 .groups__remove-sheet .sheet__close {
   grid-column: 3;
   justify-content: flex-end;

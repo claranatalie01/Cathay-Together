@@ -9,6 +9,7 @@ import Button from '../../components/ui/Button';
 import Field from '../../components/ui/Field';
 import LoadingState from '../../components/ui/LoadingState';
 import StateMessage from '../../components/ui/StateMessage';
+import { useToast } from '../../components/ui/Toast';
 import { COPY } from '../../data/copy';
 import { useAsync } from '../../hooks/useAsync';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
@@ -33,12 +34,15 @@ function safeNext(value) {
 function SignedIn({ next }) {
   const copy = COPY.signIn;
   const user = useAsync(() => getCurrentUser(), []);
+  const toast = useToast();
   const [leaving, setLeaving] = useState(false);
 
   const leave = async () => {
     setLeaving(true);
     try {
       await signOut();
+    } catch {
+      toast(copy.signOutFailed);
     } finally {
       setLeaving(false);
     }

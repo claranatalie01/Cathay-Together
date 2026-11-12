@@ -6,6 +6,8 @@
 import { isShared } from './config';
 import { ApiError } from './errors';
 import { notifyDataChanged } from './events';
+import { clearPendingGets } from './http';
+import { clearDeclinedInvitations } from './shared/handlers';
 import { getSupabase } from './supabaseClient';
 
 const UNREACHABLE = new ApiError(503, 'service_unavailable', 'We could not reach the service. Check your connection and try again.');
@@ -42,8 +44,12 @@ export async function signIn({ email, password }) {
 export async function signOut() {
   const supabase = await getSupabase();
   // 'local' signs out this browser only, not the same person's other devices.
-  await supabase.auth.signOut({ scope: 'local' });
-  notifyDataChanged();
+  const { error } = await supabase.auth.signOut({ scope: 'local' });
+  if (error) {
+    // The browser session may already be gone even when server revocation fails.
+    const { data, error: sessionError } = await supabase.auth.getSession();
+    if (data.session || sessionError) throw UNREACHABLE;
+  }
 }
 
 // Calls back with { userId } or null, once straight away and again on every
@@ -59,7 +65,11 @@ export function onSessionChanged(callback) {
     (supabase) => {
       if (!active) return;
       // Supabase reports the current session as soon as we subscribe.
-      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+          clearPendingGets();
+          clearDeclinedInvitations();
+        }
         callback(session ? { userId: session.user.id } : null);
       });
       stop = () => data.subscription.unsubscribe();

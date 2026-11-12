@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { getBooking } from '../../api';
+import { getBooking, isShared } from '../../api';
 import BottomNav from '../../components/layout/BottomNav';
 import PageHeader from '../../components/layout/PageHeader';
 import Screen from '../../components/layout/Screen';
@@ -34,6 +35,26 @@ function downloadTicket(booking) {
   link.download = `e-ticket-${booking.ticket.reference}.txt`;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function BonusMiles() {
+  const copy = COPY.booking.bonusMiles;
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  return (
+    <section className="confirmed__miles" aria-label={copy.label}>
+      <span className="confirmed__miles-icon">
+        <img src="/assets/ui-asia-miles-teal.svg" alt="" />
+      </span>
+      <div>
+        <p>{copy.lead}<strong>{copy.amount}</strong>{copy.detail}</p>
+        <button type="button" className="confirmed__redeem" onClick={() => setShowFeedback(true)}>
+          {copy.redeem}
+        </button>
+        <p className="confirmed__miles-status" role="status">{showFeedback && copy.feedback}</p>
+      </div>
+    </section>
+  );
 }
 
 export default function ConfirmedPage() {
@@ -82,6 +103,7 @@ export default function ConfirmedPage() {
         <TripLeg selection={booking.outbound} direction="outbound" compact />
         <TripLeg selection={booking.return} direction="return" compact />
       </section>
+      {isShared && <BonusMiles key={`${groupId}:${booking.ticket.reference}`} />}
       <div className="payment__actions">
         <Button size="lg" variant="secondary" onClick={() => downloadTicket(booking)}>
           <img src="/assets/ui-download.svg" alt="" />

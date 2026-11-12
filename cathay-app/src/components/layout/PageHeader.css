@@ -81,3 +81,20 @@
   font-weight: var(--weight-regular);
   text-align: center;
 }
+
+.page-header--with-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: var(--space-xs);
+  padding-inline: var(--space-md);
+}
+
+.page-header--with-action .page-header__title {
+  grid-column: 2;
+}
+
+.page-header__action {
+  grid-column: 3;
+  min-width: 0;
+  text-align: end;
+}

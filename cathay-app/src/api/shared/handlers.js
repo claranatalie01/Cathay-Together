@@ -90,6 +90,10 @@ function groupId(params) {
 // only in this browser tab until it is reloaded.
 const declined = new Set();
 
+export function clearDeclinedInvitations() {
+  declined.clear();
+}
+
 const DESTINATIONS = { HND: 'Tokyo, Japan' };
 
 // Turns the database's group JSON into the Group shape in docs/api-contract.md.

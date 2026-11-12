@@ -3,9 +3,9 @@ import './PageHeader.css';
 // Back button + page title. The title is the page's <h1> and receives focus
 // after each route change (see AppShell).
 // `titleAs` lets the style guide show a header without a second page <h1>.
-export default function PageHeader({ title, titleId = 'page-title', onBack, backLabel = 'Back', titleAs: Title = 'h1', backIcon = '/assets/ui-back.svg' }) {
+export default function PageHeader({ title, titleId = 'page-title', onBack, backLabel = 'Back', titleAs: Title = 'h1', backIcon = '/assets/ui-back.svg', action }) {
   return (
-    <header className="page-header">
+    <header className={`page-header${action ? ' page-header--with-action' : ''}`}>
       {onBack && (
         <button className="page-header__back" type="button" onClick={onBack} aria-label={backLabel}>
           <img src={backIcon} alt="" />
@@ -14,6 +14,7 @@ export default function PageHeader({ title, titleId = 'page-title', onBack, back
       <Title className="page-header__title" id={titleId} tabIndex={-1} data-page-title>
         {title}
       </Title>
+      {action && <div className="page-header__action">{action}</div>}
     </header>
   );
 }

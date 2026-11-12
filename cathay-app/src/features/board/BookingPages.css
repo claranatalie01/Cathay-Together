@@ -117,6 +117,53 @@
   letter-spacing: 0.05em; /* ds-allow: reads a code character by character */
 }
 
+.confirmed__miles {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-brand-subtle);
+  font-size: var(--text-body-size);
+  line-height: var(--leading-body);
+}
+
+.confirmed__miles-icon {
+  display: grid;
+  place-items: center;
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-default);
+}
+
+.confirmed__miles-icon img {
+  width: var(--space-optical-20);
+  height: var(--space-optical-20);
+}
+
+.confirmed__miles strong,
+.confirmed__redeem,
+.confirmed__miles-status {
+  color: var(--color-text-brand-deep);
+}
+
+.confirmed__redeem {
+  min-height: var(--size-touch-target);
+  text-align: start;
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+}
+
+.confirmed__redeem:active {
+  opacity: var(--opacity-pressed);
+}
+
+.confirmed__miles-status {
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
 /* Icon inside a full-width button, and the quiet outline used for "View everyone's flights". */
 .payment__actions .button img {
   display: inline-block;

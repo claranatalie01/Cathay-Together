@@ -193,7 +193,7 @@ Supabase provides the proposed database, identity, and function capabilities; ac
 ### DEV-02 · Shared backend, identity, and membership · P0 · After DEV-01/DATA-01
 
 - [ ] Set up Supabase, apply versioned database migrations, and seed the three demo profiles/accounts when event rules permit.
-- [ ] Add a minimal sign-in/sign-out flow; preserve the intended invite URL through sign-in.
+- [x] Add a minimal sign-in/sign-out flow; preserve the intended invite URL through sign-in.
 - [ ] Implement `/me`, group creation/list/detail, date windows, invitation preview, join, decline, and invite-copied endpoints.
 - [ ] Validate access tokens on the server; derive the caller from the verified session, never a submitted `userId`.
 - [ ] Add database row-level security: members read their group; users change only their own selections/votes; only the creator edits the shared itinerary.
@@ -204,7 +204,7 @@ Supabase provides the proposed database, identity, and function capabilities; ac
 - [ ] Configure browser cross-origin access for localhost and the actual deployed frontend; verify preflight requests.
 - [ ] Use the Edge Function base URL directly so the existing Vercel SPA rewrite does not return HTML for API calls.
 - [ ] Build copied invite links from the app's own origin plus `/invite/:code`; remove the Cathay-owned placeholder domain.
-- [ ] Hide person-switching, force-error, and mock-reset controls in shared mode; clear cached user data on sign-out.
+- [x] Hide person-switching, force-error, and mock-reset controls in shared mode; clear cached user data on sign-out.
 
 Keep provider secrets and administrative database keys server-side. Browser-visible configuration may contain only the intended public project key, URL, and mode settings. Sources: [row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security), [function authentication](https://supabase.com/docs/guides/functions/auth), [browser CORS](https://supabase.com/docs/guides/functions/cors).
 

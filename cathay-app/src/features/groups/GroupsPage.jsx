@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError, deleteGroup, getGroups, leaveGroup } from '../../api';
+import { ApiError, deleteGroup, getGroups, isShared, leaveGroup, signOut } from '../../api';
 import Screen from '../../components/layout/Screen';
 import StatusBar from '../../components/layout/StatusBar';
 import PageHeader from '../../components/layout/PageHeader';
@@ -46,6 +46,7 @@ export default function GroupsPage() {
   const copy = COPY.groups;
   const { status, data: groups, error, reload } = useAsync(getGroups, []);
   const toast = useToast();
+  const [signingOut, setSigningOut] = useState(false);
   const [managing, setManaging] = useState(false);
   const [selection, setSelection] = useState(null);
   const [removing, setRemoving] = useState(false);
@@ -65,10 +66,26 @@ export default function GroupsPage() {
     (manageButton.current ?? createButton.current)?.focus();
   }, [status, groups]);
 
+  const switchAccount = async () => {
+    setSigningOut(true);
+    try {
+      await signOut();
+    } catch {
+      toast(COPY.signIn.signOutFailed);
+      setSigningOut(false);
+    }
+  };
+
+  const accountAction = isShared && (
+    <button className="groups__sign-out" type="button" onClick={switchAccount} disabled={signingOut} aria-busy={signingOut || undefined}>
+      {signingOut ? COPY.signIn.signingOut : COPY.signIn.signOut}
+    </button>
+  );
+
   const frame = (body, sheet) => (
     <Screen>
       <StatusBar />
-      <PageHeader title={copy.title} />
+      <PageHeader title={copy.title} action={accountAction} />
       {body}
       <BottomNav variant="groups" />
       {sheet}

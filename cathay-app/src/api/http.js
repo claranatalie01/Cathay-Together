@@ -56,6 +56,10 @@ export function invalidateGet(path) {
   inFlight.delete(path);
 }
 
+export function clearPendingGets() {
+  inFlight.clear();
+}
+
 export function request(method, path, body) {
   if (method !== 'GET') return execute(method, path, body);
   if (!inFlight.has(path)) {
