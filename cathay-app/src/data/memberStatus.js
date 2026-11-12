@@ -4,7 +4,7 @@ export const MEMBER_STATUS = {
   picked: { label: 'Picked', tone: 'primary' },
   booked: { label: 'Booked', tone: 'sand' },
   invited: { label: 'Invited', tone: 'tint' },
-  // Itinerary preferences (Flow D): saved all four picks, or still choosing.
+  // Itinerary preferences (Flow D): saved all their picks, or still choosing.
   ready: { label: 'Ready', tone: 'tint' },
   choosing: { label: 'Choosing', tone: 'neutral' },
 };

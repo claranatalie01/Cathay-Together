@@ -30,8 +30,6 @@ export default function FareSelectPage() {
   const copy = COPY.flights.fares;
   const cabin = params.get('cabin') ?? undefined;
   const sheet = params.get('sheet');
-  const windowHours = params.get('window');
-  const windowQuery = windowHours ? `&window=${windowHours}` : '';
   const [saving, setSaving] = useState(null);
 
   const { status, data, error, reload } = useAsync(() => getFares(groupId, flightId, { cabin }), [groupId, flightId, cabin]);
@@ -40,7 +38,7 @@ export default function FareSelectPage() {
   const title = direction === 'return' ? copy.titleReturn : copy.titleOutbound;
   useDocumentTitle(title);
 
-  const resultsPath = `/groups/${groupId}/flights/${direction}?cabin=${shown?.cabin ?? cabin ?? 'economy'}${shown ? `&date=${shown.flight.date}` : ''}${windowQuery}`;
+  const resultsPath = `/groups/${groupId}/flights/${direction}?cabin=${shown?.cabin ?? cabin ?? 'economy'}${shown ? `&date=${shown.flight.date}` : ''}`;
 
   const frame = (body) => (
     <Screen>
@@ -66,7 +64,7 @@ export default function FareSelectPage() {
       await saveSelection(groupId, { flightId, cabin: shown.cabin, fare: fareId });
       if (direction === 'outbound') {
         toast(copy.pickedOutbound);
-        navigate(`/groups/${groupId}/flights/return?cabin=${shown.cabin}${windowQuery}`, { replace: true });
+        navigate(`/groups/${groupId}/flights/return?cabin=${shown.cabin}`, { replace: true });
       } else {
         toast(copy.pickedReturn);
         navigate(`/groups/${groupId}/invite`, { replace: true });
@@ -100,6 +98,7 @@ export default function FareSelectPage() {
       <main className="fares" aria-busy={status === 'loading' || undefined}>
         <p className="sr-only">
           {flight.from} {flight.departTime} to {flight.to} {flight.arriveTime}, {flight.flightNo}
+          {flight.via ? `, via Hong Kong, ${flight.via.layoverLabel} wait` : ''}
         </p>
         <div className="fares__list">
           {shown.fares.map((fare) => (

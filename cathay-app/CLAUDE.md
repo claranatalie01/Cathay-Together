@@ -1,12 +1,13 @@
 # Cathay Together demo
 
-React 19 + Vite 8 + react-router-dom 7 demo app: a phone-sized (440 px) "Travel Groups" flow that must match the real Cathay Pacific Android app. No test suite. Mock API in `src/api/mock` (state in localStorage, key `cathay-mock-db-v3`).
+React 19 + Vite 8 + react-router-dom 7 demo app: a phone-sized (440 px) "Travel Groups" flow that must match the real Cathay Pacific Android app. Algorithm tests only (`npm test`). Mock API in `src/api/mock` (state in localStorage, key `cathay-mock-db-v3`).
 
 **Start every session by reading `plan.md` (the master plan and progress checklist), then update its checklist when you finish a task.**
 
 ## Commands
 
 - `npm run dev` : dev server (style guide at `/design-system`)
+- `npm test` : runs the algorithm tests in `src/algorithms` (arrival window, itinerary scheduler). Keep those files free of browser code and import them with the `.js` ending so Node can run them
 - `npm run check:tokens` : must pass before you finish any change (also runs on `npm run build`)
 - `npm run check:backend` : checks the Supabase URL and publishable key in `.env.local` (git-ignored; names in `.env.example`) and that each table exists and is closed to visitors. Database tables live in `supabase/migrations`; never put the secret key in the repo
 - `npm run icons:inventory` : regenerate `src/design-system/iconInventory.js` after adding or changing any SVG in `public/assets`

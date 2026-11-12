@@ -1,7 +1,12 @@
 // Itinerary builder for the demo. Voted places come from the members' saved preferences; the
 // "suggested" stops only fill the days and carry no vote count. All costs are rough yen estimates
 // and travel times are approximate (fictional demo data).
-import { PLACES } from './placeData';
+// The scheduling rules themselves are in src/algorithms/itinerary.js.
+import { instantOf, legInstants } from '../../algorithms/arrivalWindow.js';
+import { RULES, checkPlan, clockOf, minutesOf, retimeDay, schedule } from '../../algorithms/itinerary.js';
+import { travelTable } from '../../algorithms/travel.js';
+import { PLACE_GEO } from '../../data/placeGeo.js';
+import { PLACES } from './placeData.js';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -17,10 +22,53 @@ const SUGGESTED = [
 ];
 const byId = (id) => SUGGESTED.find((s) => s.id === id);
 
+// Estimated minutes between two voted places, from their real coordinates (see
+// src/algorithms/travel.js). Stops without coordinates, such as suggested fillers, are unknown
+// and the scheduler uses its standard gap for them.
+const TRAVEL = travelTable(PLACE_GEO);
+const placeIdOf = (stopId) => (stopId?.startsWith('place-') ? stopId.slice('place-'.length) : null);
+export const travelBetweenStops = (fromId, toId) => TRAVEL[placeIdOf(fromId)]?.[placeIdOf(toId)];
+
+// Trip day numbers (0 = first day) on which a place is closed, from OpenStreetMap's closed weekdays.
+const weekdayOf = (iso) => new Date(`${iso}T12:00:00Z`).getUTCDay();
+const closedDays = (place, dates) => {
+  const weekdays = PLACE_GEO[place.id]?.closedWeekdays ?? [];
+  return dates.flatMap((date, day) => (weekdays.includes(weekdayOf(date)) ? [day] : []));
+};
+
 const MID_TITLES = ['Old Tokyo & lively lanes', 'Market mornings, city evenings'];
 const MID_FILL = [['ueno', 'akihabara'], ['ginza', 'marunouchi']];
-const MIDPOINT_COST = { food: 2750, scenery: 500, culture: 1000, shopping: 2000 };
-const MINUTES = { food: 90, scenery: 120, culture: 120, shopping: 120 };
+
+// When a suggested stop may happen, by its slot. (Voted places carry their own hours.)
+const SLOT_HOURS = { Morning: ['08:00', '12:00'], Afternoon: ['12:00', '17:30'], Evening: ['17:30', '21:30'] };
+// Where a place is tried first: a morning place as early as possible, the others from here.
+const PREFERRED_START = { Morning: null, Afternoon: 13 * 60, Evening: 17 * 60 + 30 };
+
+// What the scheduler needs to know about each place and suggested stop.
+const placeItem = (place, dates = []) => ({
+  closedOn: closedDays(place, dates),
+  id: `place-${place.id}`,
+  minutes: place.visitMinutes,
+  open: minutesOf(place.open),
+  close: minutesOf(place.close),
+  prefer: PREFERRED_START[place.bestTime] ?? null,
+});
+const fillerItem = (s, day) => ({ id: `suggested-${s.id}`, day, minutes: s.minutes, open: minutesOf(SLOT_HOURS[s.slot][0]), close: minutesOf(SLOT_HOURS[s.slot][1]) });
+
+// When the whole group is in Tokyo, in trip minutes (see src/algorithms/itinerary.js):
+// from 90 minutes after the last landing until 3 hours before the first take-off.
+// Members who have not chosen a flight are left out; with no flights there is no limit.
+export function groupFreeTime({ selections, dates, rules }) {
+  const tripStart = instantOf(dates[0], '00:00', 'HND');
+  const tripMinute = (instant) => Math.round((instant - tripStart) / 60000);
+  const legs = Object.values(selections ?? {});
+  const landings = legs.filter((s) => s?.outbound).map((s) => legInstants(s.outbound).arriveAt);
+  const takeoffs = legs.filter((s) => s?.return).map((s) => legInstants(s.return).departAt);
+  return {
+    freeFrom: landings.length ? tripMinute(Math.max(...landings)) + rules.afterLanding : null,
+    freeUntil: takeoffs.length ? tripMinute(Math.min(...takeoffs)) - rules.beforeTakeoff : null,
+  };
+}
 
 export function datesBetween(start, end) {
   const out = [];
@@ -53,12 +101,12 @@ const placeStop = (place, vote) => ({
   kind: 'place',
   source: 'voted',
   placeId: place.id,
-  slot: place.bestTime === 'Morning' ? 'Morning' : 'Afternoon',
+  slot: place.bestTime,
   name: place.name,
   area: place.area,
   description: place.description,
-  minutes: MINUTES[place.id] ?? 90,
-  cost: MIDPOINT_COST[place.id] ?? 0,
+  minutes: place.visitMinutes,
+  cost: place.cost,
   costLabel: place.budget,
   durationLabel: place.duration,
   photo: place.photo,
@@ -69,40 +117,69 @@ const placeStop = (place, vote) => ({
 });
 const suggestedStop = (s) => ({ id: `suggested-${s.id}`, kind: 'place', source: 'suggested', suggestedId: s.id, slot: s.slot, name: s.name, area: s.area, description: s.description, minutes: s.minutes, cost: s.cost, costLabel: s.costLabel, photo: s.photo, thumb: s.thumb, alt: s.alt });
 
-// Builds the stored plan: which stops are on which day (flights are added when it is read).
-export function buildPlan({ dates, votes }) {
-  const majority = (v) => v.liked * 2 > v.total;
-  const scheduled = PLACES.filter((p) => majority(votes[p.id])).sort((a, b) => votes[b.id].liked - votes[a.id].liked);
-  const maybe = PLACES.filter((p) => !majority(votes[p.id]) && votes[p.id].liked >= 1).map((p) => p.id);
+// Builds the stored plan: which stops are on which day and at what time (each viewer's own
+// flights are added when it is read). `selections` are every member's chosen flights.
+export function buildPlan({ dates, votes, selections }) {
+  const last = dates.length - 1;
+  const mids = dates.slice(1, last);
+  const voteCounts = Object.fromEntries(PLACES.map((p) => [`place-${p.id}`, votes[p.id]]));
+  const places = PLACES.map((place) => placeItem(place, dates));
+  const fillers = [
+    fillerItem(byId('ramen'), 0),
+    ...mids.flatMap((_, m) => MID_FILL[m % MID_FILL.length].map((id) => fillerItem(byId(id), m + 1))),
+    ...(last > 0 ? [fillerItem(byId('breakfast'), last)] : []),
+  ];
+  const rules = RULES;
+  const free = groupFreeTime({ selections, dates, rules });
+  const inputs = { dayCount: dates.length, places, votes: voteCounts, fillers, ...free, travel: travelBetweenStops, rules };
+  const result = schedule(inputs);
+
   const stops = {};
-  const add = (stop) => ((stops[stop.id] = stop), stop.id);
-  const days = dates.map((date, i) => ({ date, title: '', stopIds: [] }));
-  const last = days.length - 1;
-  days[0].title = 'Arrive & settle in';
-  if (last > 0) {
-    days[last].title = 'A gentle goodbye';
-    days[last].stopIds.push(add(suggestedStop(byId('breakfast'))));
-  }
-  const mids = days.slice(1, last);
-  mids.forEach((day, m) => {
-    day.title = MID_TITLES[m % MID_TITLES.length];
-    const place = scheduled[m] ?? null;
-    if (place) day.stopIds.push(add(placeStop(place, votes[place.id])));
-    MID_FILL[m % MID_FILL.length].forEach((id) => day.stopIds.push(add(suggestedStop(byId(id)))));
-  });
-  // Voted places that did not fit a middle day go in the next free morning.
-  scheduled.slice(mids.length).forEach((place, k) => {
-    const day = mids[k % Math.max(mids.length, 1)] ?? days[0];
-    day.stopIds.unshift(add(placeStop(place, votes[place.id])));
-  });
-  days[0].stopIds.push(add(suggestedStop(byId('ramen'))));
-  return { days, stops, maybe };
+  const details = (id) => {
+    const place = PLACES.find((p) => `place-${p.id}` === id);
+    return place ? placeStop(place, votes[place.id]) : suggestedStop(SUGGESTED.find((x) => `suggested-${x.id}` === id));
+  };
+  const days = dates.map((date, i) => ({
+    date,
+    title: i === 0 ? 'Arrive & settle in' : i === last ? 'A gentle goodbye' : MID_TITLES[(i - 1) % MID_TITLES.length],
+    stopIds: result.days[i].map((timed) => {
+      stops[timed.id] = { ...details(timed.id), ...timesOf(timed) };
+      return timed.id;
+    }),
+  }));
+  const idOf = (stopId) => stopId.replace(/^place-/, '');
+  return {
+    days,
+    stops,
+    // Places without a majority, then winners that did not fit in the group's free time.
+    maybe: [...result.maybe, ...result.unplaced].map(idOf),
+    didNotFit: result.unplaced.map(idOf),
+    free,
+    problems: checkPlan(result, inputs),
+  };
 }
 
-const slotOf = (hhmm) => {
+const timesOf = (timed) => ({ start: timed.start, end: timed.end, startTime: clockOf(timed.start), endTime: clockOf(timed.end), slot: slotOf(clockOf(timed.start)) });
+
+// After someone reorders or removes stops, give the day's stops new times in the new order.
+export function retimePlan(plan) {
+  if (!plan.free) return; // A plan saved before times existed: leave it as it is.
+  plan.days.forEach((day, d) => {
+    const items = day.stopIds.map((id) => {
+      const stop = plan.stops[id];
+      const place = PLACES.find((p) => p.id === stop.placeId);
+      const base = place ? placeItem(place, plan.days.map((day) => day.date)) : fillerItem({ ...stop, id: stop.suggestedId, slot: 'Morning' }, d);
+      // A moved suggested stop may happen at any time of day.
+      return place ? { ...base, kind: 'voted' } : { ...base, kind: 'filler', open: RULES.dayStart, close: RULES.dayEnd };
+    });
+    retimeDay({ day: d, items, ...plan.free, travel: travelBetweenStops }).forEach((timed) => Object.assign(plan.stops[timed.id], timesOf(timed)));
+  });
+}
+
+function slotOf(hhmm) {
   const h = Number(hhmm.slice(0, 2));
   return h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
-};
+}
 const flightStop = (selection, arrival) => ({
   id: arrival ? 'flight-arrival' : 'flight-departure',
   kind: arrival ? 'flight-arrival' : 'flight-departure',
@@ -119,7 +196,9 @@ const flightStop = (selection, arrival) => ({
 function travelBetween(a, b) {
   if (a.kind === 'flight-arrival') return { minutes: 60, text: 'by train · airport to city' };
   if (b.kind === 'flight-departure') return { minutes: 60, text: 'by train · city to airport' };
-  return { minutes: 20, text: 'by train' };
+  const minutes = travelBetweenStops(a.id, b.id);
+  if (minutes === undefined) return { minutes: 20, text: 'by train · estimated' };
+  return { minutes, text: `${minutes <= 15 ? 'on foot' : 'by train'} · estimated` };
 }
 
 // Reads the stored plan for one viewer: adds their own flights, travel between stops and totals.
@@ -127,7 +206,8 @@ export function assemble({ plan, selection, votes, dates }) {
   const days = plan.days.map((day, index) => {
     const items = [];
     if (index === 0) items.push(selection?.outbound ? flightStop(selection.outbound, true) : { id: 'flight-arrival', kind: 'flight-missing', slot: 'Afternoon', title: 'Arrival' });
-    day.stopIds.forEach((id) => plan.stops[id] && items.push(plan.stops[id]));
+    // A timed stop shows its time after the part of the day: "Morning · 09:00–10:30".
+    day.stopIds.forEach((id) => plan.stops[id] && items.push(plan.stops[id].startTime ? { ...plan.stops[id], slot: `${plan.stops[id].slot.split(' · ')[0]} · ${plan.stops[id].startTime}–${plan.stops[id].endTime}` } : plan.stops[id]));
     if (index === plan.days.length - 1 && plan.days.length > 1) items.push(selection?.return ? flightStop(selection.return, false) : { id: 'flight-departure', kind: 'flight-missing', slot: 'Afternoon', title: 'Departure' });
     const withTravel = items.map((item, i) => ({ ...item, travelBefore: i > 0 && items[i - 1].kind !== 'flight-missing' && item.kind !== 'flight-missing' ? travelBetween(items[i - 1], item) : null }));
     const allowance = index === 0 || index === plan.days.length - 1 ? 1000 : 500;

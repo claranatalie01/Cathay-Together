@@ -65,7 +65,7 @@ export const preferenceRoutes = [
     return { status: 200, body: responseFor(group, user) };
   }],
 
-  // POST /groups/:id/preferences/save – needs all four suggestions chosen
+  // POST /groups/:id/preferences/save – needs every suggestion chosen
   ['POST', '/groups/:id/preferences/save', ({ params }) => {
     const { group, user } = memberContext(params);
     const mine = group.preferences[user.id] ?? { choices: {}, saved: false };

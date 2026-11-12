@@ -69,15 +69,24 @@
 }
 
 .flight-card__number,
-.flight-card__operator {
+.flight-card__operator,
+.flight-card__via {
   color: var(--color-text-secondary);
   font-size: var(--text-body-sm-size);
   line-height: var(--text-body-sm-leading);
 }
 
-.flight-card__operator strong {
+.flight-card__operator strong,
+.flight-card__via strong {
   color: var(--color-text-primary);
   font-weight: var(--weight-semibold);
+}
+
+.flight-card__gap {
+  color: var(--color-text-brand);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-leading);
+  font-weight: var(--weight-medium);
 }
 
 .flight-card__fare {

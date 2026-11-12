@@ -5,10 +5,10 @@ import { ApiError } from '../errors';
 import { USERS, getDb, saveDb } from './db';
 import { DESTINATION_AIRPORT, dayLabel } from './flightData';
 import { currentUser, findGroup } from './helpers';
+import { UTC_OFFSET_HOURS, meetingInstant } from '../../algorithms/arrivalWindow.js';
 
 const HOLD_MS = 20 * 60 * 1000;
 
-const toMinutes = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
 
 function memberOf(group, userId) {
   return group.members.find((m) => m.userId === userId) ?? null;
@@ -41,10 +41,13 @@ function column({ group, direction, viewerId }) {
     if (!chosen) return;
     date = chosen.date;
     const time = chosen[key];
-    const point = byTime.get(time) ?? { time, minutes: toMinutes(time), names: [], includesViewer: false };
+    // Position by the exact moment (as minutes on the Tokyo clock, counted across days),
+    // so a landing after midnight sits after one before it.
+    const instant = meetingInstant(chosen, direction);
+    const point = byTime.get(instant) ?? { time, minutes: Math.round(instant / 60000) + UTC_OFFSET_HOURS[DESTINATION_AIRPORT.code] * 60, names: [], includesViewer: false };
     point.names.push(member.userId === viewerId ? 'You' : USERS[member.userId].name);
     point.includesViewer = point.includesViewer || member.userId === viewerId;
-    byTime.set(time, point);
+    byTime.set(instant, point);
   });
   const points = [...byTime.values()].sort((a, b) => a.minutes - b.minutes);
   const spanMinutes = points.length > 1 ? points[points.length - 1].minutes - points[0].minutes : 0;

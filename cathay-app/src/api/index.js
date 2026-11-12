@@ -7,4 +7,4 @@ export * from './users';
 export { isShared } from './config';
 export { onSessionChanged, signIn, signOut } from './session';
 export { ApiError } from './errors';
-export { onDataChanged } from './events';
+export { notifyDataChanged, onDataChanged } from './events';

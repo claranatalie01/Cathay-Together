@@ -4,9 +4,10 @@ import './FlightCard.css';
 
 // One flight in the results list (real app, S5): a "ticket" with the trip on the left and the
 // price on the right. The whole card is one link to that flight's fares.
-// `match` is the group-timing badge: { tone: 'within' | 'outside', text: 'Lands 15m after Gaudi' }.
-export default function FlightCard({ flight, to, match = null, className = '' }) {
-  const label = `${flight.departTime} ${flight.from} to ${flight.arriveTime} ${flight.to}, ${flight.duration}, ${flight.flightNo}, from HKD ${flight.priceFrom.toLocaleString('en-US')} per adult${match ? `, ${match.text}` : ''}`;
+// `match` is a badge above the times: { tone: 'within' | 'outside', text: 'Best of both' }.
+// `gap` is a plain line under the flight number: 'Lands 1h 30m after Clara'.
+export default function FlightCard({ flight, to, match = null, gap = null, className = '' }) {
+  const label = `${flight.departTime} ${flight.from} to ${flight.arriveTime} ${flight.to}, ${flight.duration}, ${flight.flightNo}${flight.via ? `, via Hong Kong, ${flight.via.layoverLabel} wait` : ''}, from HKD ${flight.priceFrom.toLocaleString('en-US')} per adult${match ? `, ${match.text}` : ''}${gap ? `, ${gap}` : ''}`;
   const note = flight.lowest ? 'Lowest Fare' : flight.seatsLeft ? `${flight.seatsLeft} Seats Left` : null;
   return (
     <Link className={`flight-card ${className}`.trim()} to={to} aria-label={label}>
@@ -30,6 +31,12 @@ export default function FlightCard({ flight, to, match = null, className = '' })
           <span className="flight-card__code">{flight.to}</span>
         </span>
         <span className="flight-card__number">{flight.flightNo}</span>
+        {flight.via && (
+          <span className="flight-card__via">
+            Via Hong Kong · <strong>{flight.via.layoverLabel}</strong> wait
+          </span>
+        )}
+        {gap && <span className="flight-card__gap">{gap}</span>}
         {flight.operatedBy && (
           <span className="flight-card__operator">
             {flight.flightNo} operated by <strong>{flight.operatedBy}</strong>

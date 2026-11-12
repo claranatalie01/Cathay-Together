@@ -6,7 +6,7 @@ import { PLACE_IDS, SEED_CHOICES } from './placeData';
 const KEY = 'cathay-mock-db-v4';
 
 export const USERS = {
-  clara: { id: 'clara', name: 'Clara', initial: 'C', airport: { code: 'SHA', city: 'Shanghai' } },
+  clara: { id: 'clara', name: 'Clara', initial: 'C', airport: { code: 'PVG', city: 'Shanghai' } },
   gaudi: { id: 'gaudi', name: 'Gaudi', initial: 'G', airport: { code: 'HKG', city: 'Hong Kong' } },
   kabe: { id: 'kabe', name: 'Kabe', initial: 'K', airport: { code: 'SIN', city: 'Singapore' } },
 };

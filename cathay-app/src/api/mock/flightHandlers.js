@@ -5,8 +5,6 @@ import {
   DESTINATION_AIRPORT,
   FARE_IDS,
   OUTBOUND_DATES,
-  WINDOW_RANGE,
-  clampWindow,
   othersTimes,
   withTiming,
   RETURN_DATES,
@@ -14,6 +12,7 @@ import {
   comparison,
   faresFor,
   makeSelection,
+  suggestionsFor,
   findFlight,
   flightsFor,
   isAvailable,
@@ -51,7 +50,6 @@ export const flightRoutes = [
         returnLabel: longLabel(window.end),
         cabins: cabinsFor(home.code).map(({ id, label }) => ({ id, label })),
         passengers: '1 Adult',
-        groupWindow: WINDOW_RANGE,
       },
     };
   }],
@@ -60,7 +58,6 @@ export const flightRoutes = [
   ['GET', '/groups/:id/flights', ({ params, query }) => {
     const { group, user, home, window } = memberContext(params);
     const direction = query.direction === 'return' ? 'return' : 'outbound';
-    const windowHours = clampWindow(query.window);
     const others = othersTimes({ group, viewerId: user.id, direction });
     const cabins = cabinsFor(home.code);
     const cabin = cabins.some((c) => c.id === query.cabin) ? query.cabin : 'economy';
@@ -86,10 +83,26 @@ export const flightRoutes = [
           label: tabLabel(d),
           priceFrom: lowestEconomy({ home, direction, date: d }),
         })),
-        groupWindow: { hours: windowHours, others: others.map(({ time }) => ({ time })) },
-        flights: withTiming(flightsFor({ home, direction, date, cabin }), { direction, others, windowHours }),
+        groupWindow: { others: others.map(({ userId, time }) => ({ name: USERS[userId].name, time })) },
+        flights: withTiming(flightsFor({ home, direction, date, cabin }), { direction, others }),
       },
     };
+  }],
+
+  // GET /groups/:id/flights/suggestions?direction=&cabin= – one flight per member, ranked three ways
+  ['GET', '/groups/:id/flights/suggestions', ({ params, query }) => {
+    const { group, user, window } = memberContext(params);
+    const direction = query.direction === 'return' ? 'return' : 'outbound';
+    const members = group.members.map((m) => ({
+      userId: m.userId,
+      name: USERS[m.userId].name,
+      home: USERS[m.userId].airport,
+      chosen: group.selections?.[m.userId]?.[direction],
+    }));
+    const cabins = cabinsFor(USERS[user.id].airport.code);
+    const cabin = cabins.some((c) => c.id === query.cabin) ? query.cabin : 'economy';
+    const body = suggestionsFor({ members, direction, date: direction === 'outbound' ? window.start : window.end, cabin });
+    return { status: 200, body: { ...body, viewerId: user.id } };
   }],
 
   // GET /groups/:id/flights/:flightId/fares?cabin= – fare types for one flight

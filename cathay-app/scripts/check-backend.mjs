@@ -8,6 +8,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const TABLES = ['airports', 'profiles', 'groups', 'group_members', 'flight_selections', 'votes'];
+// Database functions the app calls to create, join and read groups.
+const FUNCTIONS = {
+  list_my_groups: {},
+  get_group: { target_group: '00000000-0000-0000-0000-000000000000' },
+  preview_invitation: { code: 'AAAAAA' },
+  create_group: { group_name: 'check', trip_start: '2026-11-21', trip_end: '2026-11-24' },
+  join_group: { target_group: '00000000-0000-0000-0000-000000000000', code: 'AAAAAA' },
+  mark_invite_copied: { target_group: '00000000-0000-0000-0000-000000000000' },
+};
 const envPath = fileURLToPath(new URL('../.env.local', import.meta.url));
 
 // Minimal .env reader: NAME=value lines, # comments, optional quotes.
@@ -62,11 +71,14 @@ if (!/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(url)) {
 }
 
 const headers = { apikey: key, ...(isLegacy ? { Authorization: `Bearer ${key}` } : {}) };
-async function get(path) {
+async function get(path, postBody) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10000);
   try {
-    const res = await fetch(`${url}${path}`, { headers, signal: controller.signal });
+    const options = postBody
+      ? { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(postBody) }
+      : { headers };
+    const res = await fetch(`${url}${path}`, { ...options, signal: controller.signal });
     let body = null;
     try {
       body = await res.json();
@@ -111,6 +123,25 @@ try {
       problems += 1;
     }
   }
+
+  // A visitor must be refused by every function. (Being refused also proves it exists.)
+  console.log('\nFunctions (called as a visitor who is NOT signed in):');
+  for (const [name, args] of Object.entries(FUNCTIONS)) {
+    const { status, body } = await get(`/rest/v1/rpc/${name}`, args);
+    const code = body?.code;
+    if (status === 404 || code === 'PGRST202') {
+      console.log(`  --    ${name}: not created yet`);
+      problems += 1;
+    } else if (code === '42501' || status === 401 || status === 403) {
+      console.log(`  ok    ${name}: exists, closed to visitors`);
+    } else if (status >= 200 && status < 300) {
+      console.log(`  FAIL  ${name}: a visitor who is not signed in could run it.`);
+      problems += 1;
+    } else {
+      console.log(`  ??    ${name}: unexpected answer (HTTP ${status}${code ? `, ${code}` : ''})`);
+      problems += 1;
+    }
+  }
 } catch (error) {
   fail([
     '  FAIL  Could not reach the project.',
@@ -122,8 +153,8 @@ try {
 if (problems) {
   fail([
     `${problems} item(s) need attention.`,
-    'If tables are "not created yet", run supabase/migrations/20261111000000_initial_schema.sql',
-    'in the Supabase SQL Editor, then run this check again.',
+    'If something is "not created yet", run the files in supabase/migrations in the Supabase',
+    'SQL Editor, oldest first, then run this check again.',
   ]);
 }
-console.log('\nAll good: the app can reach the backend, and the tables are protected.\n');
+console.log('\nAll good: the app can reach the backend, and the tables and functions are protected.\n');

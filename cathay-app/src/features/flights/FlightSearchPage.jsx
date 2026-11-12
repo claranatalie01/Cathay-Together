@@ -9,7 +9,6 @@ import Button from '../../components/ui/Button';
 import ErrorState from '../../components/ui/ErrorState';
 import Field from '../../components/ui/Field';
 import LoadingState from '../../components/ui/LoadingState';
-import Slider from '../../components/ui/Slider';
 import Tabs from '../../components/ui/Tabs';
 import { COPY } from '../../data/copy';
 import { WING_PHOTO } from '../../data/photos';
@@ -26,7 +25,6 @@ export default function FlightSearchPage() {
   const { status, data: form, error, reload } = useAsync(() => getSearchForm(groupId), [groupId]);
   const [trip, setTrip] = useState('return');
   const [cabin, setCabin] = useState('economy');
-  const [windowHours, setWindowHours] = useState(null);
   useDocumentTitle(copy.title);
 
   const frame = (body, header = <PhotoHeader className="photo-header--book" photo={WING_PHOTO} title={copy.title} onBack={() => navigate(`/groups/${groupId}/invite`)} />) => (
@@ -41,11 +39,9 @@ export default function FlightSearchPage() {
   if (status === 'loading') return frame(<LoadingState variant="detail" />);
   if (status === 'error') return frame(<ErrorState error={error} onRetry={reload} />);
 
-  const timing = COPY.flights.timing;
-  const hours = windowHours ?? form.groupWindow.hours;
   const onSubmit = (event) => {
     event.preventDefault();
-    navigate(`/groups/${groupId}/flights/outbound?cabin=${cabin}&trip=${trip}&window=${hours}`);
+    navigate(`/groups/${groupId}/flights/outbound?cabin=${cabin}&trip=${trip}`);
   };
 
   return frame(
@@ -95,17 +91,6 @@ export default function FlightSearchPage() {
             ))}
           </select>
         </Field>
-        <Slider
-          id="timing-window"
-          label={timing.sliderLabel}
-          valueText={timing.sliderValue(hours)}
-          help={timing.sliderHelp}
-          min={form.groupWindow.min}
-          max={form.groupWindow.max}
-          step={form.groupWindow.step}
-          value={hours}
-          onChange={setWindowHours}
-        />
         <Button type="submit">{copy.submit}</Button>
       </form>
     </main>,

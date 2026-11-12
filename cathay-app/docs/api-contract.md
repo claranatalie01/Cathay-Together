@@ -309,7 +309,7 @@ Members only (`403 not_a_member`). Only Tokyo groups have suggestions (`404 no_s
 
 ### `GET /groups/:id/preferences`
 
-Response `200`: the four suggestions, the caller's choices and everyone's readiness.
+Response `200`: the suggestions (11 in the demo), the caller's choices and everyone's readiness.
 
 ```json
 {
@@ -332,7 +332,7 @@ Request: `{ "placeId": "food", "choice": "like" }` (`like` or `pass`). Saves one
 
 ### `POST /groups/:id/preferences/save`
 
-No body. Needs all four suggestions chosen, then marks the caller ready. Responds with the same body as the `GET`. Errors: `422 choices_incomplete`.
+No body. Needs every suggestion chosen, then marks the caller ready. Responds with the same body as the `GET`. Errors: `422 choices_incomplete`.
 
 ## Itinerary (Flow E)
 

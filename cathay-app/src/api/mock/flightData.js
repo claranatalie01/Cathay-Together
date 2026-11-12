@@ -1,28 +1,30 @@
-// Fictional flight catalogue for the demo. Everything is generated from the traveller's home
-// airport and the group's trip window, so each member sees their own flights to the group's
-// destination. Prices are in HKD. Not real schedules or fares.
+// Flight catalogue for the demo. Each member sees their own flights to the group's destination,
+// from their own home airport. REAL: the Cathay Pacific and HK Express flight numbers and times, from
+// the saved OAG snapshot (see realFlights.js). FICTIONAL: every price and the seats left, in HKD.
+import { meetingInstant, spreadMinutes } from '../../algorithms/arrivalWindow.js';
+import { rankCombinations } from '../../algorithms/combinations.js';
+import { realJourneys } from './realFlights.js';
+
 export const DESTINATION_AIRPORT = { code: 'HND', city: 'Tokyo' };
 
+// Price factor by home airport, used for the cabin upgrade amounts only (invented numbers).
 const HOME_AIRPORTS = {
-  HKG: { minutes: 230, price: 1 },
-  SHA: { minutes: 175, price: 0.86 },
-  SIN: { minutes: 415, price: 1.38 },
+  HKG: { price: 1 },
+  SHA: { price: 0.86 },
+  PVG: { price: 0.88 },
+  SIN: { price: 1.38 },
+  TPE: { price: 0.82 },
+  ICN: { price: 0.9 },
+  MNL: { price: 1.05 },
+  BKK: { price: 1.25 },
+  KUL: { price: 1.35 },
+  CAN: { price: 0.95 },
 };
-
-const TIME_DIFF_MINUTES = 60; // Tokyo is one hour ahead of Hong Kong, Shanghai and Singapore.
 
 const CABINS = [
   { id: 'economy', label: 'Economy', delta: 0 },
   { id: 'premium', label: 'Premium Economy', delta: 8931 },
   { id: 'business', label: 'Business', delta: 13101 },
-];
-
-const TEMPLATES = [
-  { no: 548, dep: '08:55', base: 6691, seats: 9 },
-  { no: 542, dep: '16:30', base: 5531, seats: null },
-  { no: 6320, dep: '15:35', base: 10001, seats: 4, operatedBy: 'Japan Airlines' },
-  { no: 500, dep: '11:20', base: 7340, seats: 6 },
-  { no: 524, dep: '19:05', base: 6120, seats: null },
 ];
 
 // Price factor per day (earlier and later days cost more or less).
@@ -69,11 +71,6 @@ export function windowOf(datesLabel) {
   return { start: `${match[4]}-${month}-${pad(match[2])}`, end: `${match[4]}-${month}-${pad(match[3])}` };
 }
 
-const toMinutes = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
-const toClock = (total) => {
-  const wrapped = ((total % 1440) + 1440) % 1440;
-  return `${String(Math.floor(wrapped / 60)).padStart(2, '0')}:${String(wrapped % 60).padStart(2, '0')}`;
-};
 const durationLabel = (minutes) => `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
 
 const homeFactor = (code) => HOME_AIRPORTS[code]?.price ?? 1;
@@ -84,40 +81,29 @@ export function cabinsFor(homeCode) {
 }
 
 // Flights for one direction and day, in the given cabin. `home` is the traveller's airport.
+// From Hong Kong these are direct flights; from anywhere else each result is two flights joined in
+// Hong Kong. Premium economy and business are Cathay Pacific only.
 export function flightsFor({ home, direction, date, cabin }) {
-  const meta = HOME_AIRPORTS[home.code] ?? HOME_AIRPORTS.HKG;
   const delta = cabinsFor(home.code).find((c) => c.id === cabin)?.delta ?? 0;
-  const outbound = direction === 'outbound';
-  const from = outbound ? home.code : DESTINATION_AIRPORT.code;
-  const to = outbound ? DESTINATION_AIRPORT.code : home.code;
-  const flights = TEMPLATES.map((t) => {
-    const price = Math.round(t.base * (DAY_FACTOR[date] ?? 1) * meta.price);
-    const departs = toMinutes(t.dep);
-    const arrives = departs + meta.minutes + (outbound ? TIME_DIFF_MINUTES : -TIME_DIFF_MINUTES);
-    return {
-      id: `${direction}-${date}-${t.no}`,
-      flightNo: `CX${outbound ? t.no : t.no + 1}`,
-      from,
-      to,
-      date,
-      departTime: toClock(departs),
-      arriveTime: toClock(arrives),
-      duration: durationLabel(meta.minutes),
-      operatedBy: t.operatedBy ?? null,
-      seatsLeft: t.seats,
-      lowest: false,
-      economyPrice: price,
-      priceFrom: price + delta,
-    };
-  }).sort((a, b) => a.departTime.localeCompare(b.departTime));
-  const cheapest = flights.reduce((min, f) => (f.economyPrice < min.economyPrice ? f : min), flights[0]);
-  cheapest.lowest = true;
-  return flights;
+  const flights = realJourneys({
+    homeCode: home.code,
+    direction,
+    date,
+    dayFactor: DAY_FACTOR[date] ?? 1,
+    cabinOnlyCx: cabin !== 'economy',
+    destinationCode: DESTINATION_AIRPORT.code,
+  }).map((f) => ({ ...f, priceFrom: f.economyPrice + delta }));
+  if (flights.length) {
+    const cheapest = flights.reduce((min, f) => (f.economyPrice < min.economyPrice ? f : min), flights[0]);
+    cheapest.lowest = true;
+  }
+  return flights.sort((a, b) => a.departAt.localeCompare(b.departAt));
 }
 
 export function lowestEconomy({ home, direction, date }) {
   if (!isAvailable(date)) return null;
-  return Math.min(...flightsFor({ home, direction, date, cabin: 'economy' }).map((f) => f.economyPrice));
+  const prices = flightsFor({ home, direction, date, cabin: 'economy' }).map((f) => f.economyPrice);
+  return prices.length ? Math.min(...prices) : null;
 }
 
 // ---- Fares ---------------------------------------------------------------------------------
@@ -175,7 +161,7 @@ export function comparison() {
 }
 
 export function findFlight({ home, flightId }) {
-  const match = /^(outbound|return)-(\d{4}-\d{2}-\d{2})-\d+$/.exec(flightId);
+  const match = /^(outbound|return)-(\d{4}-\d{2}-\d{2})-[A-Z0-9_]+$/.exec(flightId);
   if (!match) return null;
   const [, direction, date] = match;
   if (!isAvailable(date)) return null;
@@ -183,55 +169,113 @@ export function findFlight({ home, flightId }) {
 }
 
 // ---- Group timing -----------------------------------------------------------------------------
-// "Within 1h of everyone": how close a flight's landing (outbound) or take-off (return) is to the
-// other members' chosen flights. Members who have not chosen yet are left out.
-export const WINDOW_RANGE = { hours: 1, min: 1, max: 6, step: 1 };
+// How far apart the group would land (outbound) or take off (return) if the viewer chose a
+// flight, counting the other members' chosen flights. Members who have not chosen are left out.
+// There is no window to set: closer is always better. The spread itself is calculated in
+// src/algorithms/arrivalWindow.js.
 
-export const clampWindow = (value) => {
-  const n = Math.round(Number(value));
-  if (!Number.isFinite(n)) return WINDOW_RANGE.hours;
-  return Math.min(WINDOW_RANGE.max, Math.max(WINDOW_RANGE.min, n));
-};
-
-// The other members' times for this direction: [{ userId, name, minutes, time }]
+// The other members' times for this direction: [{ userId, time, instant }]
 export function othersTimes({ group, viewerId, direction }) {
   return group.members
     .filter((member) => member.userId !== viewerId)
     .map((member) => {
       const chosen = group.selections?.[member.userId]?.[direction];
-      const time = chosen ? (direction === 'outbound' ? chosen.arriveTime : chosen.departTime) : null;
-      return time ? { time, minutes: toMinutes(time) } : null;
+      if (!chosen) return null;
+      return { userId: member.userId, time: direction === 'outbound' ? chosen.arriveTime : chosen.departTime, instant: meetingInstant(chosen, direction) };
     })
     .filter(Boolean);
 }
 
-// Overshoot bucket labels, smallest first.
-const BUCKETS = [
-  { id: '15m', max: 15 },
-  { id: '30m', max: 30 },
-  { id: '1h', max: 60 },
-  { id: '2h', max: 120 },
-  { id: 'more', max: Infinity },
-];
-
-// Adds `timing` to each flight: the spread between this flight and every other member's time
-// (earliest to latest). Within the window when the spread fits; otherwise bucketed by overshoot.
-export function withTiming(flights, { direction, others, windowHours }) {
+// Adds `timing` to each flight: { spreadMinutes, closest, deltaMinutes } against the others'
+// chosen flights, or null when nobody else has chosen yet. `closest` marks the flight(s) with the
+// smallest spread. `deltaMinutes` is set only when exactly one other member has chosen: how many
+// minutes after (positive) or before (negative) that person this flight lands or leaves.
+export function withTiming(flights, { direction, others }) {
   if (others.length === 0) return flights.map((flight) => ({ ...flight, timing: null }));
-  return flights.map((flight) => {
-    const minutes = toMinutes(direction === 'outbound' ? flight.arriveTime : flight.departTime);
-    const all = [minutes, ...others.map((o) => o.minutes)];
-    const spread = Math.max(...all) - Math.min(...all);
-    const overshoot = spread - windowHours * 60;
+  const spreads = flights.map((flight) => spreadMinutes([meetingInstant(flight, direction), ...others.map((o) => o.instant)]));
+  const smallest = Math.min(...spreads);
+  const only = others.length === 1 ? others[0].instant : null;
+  return flights.map((flight, i) => ({
+    ...flight,
+    timing: {
+      spreadMinutes: spreads[i],
+      closest: spreads[i] === smallest,
+      deltaMinutes: only === null ? null : Math.round((meetingInstant(flight, direction) - only) / 60000),
+    },
+  }));
+}
+
+// ---- Group suggestions ---------------------------------------------------------------------------
+// One flight per member in one direction, ranked (see src/algorithms/combinations.js).
+//   members  [{ userId, name, home: { code, city }, chosen? }]  `chosen` is that member's saved
+//            selection for this direction.
+//   cabin    the cabin for everyone who has NOT chosen yet.
+// There is no time window: see combinations.js for how "best of both" is decided.
+// A member who has chosen is kept exactly as chosen: their own flight, date, cabin and fare
+// price, whatever the cabin control says. Everyone else is placed from their own airport, in
+// `cabin`, at the lowest fare of that cabin. Used by both the mock and the shared backend, so they
+// answer alike.
+// Shown beside a suggested flight: whether the landing is on the day after take-off (outbound
+// only; a return is shown by its take-off) and how many stops it has. A connection's flight
+// number is two numbers joined by " + ".
+const extrasOf = (flight, direction) => ({
+  nextDay: direction === 'outbound' && Boolean(flight.arriveDate) && flight.arriveDate !== flight.date,
+  stops: flight.flightNo.includes(' + ') ? 1 : 0,
+});
+
+export function suggestionsFor({ members, direction, date, cabin = 'economy', othersLimit = 30 }) {
+  const catalogue = members.map((member) => {
+    if (member.chosen) {
+      const c = member.chosen;
+      const flight = { id: c.flightId, flightNo: c.flightNo, time: direction === 'outbound' ? c.arriveTime : c.departTime, price: c.price, cabinLabel: c.cabinLabel, ...extrasOf(c, direction) };
+      return { member, flights: [flight], instants: { [c.flightId]: meetingInstant(c, direction) }, fixed: true };
+    }
+    const list = flightsFor({ home: member.home, direction, date, cabin });
     return {
-      ...flight,
-      timing: {
-        within: overshoot <= 0,
-        bucket: overshoot <= 0 ? 'within' : BUCKETS.find((b) => overshoot <= b.max).id,
-        overshootMinutes: Math.max(0, overshoot),
-      },
+      member,
+      flights: list.map((f) => ({ id: f.id, flightNo: f.flightNo, time: direction === 'outbound' ? f.arriveTime : f.departTime, price: f.priceFrom, ...extrasOf(f, direction) })),
+      instants: Object.fromEntries(list.map((f) => [f.id, meetingInstant(f, direction)])),
+      fixed: false,
     };
   });
+  const ranked = rankCombinations({
+    othersLimit,
+    members: catalogue.map(({ member, flights, instants, fixed }) => ({
+      userId: member.userId,
+      fixedFlightId: fixed ? flights[0].id : undefined,
+      flights: flights.map((f) => ({ id: f.id, price: f.price, instant: instants[f.id] })),
+    })),
+  });
+  const describe = (option) => ({
+    total: option.total,
+    spreadMinutes: option.spreadMinutes,
+    picks: option.picks.map((p, i) => {
+      const { member, flights, fixed } = catalogue[i];
+      const f = flights.find((x) => x.id === p.flightId);
+      return {
+        userId: member.userId,
+        name: member.name,
+        airport: member.home,
+        flightId: f.id,
+        flightNo: f.flightNo,
+        time: f.time,
+        nextDay: f.nextDay,
+        stops: f.stops,
+        price: p.price,
+        extra: p.extra,
+        fixed,
+        cabinLabel: f.cabinLabel ?? null,
+      };
+    }),
+  });
+  return {
+    direction,
+    date,
+    cabin,
+    combinations: ranked.count,
+    featured: ranked.featured.map((f) => ({ labels: f.labels, ...describe(f.option) })),
+    others: ranked.others.map(describe),
+  };
 }
 
 // ---- Selections ---------------------------------------------------------------------------------
@@ -254,19 +298,28 @@ export function makeSelection({ home, flightId, cabin, fare }) {
     date: flight.date,
     departTime: flight.departTime,
     arriveTime: flight.arriveTime,
+    arriveDate: flight.arriveDate,
+    departAt: flight.departAt,
+    arriveAt: flight.arriveAt,
     flightNo: flight.flightNo,
   };
 }
 
 // Demo choices for members who are already "picked" or "booked" in the seed data, so every screen
-// shows the same real flights for them. [outbound flight number, return flight number]
-const SEED_FLIGHTS = { gaudi: [500, 6320], kabe: [548, 542], clara: [500, 6320] };
+// shows the same flights for them. [position in the day's outbound list, position in the return list]
+const SEED_PICKS = { gaudi: [0, 1], kabe: [1, 0], clara: [0, 1] };
 
 export function seedSelectionFor({ userId, home, status, window }) {
-  const picks = SEED_FLIGHTS[userId];
+  const picks = SEED_PICKS[userId];
   if (!picks) return null;
   const fare = status === 'booked' ? 'essential' : 'light';
-  const outbound = makeSelection({ home, flightId: `outbound-${window.start}-${picks[0]}`, cabin: 'economy', fare });
-  const back = makeSelection({ home, flightId: `return-${window.end}-${picks[1]}`, cabin: 'economy', fare });
-  return outbound && back ? { outbound, return: back } : null;
+  const outList = flightsFor({ home, direction: 'outbound', date: window.start, cabin: 'economy' });
+  const backList = flightsFor({ home, direction: 'return', date: window.end, cabin: 'economy' });
+  if (!outList.length || !backList.length) return null;
+  // Real schedules can leave only one option: wrap round so there is always a flight to pick.
+  const out = outList[picks[0] % outList.length];
+  const back = backList[picks[1] % backList.length];
+  const outbound = makeSelection({ home, flightId: out.id, cabin: 'economy', fare });
+  const ret = makeSelection({ home, flightId: back.id, cabin: 'economy', fare });
+  return outbound && ret ? { outbound, return: ret } : null;
 }

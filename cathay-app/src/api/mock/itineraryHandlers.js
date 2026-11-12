@@ -3,7 +3,7 @@ import { ApiError } from '../errors';
 import { USERS, getDb, saveDb } from './db';
 import { windowOf } from './flightData';
 import { currentUser, findGroup } from './helpers';
-import { assemble, buildPlan, datesBetween, votesFor } from './itineraryData';
+import { assemble, buildPlan, datesBetween, retimePlan, votesFor } from './itineraryData';
 import { PLACES } from './placeData';
 
 function context(params) {
@@ -33,7 +33,7 @@ export const itineraryRoutes = [
     const ctx = context(params);
     const waiting = ctx.group.members.filter((m) => !ctx.group.preferences?.[m.userId]?.saved).map((m) => ctx.names[m.userId]);
     if (waiting.length) throw new ApiError(422, 'not_ready', `Waiting for ${waiting.join(', ')} to finish swiping.`, { waiting });
-    ctx.group.itinerary = { ...buildPlan({ dates: ctx.dates, votes: ctx.votes }), builtAt: Date.now() };
+    ctx.group.itinerary = { ...buildPlan({ dates: ctx.dates, votes: ctx.votes, selections: ctx.group.selections }), builtAt: Date.now() };
     saveDb();
     return { status: 200, body: bodyFor(ctx) };
   }],
@@ -57,6 +57,7 @@ export const itineraryRoutes = [
       return { ...day, stopIds: sent.stopIds };
     });
     plan.days = next;
+    retimePlan(plan);
     saveDb();
     return { status: 200, body: bodyFor(ctx) };
   }],

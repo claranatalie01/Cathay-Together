@@ -10,14 +10,26 @@ export function getSearchForm(groupId) {
 }
 
 // Flights for one direction and day. Rejects with ApiError code date_unavailable (422).
-// params: { direction: 'outbound' | 'return', date?: 'YYYY-MM-DD', cabin?: 'economy' | 'premium' | 'business', window?: 1..6 }
-// `window` is the group timing window in hours; each flight then carries `timing` against the other members.
-export function getFlights(groupId, { direction = 'outbound', date, cabin, window } = {}) {
+// params: { direction: 'outbound' | 'return', date?: 'YYYY-MM-DD', cabin?: 'economy' | 'premium' | 'business' }
+// Each flight carries `timing`: { spreadMinutes, closest } against the other members' chosen
+// flights, or null when nobody else has chosen.
+export function getFlights(groupId, { direction = 'outbound', date, cabin } = {}) {
   const query = new URLSearchParams({ direction });
   if (date) query.set('date', date);
   if (cabin) query.set('cabin', cabin);
-  if (window) query.set('window', String(window));
   return request('GET', `/groups/${enc(groupId)}/flights?${query}`);
+}
+
+// Possible combinations for one direction: one flight per member. `featured` holds the cheapest,
+// the closest (smallest gap between landings, or take-offs on the way home) and the balanced
+// "best of both"; one combination can carry several of those labels. `others` is the rest, best
+// balance first. Members who have already chosen are kept as chosen; `cabin` applies to the rest.
+// params: { direction: 'outbound' | 'return', cabin?: 'economy' | 'premium' | 'business' }.
+// Resolves with { featured: [{ labels, total, spreadMinutes, picks }], others: [...same without labels] }.
+export function getSuggestions(groupId, { direction = 'outbound', cabin } = {}) {
+  const query = new URLSearchParams({ direction });
+  if (cabin) query.set('cabin', cabin);
+  return request('GET', `/groups/${enc(groupId)}/flights/suggestions?${query}`);
 }
 
 // Fare types (Light, Essential, Flex) for one flight, plus the comparison table.

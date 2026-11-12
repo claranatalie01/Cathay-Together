@@ -10,6 +10,9 @@
 --
 -- What it does
 --   Finds each account by its email and gives it a name and a home airport.
+--   Clara flies from Shanghai Pudong (PVG), not Hongqiao (SHA): Cathay has about ten flights a day
+--   from Pudong to Hong Kong and one from Hongqiao, so real schedules work much better from PVG.
+--   PVG is added by supabase/migrations/20261111020000_more_airports.sql: run that first.
 --   Passwords are not stored here or anywhere in the repository.
 --
 -- How to run it
@@ -21,7 +24,7 @@ insert into public.profiles (id, display_name, home_airport)
 select u.id, demo.display_name, demo.home_airport
 from (values
   ('gaudi', 'Gaudi', 'HKG'),
-  ('clara', 'Clara', 'SHA'),
+  ('clara', 'Clara', 'PVG'),
   ('kabe',  'Kabe',  'SIN')
 ) as demo (handle, display_name, home_airport)
 join auth.users u
@@ -31,7 +34,7 @@ on conflict (id) do update
   set display_name = excluded.display_name,
       home_airport = excluded.home_airport;
 
--- What is in the table now. Expect three rows: Clara SHA, Gaudi HKG, Kabe SIN.
+-- What is in the table now. Expect three rows: Clara PVG, Gaudi HKG, Kabe SIN.
 select p.display_name, p.home_airport, a.city
 from public.profiles p
 join public.airports a on a.code = p.home_airport

@@ -5,7 +5,9 @@ import ComingSoonPage from './features/ComingSoonPage';
 import NotFoundPage from './features/NotFoundPage';
 import { ResetPage } from './demo';
 import RequireSession from './features/auth/RequireSession';
+import RequireProfile from './features/auth/RequireProfile';
 import SignInPage from './features/auth/SignInPage';
+import WelcomePage from './features/auth/WelcomePage';
 import DesignSystemPage from './design-system/DesignSystemPage';
 import GroupsPage from './features/groups/GroupsPage';
 import CreateGroupPage from './features/groups/CreateGroupPage';
@@ -57,6 +59,9 @@ export default function App() {
           <Route path="sign-in" element={<SignInPage />} />
           {/* Everything below needs a signed-in person (always true in mock mode). */}
           <Route element={<RequireSession />}>
+          {/* Signed in but no name and home airport yet: shown once, outside the profile check. */}
+          <Route path="welcome" element={<WelcomePage />} />
+          <Route element={<RequireProfile />}>
           <Route index element={<Navigate to="/groups" replace />} />
           <Route path="reset" element={<ResetPage />} />
           <Route path="groups" element={<GroupsPage />} />
@@ -80,6 +85,7 @@ export default function App() {
           <Route path="groups/:groupId/*" element={<ComingSoonPage later />} />
           <Route path="coming-soon/:tab" element={<ComingSoonPage />} />
           <Route path="*" element={<NotFoundPage />} />
+          </Route>
           </Route>
         </Route>
       </Routes>

@@ -171,20 +171,47 @@ export const COPY = {
       pickedOutbound: 'Outbound flight chosen. Now choose your return.',
       pickedReturn: 'Flights picked. Your group can see your status.',
     },
-    timing: {
-      sliderLabel: 'Group timing window',
-      sliderValue: (hours) => `Within ${hours} ${hours === 1 ? 'hour' : 'hours'}`,
-      sliderHelp: 'Show flights that land in Tokyo, and leave Tokyo, within this time of your friends.',
-      introOutbound: (hours) => `Lands in Tokyo within ${hours}h of your friends`,
-      introReturn: (hours) => `Leaves Tokyo within ${hours}h of your friends`,
-      headingWithin: { outbound: (hours) => `Lands within ${hours}h of everyone`, return: (hours) => `Leaves within ${hours}h of everyone` },
-      headingOutside: {
-        outbound: (bucket) => (bucket === 'more' ? 'Lands more than 2h outside your window' : `Lands ${bucket} outside your window`),
-        return: (bucket) => (bucket === 'more' ? 'Leaves more than 2h outside your window' : `Leaves ${bucket} outside your window`),
+    suggest: {
+      title: 'Group combinations',
+      barNobody: (names) => `For you, ${names}`,
+      barPicked: (names, count) => `${names} ${count === 1 ? 'has' : 'have'} picked · see what lines up`,
+      help: (cabinLabel) => `Everyone still picks their own flight. Anyone who has picked stays as they picked; the rest are shown in ${cabinLabel}.`,
+      sections: {
+        outbound: { cheapest: 'Cheapest', closest: 'Closest landing', balanced: 'Best of both' },
+        return: { cheapest: 'Cheapest', closest: 'Closest take-off', balanced: 'Best of both' },
       },
-      badge: {
-        within: (hours) => `Within ${hours}h of everyone`,
-        outside: (bucket) => (bucket === 'more' ? 'Outside your window +2h or more' : `Outside your window +${bucket}`),
+      // The same labels as a tag on the viewer's own flight card.
+      tags: {
+        outbound: { cheapest: 'Cheapest for group', closest: 'Closest landing', balanced: 'Best of both' },
+        return: { cheapest: 'Cheapest for group', closest: 'Closest take-off', balanced: 'Best of both' },
+      },
+      others: 'Other combinations',
+      othersHelp: 'Best balance of price and time first.',
+      showMore: (count) => `Show ${count} more`,
+      youName: 'You',
+      alreadyChosen: 'picked',
+      stops: (count) => `${count} stop${count === 1 ? '' : 's'}`,
+      nextDay: '+1 day',
+      extra: (amount) => `+${amount}`,
+      total: (amount) => `Total ${amount}`,
+      spread: {
+        outbound: (span) => `landings ${span} apart`,
+        return: (span) => `take-offs ${span} apart`,
+      },
+      together: { outbound: 'land together', return: 'leave together' },
+      choose: (flightNo) => `Choose ${flightNo}`,
+      chooseMine: 'Choose my flight',
+    },
+    timing: {
+      intro: { outbound: 'Closest to your friends’ landing times first', return: 'Closest to your friends’ take-off times first' },
+      // The line on each flight card once someone else has picked.
+      withOne: {
+        outbound: { same: (name) => `Lands with ${name}`, after: (span, name) => `Lands ${span} after ${name}`, before: (span, name) => `Lands ${span} before ${name}` },
+        return: { same: (name) => `Leaves with ${name}`, after: (span, name) => `Leaves ${span} after ${name}`, before: (span, name) => `Leaves ${span} before ${name}` },
+      },
+      withGroup: {
+        outbound: { same: 'Group lands together', apart: (span) => `Group lands ${span} apart` },
+        return: { same: 'Group leaves together', apart: (span) => `Group leaves ${span} apart` },
       },
     },
     search: {
@@ -247,6 +274,23 @@ export const COPY = {
     signOut: 'Sign out',
     profileProblem: 'We could not load your profile',
     retry: 'Retry',
+  },
+  welcome: {
+    title: 'Welcome',
+    description: 'Two quick things, once. We use them to show flights from the right airport.',
+    labels: { name: 'Your name', airport: 'Where do you usually fly from?' },
+    search: 'Search city or airport code',
+    noMatch: 'No airport matches that. Try a city name or a three-letter code.',
+    locate: 'Suggest the nearest airport',
+    locating: 'Finding the nearest airport…',
+    locateNote: 'Your location stays in this browser. It is only compared with the list below.',
+    locateDenied: 'We could not get your location. Choose from the list instead.',
+    suggested: 'Nearest to you',
+    errors: { nameRequired: 'Enter your name.', airportRequired: 'Choose where you fly from.' },
+    submit: 'Continue',
+    submitting: 'Saving…',
+    failed: 'We could not save that. Please try again.',
+    changeLater: 'You can change your airport for a single trip when you pick flights.',
   },
   createGroup: {
     title: 'Create group',
