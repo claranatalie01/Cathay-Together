@@ -276,6 +276,7 @@ Keep provider secrets and administrative database keys server-side. Browser-visi
 - [x] Reconnect Tavily place photos with bundled fallbacks and update photos in saved researched decks.
 - [x] Give the model the exact shared window for each day, request a simpler draft when a check fails, and report the specific scheduling rule when it blocks the revised draft.
 - [x] Look up named venues, check AI drafts against the coordinate-based transfer matrix, and use the saved estimates in the itinerary and its edits.
+- [x] Search Tavily for named food venues and resolve generic meals to Geoapify district centres before itinerary review.
 
 Use a greedy heuristic: examine promising activities in a fixed order and add each only if it fits. This is manageable for a small demo; it is not a globally optimal route solver.
 

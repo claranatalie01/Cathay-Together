@@ -113,3 +113,44 @@ def test_transfer_estimates_flag_geoapify_credit_only_when_its_points_are_used()
     assert out["usesGeoapify"] and out["usesOpenStreetMap"] and out["between"]["a"]["b"] == 35
     none = transfer_estimates([{"id": "a"}, {"id": "b"}])
     assert not none["usesGeoapify"] and not none["usesOpenStreetMap"]
+
+
+def test_locate_areas_returns_district_centres_and_skips_unknowns(monkeypatch):
+    monkeypatch.setenv("GEOAPIFY_API_KEY", "test-key")
+    calls = []
+
+    def lookup(params):
+        calls.append(params["text"])
+        if params["text"] == "Shinjuku":
+            return {"results": [{"name": "Shinjuku", "result_type": "district", "lat": 35.69, "lon": 139.70, "rank": {"confidence": 0.9}}]}
+        if params["text"] == "Far Away":
+            return {"results": [{"name": "Far Away", "lat": 51.5, "lon": 0.0, "rank": {"confidence": 0.9}}]}
+        return {"results": []}
+
+    monkeypatch.setattr(geocoding, "_get_json", lookup)
+    out = geocoding.locate_areas(["Shinjuku", "Shinjuku", "Far Away", "Not verified", " ", "Nowhere"], "Tokyo, Japan")
+    assert out == {"Shinjuku": {"lat": 35.69, "lon": 139.70}, "Far Away": None, "Nowhere": None}
+    assert sorted(calls) == ["Far Away", "Nowhere", "Shinjuku"], "each district once; 'Not verified' is never looked up"
+    monkeypatch.delenv("GEOAPIFY_API_KEY")
+    assert geocoding.locate_areas(["Shinjuku"], "Tokyo, Japan") == {}
+
+
+def test_generic_meals_get_district_transfers_while_other_pairs_keep_their_values():
+    from server.itinerary.travel import add_meal_transfers
+
+    cards = [
+        {"id": "gyoen", "coordinates": {"lat": 35.6851, "lon": 139.7095}},
+        {"id": "tower", "coordinates": {"lat": 35.6586, "lon": 139.7455}},
+    ]
+    plan = {"days": [{"stops": [
+        {"card_id": "gyoen"}, {"transfer_id": "meal-d-lunch", "area": "Shinjuku"},
+        {"card_id": "tower"}, {"type": "free"}, {"transfer_id": "meal-d-dinner", "area": "Not verified"},
+    ]}]}
+    transfers = {"fallbackMinutes": 30, "between": {"gyoen": {"tower": 25}, "tower": {"gyoen": 25}}, "usesGeoapify": False, "usesOpenStreetMap": False}
+    out = add_meal_transfers(transfers, plan, cards, {"Shinjuku": {"lat": 35.6896, "lon": 139.7006}})
+    assert out["between"]["gyoen"]["meal-d-lunch"] == out["between"]["meal-d-lunch"]["gyoen"] <= 15  # next door
+    assert out["between"]["meal-d-lunch"]["tower"] > 15  # Shinjuku to Tokyo Tower is a train ride
+    assert out["between"]["gyoen"]["tower"] == 25, "an existing pair is untouched"
+    assert "meal-d-dinner" not in out["between"], "a meal with no known district keeps the fallback"
+    assert out["usesGeoapify"] and out["usesOpenStreetMap"]
+    assert transfers["between"] == {"gyoen": {"tower": 25}, "tower": {"gyoen": 25}}, "the input is not changed"

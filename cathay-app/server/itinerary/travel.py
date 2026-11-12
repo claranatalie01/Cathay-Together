@@ -47,6 +47,36 @@ def transfer_estimates(cards: list[dict]) -> dict:
 
 
 def transfer_minutes(estimates: dict, previous_place: dict, stop: dict) -> int:
-    return estimates["between"].get(previous_place.get("card_id"), {}).get(
-        stop.get("card_id"), estimates["fallbackMinutes"]
+    return estimates["between"].get(_transfer_key(previous_place), {}).get(
+        _transfer_key(stop), estimates["fallbackMinutes"]
     )
+
+
+def _transfer_key(stop: dict) -> str | None:
+    return stop.get("card_id") or stop.get("transfer_id")
+
+
+def add_meal_transfers(transfers: dict, schedule: dict, cards: list[dict], area_points: dict) -> dict:
+    """Add district estimates for every same-day pair involving a generic meal."""
+    points = {card["id"]: coordinate_pair(card.get("coordinates")) for card in cards}
+    between = {from_id: dict(to) for from_id, to in transfers["between"].items()}
+    used = False
+    for day in schedule["days"]:
+        prior = []
+        for stop in day["stops"]:
+            key = _transfer_key(stop)
+            if key is None:
+                continue
+            generic = "transfer_id" in stop
+            point = coordinate_pair(area_points.get(stop["area"])) if generic else points.get(key)
+            if point is None:
+                continue
+            for other_key, other_point, other_generic in prior:
+                if generic or other_generic:
+                    minutes = estimate_minutes(other_point, point)
+                    between.setdefault(other_key, {})[key] = minutes
+                    between.setdefault(key, {})[other_key] = minutes
+                    used = True
+            prior.append((key, point, generic))
+    return {**transfers, "between": between, "usesGeoapify": transfers.get("usesGeoapify", False) or used,
+            "usesOpenStreetMap": transfers.get("usesOpenStreetMap", False) or used}

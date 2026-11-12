@@ -62,11 +62,13 @@ def normalize_cards(raw_cards, known_source_ids: set[str]) -> list[dict]:
         source_ids = [s for s in cited if isinstance(s, str) and s in known_source_ids] if isinstance(cited, list) else []
         if not name or not source_ids or name.casefold() in seen:
             continue  # no evidence, no card
-        seen.add(name.casefold())
-
         category = clean_text(raw.get("category"), 20).lower()
         if category not in config.CATEGORIES:
             category = "culture"
+        venue_name = clean_text(raw.get("venue_name", name), 80)
+        if category == "food" and not venue_name:
+            continue
+        seen.add(name.casefold())
         best_time = clean_text(raw.get("best_time_of_day"), 12).lower()
         if best_time not in config.TIMES_OF_DAY:
             best_time = "any"
@@ -76,7 +78,7 @@ def normalize_cards(raw_cards, known_source_ids: set[str]) -> list[dict]:
             {
                 "id": f"card_{uuid.uuid4().hex[:8]}",
                 "name": name,
-                "venue_name": clean_text(raw.get("venue_name", name), 80),
+                "venue_name": venue_name,
                 "category": category,
                 "headline": clean_text(raw.get("headline"), 60),
                 "description": clean_text(raw.get("description"), 300),
@@ -184,7 +186,7 @@ RULES:
 - Filter out anything likely closed during {dates['start']} to {dates['end']}
 - Prioritise group-friendly activities for {context['group_size']} people
 - Include a mix of free and paid options
-- Include at least 3 food/restaurant options at different price points
+- Include at least 4 food places at different price points. Each must be one specific, named venue (a real restaurant, café or food market) with its exact venue_name. Never a cuisine or a meal type such as "Japanese cuisine" or "sushi dinner"
 - Set realistic estimated costs in JPY (or local currency); use 0 only for free places
 - Use "Unknown" for opening hours that the evidence does not state
 - Source IDs must reference the evidence provided

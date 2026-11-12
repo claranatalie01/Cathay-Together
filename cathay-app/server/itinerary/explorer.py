@@ -120,7 +120,7 @@ Return exactly this JSON structure:
 }}
 
 Generate 5-7 queries that collectively cover:
-1. Best restaurants and food experiences in {destination} (street food to mid-range)
+1. Specific, named restaurants, cafés and food markets in {destination}, from street food to mid-range. Search for venue names (for example "best named ramen shops in {destination}"), never for a cuisine in general
 2. Cultural attractions, temples, museums in {destination}
 3. Group-friendly activities for {group_size} people in {destination}
 4. {destination} hidden gems locals recommend
@@ -134,7 +134,8 @@ Keep each query under 300 characters. Make them specific and searchable.
     )
     raw = plan.get("search_queries", []) if isinstance(plan, dict) else []
     cleaned = [q.strip()[:300] for q in raw if isinstance(q, str) and q.strip()]
-    return list(dict.fromkeys(cleaned))[: config.MAX_SEARCHES]
+    food_query = f"Named local restaurants and cafés in {destination} with street addresses and opening hours"
+    return list(dict.fromkeys([food_query, *cleaned]))[: config.MAX_SEARCHES]
 
 
 def explorer_agent(llm, search_client, model: str, context: dict) -> tuple[list[dict], list[dict], list[dict]]:

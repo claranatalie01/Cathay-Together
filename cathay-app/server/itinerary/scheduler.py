@@ -117,7 +117,7 @@ MAYBE ACTIVITIES (only if time permits):
 
 MINIMUM TRANSFER MINUTES BETWEEN ACTIVITY IDS (matrix is symmetric):
 {json.dumps(transfers["between"], separators=(",", ":"))}
-Use {transfers["fallbackMinutes"]} minutes when a pair is absent, including transfers involving meal suggestions.
+Use {transfers["fallbackMinutes"]} minutes when a pair is absent, until a district is known. Give each generic meal one specific nearby district in its area field.
 
 RETRIEVED EVIDENCE (for opening hours and details):
 {json.dumps(evidence, ensure_ascii=False)}

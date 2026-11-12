@@ -334,3 +334,19 @@ def test_a_saved_plan_is_reused_only_while_its_inputs_are_unchanged(monkeypatch)
     first = FakeStore(None)  # no plan yet: built
     app_module.run_job(first, "plan")
     assert len(first.finished) == 1
+
+
+def test_district_transfer_is_used_for_both_review_and_saved_plan(monkeypatch):
+    cards = voted_cards()
+    cards[0]["coordinates"] = {"lat": 0, "lon": 0}
+    draft = good_plan()
+    lunch = draft["days"][1]["stops"][1]
+    lunch.update(area="Shinjuku", start="10:50")
+    monkeypatch.setattr(pipeline, "locate_areas", lambda areas, destination: {
+        "Shinjuku": {"lat": 0, "lon": 0.07},
+    })
+    result = pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([draft, REVIEW_OK]))["plan"]
+    meal_id = f"meal-{DATES[1]}-lunch"
+    assert result["transfers"]["between"]["card_aaaaaaaa"][meal_id] == 35
+    assert any("needs 35 minutes of travel, but only 20 are available" in issue["message"]
+               for issue in result["review"]["issues"])

@@ -1,6 +1,23 @@
 """Shared fixtures: a fake model and search client, so tests need no network and no keys."""
 import json
 
+import pytest
+import requests
+
+
+@pytest.fixture(autouse=True)
+def no_real_network_keys(monkeypatch):
+    """Tests never spend credits or touch the network: the keys in .env are hidden unless a test sets one."""
+    for name in ("GEOAPIFY_API_KEY", "GOOGLE_PLACES_API_KEY", "TAVILY_API_KEY", "POE_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+
+    def deny_request(*args, **kwargs):
+        pytest.fail("Unexpected HTTP request. Stub the provider in this test.")
+
+    monkeypatch.setattr(requests.sessions.Session, "request", deny_request)
+    monkeypatch.setattr("httpx.HTTPTransport.handle_request", deny_request)
+    monkeypatch.setattr("httpx.AsyncHTTPTransport.handle_async_request", deny_request)
+
 CONTEXT = {
     "destination": "Tokyo, Japan",
     "dates": {"start": "2026-11-21", "end": "2026-11-23"},

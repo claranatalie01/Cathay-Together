@@ -47,10 +47,8 @@ def _activity(stop: dict, place: dict) -> dict:
     }
 
 
-def _meal(stop: dict, day: str, taken: set) -> dict:
-    stop_id = f"meal-{day}-{stop['meal']}"
-    while stop_id in taken:
-        stop_id += "x"
+def _meal(stop: dict) -> dict:
+    stop_id = stop["transfer_id"]
     text = " · ".join(part for part in (stop["area"], stop["note"]) if part)
     if stop["source_ids"]:
         text += " " + " ".join(f"[{s}]" for s in stop["source_ids"])
@@ -108,7 +106,7 @@ def to_app_plan(schedule: dict, places: list[dict], sources: list[dict], review:
                 scheduled.add(place["id"])
                 cited += place["source_ids"]
             elif stop["type"] == "meal":
-                built = _meal(stop, day["date"], set(stops))
+                built = _meal(stop)
                 cited += stop["source_ids"]
             else:
                 built = _free(stop, day["date"])

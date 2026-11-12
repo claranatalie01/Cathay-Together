@@ -47,5 +47,6 @@ export const isPhysicalStop = (stop) => stop.kind === 'place' && stop.suggestedI
 
 // Read the exact estimate saved by the shared planner, including its unknown-place fallback.
 export function savedTransferMinutes(transfers, from, to) {
-  return transfers.between[from.placeId]?.[to.placeId] ?? transfers.fallbackMinutes;
+  // A stop that is one of the group's places is keyed by its place id; a generic meal by its own id.
+  return transfers.between[from.placeId ?? from.id]?.[to.placeId ?? to.id] ?? transfers.fallbackMinutes;
 }

@@ -135,3 +135,61 @@ def enrich_coordinates(cards: list[dict], destination: str) -> None:
         card["coordinates"] = point
         if point:
             card["coordinateSource"] = GEOAPIFY_SOURCE
+
+
+AREA_FIELDS = ("name", "suburb", "district", "city_district", "city", "address_line1")
+AREA_TYPES = {"suburb", "district", "city", "county"}
+
+
+def _area_lookup(area: str, center: tuple[float, float], key: str) -> dict | None:
+    lat, lon = center
+    results = _get_json({
+        "text": area,
+        "type": "locality",
+        "filter": f"circle:{lon},{lat},{SEARCH_RADIUS_M}",
+        "bias": f"proximity:{lon},{lat}",
+        "limit": 5,
+        "lang": "en",
+        "apiKey": key,
+    }).get("results") or []
+    for result in results:
+        pair = coordinate_pair({"lat": result.get("lat"), "lon": result.get("lon")})
+        if pair is None or distance_km(center, pair) * 1000 > SEARCH_RADIUS_M:
+            continue
+        confidence = (result.get("rank") or {}).get("confidence")
+        if isinstance(confidence, (int, float)) and confidence < MIN_CONFIDENCE:
+            continue
+        if result.get("result_type") in AREA_TYPES and any(
+            names_match(area, str(result.get(field) or "")) for field in AREA_FIELDS
+        ):
+            return {"lat": pair[0], "lon": pair[1]}
+    return None
+
+
+def locate_areas(areas: list[str], destination: str) -> dict[str, dict | None]:
+    """The centre point of each named district ("Shinjuku", "Roppongi"), for meals that name no venue.
+
+    A district centre is a rough position, but far better than guessing a flat transfer time. Names that
+    do not resolve to a place near the destination are left out, and the planner keeps its 30 minute fallback.
+    """
+    key = config.env("GEOAPIFY_API_KEY")
+    names = list(dict.fromkeys(a.strip() for a in areas if a and a.strip() and a.strip().casefold() != "not verified"))
+    if not key or not names:
+        return {}
+    try:
+        center = _destination_center(destination, key)
+    except (ValueError, requests.RequestException) as exc:
+        log.info("Destination lookup failed: %s", type(exc).__name__)
+        return {}
+    if center is None:
+        return {}
+
+    def one(area):
+        try:
+            return _area_lookup(area, center, key)
+        except (ValueError, requests.RequestException) as exc:
+            log.info("District lookup failed: %s", type(exc).__name__)  # type only: the URL holds the key
+            return None
+
+    with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(names))) as pool:
+        return dict(zip(names, pool.map(one, names)))
