@@ -10,6 +10,10 @@ This is the active technical roadmap. The previous frontend plan is preserved un
 
 **Why and how:** the algorithms, data, services and backend are explained in plain language, with worked examples, in [docs/technical-guide.md](docs/technical-guide.md).
 
+The [architecture](ARCHITECTURE.md), [data dictionary](DATA_DICTIONARY.md) and [logic](LOGIC.md) describe the current implementation. Earlier decisions and progress notes below record the hackathon plan.
+
+- [x] Remove unused app bindings, legacy navigation flags, and the uncalled flight-selection wrapper. Keep the documented selection routes.
+
 ## 0. Your to-do summary (start here)
 
 A short, ordered list of everything you need to do. Each item points to the section with the detail. Added 10 November 2026.

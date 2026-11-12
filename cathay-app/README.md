@@ -7,6 +7,11 @@ Interactive demo of the Cathay Together group-booking prototype.
 
 The app runs as a single-browser demo or as a shared trip backed by Supabase. Both modes use a bundled OAG schedule snapshot for flights to Tokyo Haneda and simulate fares, booking, payment and tickets.
 
+| Mode | Swipe deck | Itinerary |
+| --- | --- | --- |
+| Mock | 11 bundled Tokyo places | Local JavaScript scheduler. Strict majority, preset fillers and a 20-minute transfer fallback. |
+| Shared | Tavily research and matched photos. Geoapify supplies coordinates where available. | Python planner drafts with Poe and reviews one group plan saved in Supabase. Missing coordinates use a 30-minute transfer fallback. |
+
 The original static prototype is kept outside this repository.
 
 ## Run it
@@ -43,7 +48,7 @@ npm run dev:api
 
 Or start both in one terminal with `npm run dev:all` (after the one-time setup above). Ctrl+C stops both.
 
-For production, apply [`20261112020000_researched_itineraries.sql`](supabase/migrations/20261112020000_researched_itineraries.sql) after the earlier migrations. In Vercel, keep the project root set to `cathay-app`, enable Fluid Compute for the planner’s 300-second limit, and redeploy after setting the variables below. The React app and `/api/planner` deploy together. Use `npm run dev:shared` with the local planner to test the whole workflow locally.
+For production, apply the pending [migrations](supabase/migrations) in order through [`20261112030000_rebuild_itineraries.sql`](supabase/migrations/20261112030000_rebuild_itineraries.sql). It follows [`20261112020000_researched_itineraries.sql`](supabase/migrations/20261112020000_researched_itineraries.sql). In Vercel, keep the project root set to `cathay-app`, enable Fluid Compute for the planner’s 300-second limit, and redeploy after setting the variables below. The React app and `/api/planner` deploy together. Use `npm run dev:shared` with the local planner to test the whole workflow locally.
 
 ### Environment variables
 
@@ -56,14 +61,16 @@ For production, apply [`20261112020000_researched_itineraries.sql`](supabase/mig
 | `TAVILY_API_KEY` | Server only. Required for researching places. |
 | `POE_API_KEY` | Server only. Required for search planning, curation, scheduling and review. |
 | `POE_MODEL`, `POE_BASE_URL` | Optional server settings. Defaults to `GPT-4o-Mini` and `https://api.poe.com/v1/`. |
+| `GEOAPIFY_API_KEY` | Optional server key for named venue and generic meal district coordinates. Missing points use the 30-minute transfer fallback. |
+| `LLM_TIMEOUT_SECONDS` | Optional server setting for each model call. Defaults to 60 seconds with a 5-second minimum. |
 | `GOOGLE_PLACES_API_KEY` | Optional server key for ratings enrichment. |
 | `OAG_SUBSCRIPTION_KEY` | Optional local credential for `npm run fetch:oag`, which refreshes `src/data/oagSnapshot.json`. Both modes can run from the checked-in snapshot. |
 
 Set server keys as Vercel **Secrets** or in the git-ignored `.env` for local development (the same file the front end uses; only `VITE_` names reach the browser). Keep them out of `VITE_` variables. The Python service verifies the caller’s Supabase session and membership before contacting Tavily or Poe. Keep the OAG subscription key in the git-ignored local environment and use its unprefixed name.
 
-Shared mode prepares the latest trip after sign-in and researches other trips as they are opened or created. Trips with existing swipes or plans retain their original deck. Existing plans open as saved, and the planner saves a new plan only after every traveller saves their choices. Research and planning errors offer a retry. The mock workflow uses its local deck and scheduler.
+Shared mode prepares the latest trip after sign-in and researches other trips as they are opened or created. Trips with existing swipes or plans retain their original deck. Every traveller must save their choices before the server can generate a new plan. The itinerary screen opens a saved plan as-is. When called directly, the build endpoint compares the saved fingerprint with current membership, votes and flight times. Research and planning errors offer a retry. The mock workflow uses its local deck and scheduler.
 
-The shared planner keeps the 90-minute arrival buffer, three-hour departure buffer and 08:00–21:30 local planning window. It checks known opening hours, closures and overlaps. It prioritizes places liked by at least half the group and estimates transfers. The model proposes meals and free time within the trip's activity and meal budget.
+The shared planner keeps the 90-minute arrival buffer, three-hour departure buffer and 08:00–21:30 local planning window. It checks known opening hours, closures and overlaps. It prioritizes places liked by at least half the group. The model proposes activities, meals and free time, and the server can use a popular food venue in a generic meal slot. Transfers use named venue or district coordinates when available. A short transfer is a warning, and the planner can save a readable draft with review issues.
 
 ## Review shortcuts
 
@@ -98,7 +105,8 @@ The Next step card on Group details and the Members page follows your progress f
 - `src/components` – `layout/`, `ui/` (Button, Chip, Field, Sheet, Toast, StateMessage, LoadingState, ErrorState), `domain/`
 - `src/features` – pages, one folder per flow
 - `src/api` – page-facing async API, browser mock handlers, Supabase handlers, and builders used in both modes
-- `src/algorithms` – pure JavaScript for flight timing, connections, group ranking, travel estimates and itinerary scheduling
+- `src/algorithms` – JavaScript flight timing, group ranking, mock itinerary scheduling and shared transfer display helpers
+- `server/itinerary` and `api/planner.py` – the shared research, geocoding and itinerary pipeline and its Vercel entry point
 - `src/data` – UI copy, OAG snapshot, place coordinates, and other static data
 - `src/demo` – local demo controls and reset
 - `supabase` – schema migrations, RPCs, optional demo profile seed and SQL tests
@@ -112,4 +120,5 @@ To remove the optional demo controls from a copy of the app, remove the `DemoCon
 
 - [Architecture](ARCHITECTURE.md) covers app flows, algorithms, and security boundaries.
 - [Data dictionary](DATA_DICTIONARY.md) covers the Supabase schema, RPCs, payloads, and source data.
-- The [older API contract](docs/api-contract.md) includes route examples from earlier flows, including the former flight timing window. Use the current handlers and the data dictionary for implemented behavior.
+- [Logic](LOGIC.md) covers the flight formulas and the mock and shared itinerary rules.
+- The [API contract](docs/api-contract.md) includes route examples, including historical examples of the flight timing window.

@@ -50,7 +50,7 @@ export default function PaymentPage() {
       try {
         await startBooking(groupId);
         await reload();
-      } catch (startError) {
+      } catch {
         toast(copy.payFailed);
       } finally {
         setBusy(null);

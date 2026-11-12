@@ -78,7 +78,7 @@ def _destination_center(destination: str, key: str) -> tuple[float, float] | Non
     return pair
 
 
-def _lookup(venue: str, destination: str, center: tuple[float, float], key: str) -> dict | None:
+def _lookup(venue: str, center: tuple[float, float], key: str) -> dict | None:
     lat, lon = center
     results = _get_json({
         # The venue name alone: adding the city to the text makes Geoapify's confidence score collapse
@@ -103,9 +103,9 @@ def _lookup(venue: str, destination: str, center: tuple[float, float], key: str)
     return None
 
 
-def _safe_lookup(venue: str, destination: str, center: tuple[float, float], key: str) -> dict | None:
+def _safe_lookup(venue: str, center: tuple[float, float], key: str) -> dict | None:
     try:
-        return _lookup(venue, destination, center, key)
+        return _lookup(venue, center, key)
     except (ValueError, requests.RequestException) as exc:
         log.info("Venue coordinate lookup failed: %s", type(exc).__name__)  # type only: the URL holds the key
         return None
@@ -129,7 +129,7 @@ def enrich_coordinates(cards: list[dict], destination: str) -> None:
     venues = {id(card): (card.get("venue_name") or card["name"]).strip() for card in pending}
     unique = list(dict.fromkeys(v for v in venues.values() if v and "|" not in v))
     with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, max(len(unique), 1))) as pool:
-        points = dict(zip(unique, pool.map(lambda v: _safe_lookup(v, destination, center, key), unique)))
+        points = dict(zip(unique, pool.map(lambda v: _safe_lookup(v, center, key), unique)))
     for card in pending:
         point = points.get(venues[id(card)])
         card["coordinates"] = point

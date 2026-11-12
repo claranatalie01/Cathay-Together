@@ -71,8 +71,6 @@ export function windowOf(datesLabel) {
   return { start: `${match[4]}-${month}-${pad(match[2])}`, end: `${match[4]}-${month}-${pad(match[3])}` };
 }
 
-const durationLabel = (minutes) => `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
-
 const homeFactor = (code) => HOME_AIRPORTS[code]?.price ?? 1;
 
 export function cabinsFor(homeCode) {
@@ -117,7 +115,7 @@ const FARE_RULES = {
   flex: { name: 'Flex', tagline: null, seat: 'Free (Preferred seats)', baggage: '2x23kg', changeFee: 0, cancelFee: 600, miles: 2200, points: 22, seatSelect: true, milesUpgrade: true },
 };
 
-export const FARE_IDS = Object.keys(FARE_RULES);
+const FARE_IDS = Object.keys(FARE_RULES);
 
 export function faresFor(flight) {
   const light = flight.priceFrom;

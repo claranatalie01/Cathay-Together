@@ -4,8 +4,6 @@
 import { buildJourneys } from '../../algorithms/connections.js';
 import snapshot from '../../data/oagSnapshot.json' with { type: 'json' };
 
-export const SNAPSHOT_INFO = { source: snapshot.source, fetchedAt: snapshot.fetchedAt };
-
 const hash = (text) => [...text].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 // Invented fare model: a base plus an amount per minute in the air, HK Express a little over half

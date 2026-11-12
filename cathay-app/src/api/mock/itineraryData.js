@@ -27,7 +27,7 @@ const byId = (id) => SUGGESTED.find((s) => s.id === id);
 // and the scheduler uses its standard gap for them.
 const TRAVEL = travelTable(PLACE_GEO);
 const placeIdOf = (stopId) => (stopId?.startsWith('place-') ? stopId.slice('place-'.length) : null);
-export const travelBetweenStops = (fromId, toId) => TRAVEL[placeIdOf(fromId)]?.[placeIdOf(toId)];
+const travelBetweenStops = (fromId, toId) => TRAVEL[placeIdOf(fromId)]?.[placeIdOf(toId)];
 
 // Trip day numbers (0 = first day) on which a place is closed, from OpenStreetMap's closed weekdays.
 const weekdayOf = (iso) => new Date(`${iso}T12:00:00Z`).getUTCDay();
@@ -75,7 +75,7 @@ export function datesBetween(start, end) {
   for (let d = new Date(`${start}T12:00:00Z`); d <= new Date(`${end}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 1)) out.push(d.toISOString().slice(0, 10));
   return out;
 }
-export const dayLabel = (iso) => {
+const dayLabel = (iso) => {
   const d = new Date(`${iso}T12:00:00Z`);
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()].slice(0, 3)}`;
 };

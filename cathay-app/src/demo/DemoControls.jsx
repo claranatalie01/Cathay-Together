@@ -23,8 +23,7 @@ function useSnapshot() {
 // it is outlined and tagged "Demo only", and can be hidden.
 //   context: 'members' | 'groups' | 'invite'
 //   group:   the API group being shown (members / invite pages)
-//   inviteCode: the invite code in the URL (invite page, even if the group failed to load)
-export function DemoControls({ context, group, inviteCode }) {
+export function DemoControls({ context, group }) {
   const navigate = useNavigate();
   const [visible, setVisible] = useDemoVisibility();
   const [snapshot, refresh] = useSnapshot();
@@ -40,8 +39,6 @@ export function DemoControls({ context, group, inviteCode }) {
     );
   }
 
-  const code = inviteCode ?? group?.code;
-  const stored = snapshot.groups.find((g) => g.code === code);
   const memberIds = group ? group.members.map((m) => m.userId) : [];
   const joiner = personas.find((p) => !memberIds.includes(p.id) && p.id === 'clara') ?? personas.find((p) => !memberIds.includes(p.id));
   const kabeMissing = group && !memberIds.includes('kabe');

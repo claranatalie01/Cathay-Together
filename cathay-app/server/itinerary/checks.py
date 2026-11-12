@@ -145,8 +145,3 @@ def deterministic_checks(schedule: dict, cards: list[dict], context: dict, trans
     if total > budget:
         issues.append(_issue("error", None, f"Estimated cost ¥{total:,} per person is over the ¥{budget:,} budget.", "Swap a paid stop for a free one."))
     return issues
-
-
-def estimated_total(schedule: dict, cards: list[dict]) -> int:
-    cards_by_id = {c["id"]: c for c in cards}
-    return sum(stop_cost(s, cards_by_id) for day in schedule["days"] for s in day["stops"])

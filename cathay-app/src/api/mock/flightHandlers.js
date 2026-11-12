@@ -3,7 +3,6 @@ import { ApiError } from '../errors';
 import { USERS, getDb, saveDb } from './db';
 import {
   DESTINATION_AIRPORT,
-  FARE_IDS,
   OUTBOUND_DATES,
   othersTimes,
   withTiming,

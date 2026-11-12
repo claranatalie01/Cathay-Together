@@ -1,8 +1,8 @@
 # LOGIC.md
 
-How the two algorithms in Cathay Together work. Both are pure functions: no browser, storage, network or randomness, so the same inputs always give the same output. Sources: `src/algorithms/combinations.js`, `arrivalWindow.js`, `travel.js`, `itinerary.js`, and the data in `src/data/placeGeo.js`. Tests sit beside them (`npm test`).
+Flight ranking and the mock itinerary are deterministic JavaScript. Shared itinerary generation uses the Python planner, external research and a model. Sources: `src/algorithms/combinations.js`, `arrivalWindow.js`, `travel.js`, `itinerary.js`, and the data in `src/data/placeGeo.js`. Tests sit beside them (`npm test`).
 
-Data status: flight times and numbers come from a saved OAG schedule snapshot; **all prices are fictional**. Place coordinates are real (OpenStreetMap); most opening hours are our own estimates (see 2.5).
+Flight times and numbers come from a saved OAG schedule snapshot. **Flight fares are simulated.** Mock coordinates come from OpenStreetMap, with curated opening-hour estimates. Shared cards use researched evidence and Geoapify coordinates when available.
 
 ---
 
@@ -111,7 +111,7 @@ G1 C1 K1 and G2 C2 K2 tie at 1.000, so the **smaller spread wins**: Best of both
 
 ---
 
-## 2. Rule-based itinerary generation engine
+## 2. Mock itinerary scheduler
 
 No machine learning and no language model. The same votes always give the same plan, and `checkPlan()` can prove a plan valid.
 
@@ -181,3 +181,34 @@ Everyone likes all 11 places, trip Sat 21 to Tue 24 Nov, no flight limits. One r
 - **Opening hours are mostly estimates.** `placeData.js` supplies `open`/`close` for all places. OpenStreetMap's hours text exists for only Shinjuku Gyoen, Sensō-ji, Tokyo Tower and Zōjō-ji, and it is **not parsed**: only the structured `closedWeekdays` is used. Where the map and the estimate differ, `note` in `PLACE_GEO` records it; no hours are overwritten automatically.
 - **Single day length.** Everything is limited to 08:00 to 21:30, including places that open earlier or close later.
 - **Validation lives in the app.** The database stores the plan; `checkPlan` runs in the browser and the database does not re-check it.
+
+
+## 3. Shared AI itinerary planner
+
+### 3.1 Research and readiness
+
+1. **Search.** `explorer_agent()` uses Tavily, with a dedicated query for named restaurants and cafés. `curator_agent()` builds cards from cited evidence, matches photos by their descriptions and supplies exact venue names where possible.
+2. **Geocode.** `enrich_coordinates()` looks for a name match near the destination and checks the provider’s confidence. It keeps the accepted point and its source. Existing shared groups with legacy votes use the bundled `server/legacy_places.json`.
+3. **Save votes.** A member saves one choice per deck card. The planner uses every current member’s saved votes. `split_cards()` prioritizes `likes × 2 ≥ total`, then allows lower-ranked liked places. For example, two likes out of four qualify. If no place qualifies, it works from all places with a like. With zero likes across the deck, the planner returns `nothing_to_plan`.
+
+### 3.2 Draft, geocode meals and review
+
+| Step | Current rule |
+| --- | --- |
+| Availability | `flight_limits()` and `day_window()` intersect 08:00–21:30 local time with the latest arrival plus 90 minutes and the earliest departure minus 180 minutes. A day can have an empty window. |
+| Draft | `scheduler_agent()` gives Poe the daily windows, liked cards, research, budget and pairwise travel estimates. Pace limits are two activities for relaxed, three for moderate and four for packed. |
+| Meals | Full middle days require lunch and dinner. `adopt_liked_food()` can replace a generic lunch or dinner with an unscheduled food card liked by at least half the group if its known hours and closure days allow the slot. `locate_areas()` geocodes the named district for remaining generic meals. |
+| Transfers | `distance_km()` computes Haversine distance. Let `d = 1.3 × distance_km`. For `d ≤ 1.2 km`, use `60 × d / 5`. Otherwise use `10 + 60 × d / 25`. Round to `max(5, ceil(minutes / 5) × 5)`. If either point is unavailable, use 30 minutes. |
+| Rule checks | `deterministic_checks()` checks overlaps, airport buffers, opening hours, closures, pace, meals and the JPY budget. An insufficient transfer is a warning. After a free-time block, the previous physical stop remains the origin and the transfer gap starts at the end of the block. |
+| Model review | When the rule checks find no errors, `quality_check_agent()` asks the model to review feasibility and evidence. A warning alone does not require a revision. |
+| Revision and selection | On rejection, `run_plan()` can request one simpler draft with feedback. It saves the reviewed draft with the fewest reported errors, choosing the later one on a tie. A draft can be saved with review errors. A provider failure or lack of a usable draft can surface **Try again**. |
+
+**Worked transfer.** A 1.42 km straight-line leg becomes 1.85 km of estimated street distance. That takes about 14.4 minutes with the transit formula, rounded up to **15 minutes**. The label reads “15 min estimated transfer” with the same icon used for walking estimates.
+
+### 3.3 Save, read and edit
+
+- **Save one group plan.** `finish_trip_planner_job()` verifies the original input snapshot before saving. The plan includes `review`, `sources`, `transfers` and the input `fingerprint`. A rebuild can replace the saved plan and its manual edits.
+- **Reuse the saved transfer table.** `savedTransferMinutes()` uses the card ID, or the stop ID for a generic meal. The displayed totals and `retimeResearchedPlan()` use this same table.
+- **Open the plan.** The build endpoint checks the input fingerprint. The current itinerary screen can open an existing plan before calling that endpoint.
+
+Sources include [`pipeline.py`](server/itinerary/pipeline.py), [`geocoding.py`](server/itinerary/geocoding.py), [`travel.py`](server/itinerary/travel.py), [`checks.py`](server/itinerary/checks.py), and [`app.py`](server/app.py).

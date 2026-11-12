@@ -1,4 +1,5 @@
--- Run after the earlier SQL suites and the researched_itineraries migration.
+-- Run after the earlier SQL suites and 20261112020000_researched_itineraries.sql.
+-- This verifies the insert-once behavior before 20261112030000_rebuild_itineraries.sql.
 begin;
 
 do $$ begin

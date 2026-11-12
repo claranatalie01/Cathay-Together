@@ -1,6 +1,6 @@
 # Cathay Together demo
 
-React 19 + Vite 8 + react-router-dom 7 demo app: a phone-sized (440 px) "Travel Groups" flow that must match the real Cathay Pacific Android app. Algorithm tests only (`npm test`). Mock API in `src/api/mock` (state in localStorage, key `cathay-mock-db-v3`).
+React 19 + Vite 8 + react-router-dom 7 demo app: a phone-sized (440 px) "Travel Groups" flow that must match the real Cathay Pacific Android app. Mock API in `src/api/mock`, with browser storage under `cathay-mock-db-v4`. Shared itinerary generation lives in `server/itinerary/`. Run `npm test` for JavaScript and `.venv/bin/python -m pytest server/tests` for Python.
 
 **Start every session by reading `plan.md` (the master plan and progress checklist), then update its checklist when you finish a task.**
 

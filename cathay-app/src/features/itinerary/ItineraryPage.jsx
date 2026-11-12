@@ -117,7 +117,7 @@ export default function ItineraryPage() {
           </IconHeading>
           {editing && <p className="itinerary__note">{copy.editNote}</p>}
           <ol className="itinerary__list">
-            {rows.map((item, index) => {
+            {rows.map((item) => {
               const placeIndex = ids.indexOf(item.id);
               return (
                 <li key={item.id}>

@@ -8,35 +8,27 @@ export const NAV_VARIANTS = {
   groups2: {
     active: 'groups',
     icons: { profile: '2fa4b.svg', trips: 'e2721.svg', book: '47480.svg', groups: 'ee380.svg', home: '2fe35.svg' },
-    groupsAlt: true,
-    homeAlt: true,
   },
   groups3: {
     active: 'groups',
     icons: { profile: '2fa4b.svg', trips: 'e2721.svg', book: '47480.svg', groups: '4c5a4.svg', home: '1169e.svg' },
-    groupsAlt: true,
-    homeAlt2: true,
   },
   book: {
     active: 'book',
     icons: { profile: '2fa4b.svg', trips: 'e2721.svg', book: 'c92e8.svg', groups: '447b4.svg', home: 'cda7a.svg' },
-    bookRotated: true,
-    groupsAlt: true,
   },
   book2: {
     active: 'book',
     icons: { profile: '2fa4b.svg', trips: 'e2721.svg', book: 'c92e8.svg', groups: '447b4.svg', home: '1611f.svg' },
-    bookRotated: true,
-    groupsAlt: true,
   },
 };
 
 export const NAV_TABS = [
-  { key: 'home', label: 'Home' },
-  { key: 'book', label: 'Book' },
-  { key: 'trips', label: 'My Trips' },
-  { key: 'profile', label: 'Profile' },
-  { key: 'groups', label: 'Travel Groups' },
+  { key: 'home' },
+  { key: 'book' },
+  { key: 'trips' },
+  { key: 'profile' },
+  { key: 'groups' },
 ];
 
 // Where each tab leads. Tabs without a designed screen go to a placeholder.

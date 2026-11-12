@@ -1,6 +1,6 @@
 # Cathay Together: technical guide
 
-Mentor notes for the Cathay Hackathon, 14–15 November 2026. Written 10 November 2026.
+Historical mentor notes for the Cathay Hackathon, written 10 November 2026. For the implemented flows, use the [current architecture](../ARCHITECTURE.md) and [logic](../LOGIC.md).
 
 - [plan.md](../plan.md) says **what to do and in what order**. This guide explains **why, and how each part works**.
 - Where this guide and `plan.md` disagree, `plan.md` wins. Differences are listed as open decisions in `plan.md` section 0.

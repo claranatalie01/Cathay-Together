@@ -19,7 +19,7 @@
 //
 // Pure functions: no browser, storage or network. Tested in connections.test.js.
 
-export const HUB = 'HKG';
+const HUB = 'HKG';
 export const MIN_LAYOVER = 90; // minutes: land, walk to the next gate, check the connection
 export const MAX_LAYOVER = 480; // minutes: eight hours is the longest wait offered
 

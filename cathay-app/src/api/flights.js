@@ -39,11 +39,6 @@ export function getFares(groupId, flightId, { cabin } = {}) {
   return request('GET', `/groups/${enc(groupId)}/flights/${enc(flightId)}/fares${query}`);
 }
 
-// The signed-in member's chosen outbound and return flights so far: { outbound?, return? }.
-export function getSelection(groupId) {
-  return request('GET', `/groups/${enc(groupId)}/flights/selection`);
-}
-
 // Saves the chosen flight and fare for its direction. Once both directions are chosen the
 // member's status becomes "picked". Body: { flightId, cabin, fare }.
 export async function saveSelection(groupId, selection) {

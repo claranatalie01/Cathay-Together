@@ -1,6 +1,6 @@
 # Cathay Together data dictionary
 
-This describes the schema after all four migrations, the records assembled by the app, and the fixture data bundled with it. See [Architecture](ARCHITECTURE.md) for the flows and algorithms.
+This describes the schema after all seven migrations, the records assembled by the app, and the fixture data bundled with it. See [Architecture](ARCHITECTURE.md) for the flows and algorithms.
 
 ## Schema sources
 
@@ -10,8 +10,11 @@ This describes the schema after all four migrations, the records assembled by th
 | [`20261111010000_group_functions.sql`](supabase/migrations/20261111010000_group_functions.sql) | Adds the six group and invitation RPCs. |
 | [`20261111020000_more_airports.sql`](supabase/migrations/20261111020000_more_airports.sql) | Adds airport coordinates and seven home airports. |
 | [`20261112000000_booking_preferences_itinerary.sql`](supabase/migrations/20261112000000_booking_preferences_itinerary.sql) | Adds bookings, itineraries, five RPCs, the vote trigger, and the current group JSON. |
+| [`20261112010000_remove_groups.sql`](supabase/migrations/20261112010000_remove_groups.sql) | Adds creator deletion and member leave RPCs. |
+| [`20261112020000_researched_itineraries.sql`](supabase/migrations/20261112020000_researched_itineraries.sql) | Adds researched decks and planner RPCs, preserves legacy votes, validates saved preferences against the stored deck and moves generated itinerary inserts to the service role. |
+| [`20261112030000_rebuild_itineraries.sql`](supabase/migrations/20261112030000_rebuild_itineraries.sql) | Allows the planner to replace a stale saved itinerary. |
 
-The eight tables below are in `public`. Supabase manages `auth.users`. The app references `auth.users.id` and the optional [demo seed](supabase/seed/demo_profiles.sql) matches accounts using `auth.users.email`. Column nullability below is explicit. A primary key is required and unique, including when it spans multiple columns.
+The nine tables below are in `public`. Supabase manages `auth.users`. The app references `auth.users.id` and the optional [demo seed](supabase/seed/demo_profiles.sql) matches accounts using `auth.users.email`. Column nullability below is explicit. A primary key is required and unique, including when it spans multiple columns.
 
 ## Tables and relationships
 
@@ -52,7 +55,7 @@ One row per trip. The app's demo date restriction is implemented in the handler.
 | `creator_id` | `uuid` | No | Foreign key to `profiles(id)`. |
 | `invite_code` | `text` | No | Unique. Six uppercase alphanumeric characters. |
 | `invite_copied` | `boolean` | No | Defaults to `false`. Records whether a member copied the link. |
-| `budget_per_person_jpy` | `integer` | No | Defaults to `15000`. Nonnegative. The scheduler does not use this field. |
+| `budget_per_person_jpy` | `integer` | No | Defaults to `15000`. Nonnegative. The shared planner checks estimated activities and meals against it. |
 | `created_at` | `timestamptz` | No | Defaults to `now()`. |
 
 ### `group_members`
@@ -114,18 +117,31 @@ At most one booking row per group member. Primary key `(group_id, user_id)`, als
 
 ### `itineraries`
 
-One saved plan per group. Each save upserts the full plan and supplies the author and timestamp. The schema checks the top-level JSON type.
+One saved plan per group. The planner inserts or replaces the full plan. A browser edit updates the existing row. The schema checks the top-level JSON type.
 
 | Column | Type | Null | Default, relationship or constraint |
 | --- | --- | --- | --- |
 | `group_id` | `uuid` | No | Primary key and foreign key to `groups(id)`, cascading on deletion. |
 | `plan` | `jsonb` | No | Must be a JSON object. See [stored plan](#stored-plan-and-rendered-itinerary). |
-| `updated_by` | `uuid` | No | Foreign key to `profiles(id)`. RLS requires the caller's user ID on writes. |
-| `updated_at` | `timestamptz` | No | Defaults to `now()`. The shared handler supplies an ISO timestamp on upsert. |
+| `updated_by` | `uuid` | No | Foreign key to `profiles(id)`. For browser edits, RLS requires the caller’s user ID. |
+| `updated_at` | `timestamptz` | No | Defaults to `now()`. The browser edit supplies an ISO timestamp. The planner uses the database clock. |
+
+### `group_place_decks`
+
+One stable deck per group. The migration marks trips with existing votes, saved preferences or itineraries as legacy so their original card IDs stay valid.
+
+| Column | Type | Null | Default, relationship or constraint |
+| --- | --- | --- | --- |
+| `group_id` | `uuid` | No | Primary key and foreign key to `groups(id)`, cascading on deletion. |
+| `legacy` | `boolean` | No | Defaults to false. Legacy decks use the bundled place IDs. |
+| `places` | `jsonb` | Yes | A nonempty array when set. Shared cards include stable IDs, display fields, citations, photo metadata and optional `coordinates: { lat, lon }` and `coordinateSource`. |
+| `sources` | `jsonb` | No | Array of research evidence. Defaults to `[]`. |
+| `job_token` | `uuid` | Yes | Current planner lease token. |
+| `job_until` | `timestamptz` | Yes | Lease expiry. The claim RPC allows 310 seconds. |
 
 ## Direct table access
 
-All eight tables have RLS enabled. The migrations revoke app table privileges from `anon` and grant table privileges to `service_role`. The signed-in browser uses `authenticated` and its access is as follows.
+All nine tables have RLS enabled. The migrations revoke app table privileges from `anon` and grant table privileges to `service_role`. The signed-in browser uses `authenticated` and its access is as follows.
 
 | Table | Direct reads | Direct writes |
 | --- | --- | --- |
@@ -136,13 +152,14 @@ All eight tables have RLS enabled. The migrations revoke app table privileges fr
 | `flight_selections` | Group members | Insert and update own rows with valid membership. Delete own rows. The app upserts selections. The DB does not check against the OAG catalogue or lock rows after payment. |
 | `votes` | Group members | Insert and update own rows with valid membership. Delete own rows. The app upserts swipes. |
 | `bookings` | None | None. Booking access is exclusively through RPCs in the app. |
-| `itineraries` | Group members | Insert and update the group's row with `updated_by = auth.uid()`. |
+| `itineraries` | Group members | Update an existing group row with `updated_by = auth.uid()`. The planner service inserts generated plans. |
+| `group_place_decks` | Group members can read `group_id`, `legacy` and `places`. | Service role only. |
 
 [`private.is_member()` and `private.shares_group()`](supabase/migrations/20261111000000_initial_schema.sql) implement the membership checks used by RLS. Invitations are represented by the group code and membership in shared mode. There is no invitations table.
 
 ## Public RPCs
 
-Each public function uses `SECURITY DEFINER` with an empty search path. Execute is granted to `authenticated` and `service_role` and revoked from `PUBLIC` and `anon`. The functions use `private.caller_id()` to resolve the signed-in account and require a profile. The booking and preference functions additionally call `private.member_id()` to require membership.
+Each browser-callable function below uses `SECURITY DEFINER` with an empty search path. Execute is granted to `authenticated` and `service_role` and revoked from `PUBLIC` and `anon`. The functions use `private.caller_id()` to resolve the signed-in account and require a profile. The booking and preference functions additionally call `private.member_id()` to require membership.
 
 | RPC signature | Return | Reads, writes and checks |
 | --- | --- | --- |
@@ -152,11 +169,23 @@ Each public function uses `SECURITY DEFINER` with an empty search path. Execute 
 | `create_group(group_name text, trip_start date, trip_end date)` | Group `jsonb` | Validates trimmed name and date order, generates a code, and inserts the group and creator membership atomically. |
 | `join_group(target_group uuid, code text)` | Group `jsonb` | Checks that the group exists, then checks the normalized code and inserts a membership for a new member. An existing member gets the group back unchanged. |
 | `mark_invite_copied(target_group uuid)` | Group `jsonb` | A member sets the group's `invite_copied` flag to true. |
+| `delete_group(target_group uuid)` | `void` | Creator only. Deletes the trip and its dependent records. |
+| `leave_group(target_group uuid)` | `void` | Joined member only. Removes that member’s membership and its dependent rows. The creator uses deletion. |
 | `get_booking(target_group uuid)` | Booking `jsonb` | Returns the caller's record and database time. A member without a booking gets null booking fields. |
 | `start_booking(target_group uuid)` | Booking `jsonb` | Requires both selections and an unpaid trip. Starts a 20-minute hold or keeps an existing live hold. |
 | `release_booking(target_group uuid)` | Booking `jsonb` | Clears the caller's hold for an unpaid booking. |
 | `pay_booking(target_group uuid)` | Booking `jsonb` | Requires both selections, an unpaid trip and a live hold. Sums stored prices, writes simulated payment fields and clears the hold. |
-| `save_preferences(target_group uuid, place_ids text[])` | `void` | Requires a nonempty list and a stored vote for each supplied ID, then updates `preferences_saved_at`. The app supplies the full catalogue. |
+| `save_preferences(target_group uuid, place_ids text[])` | `void` | Requires a vote for every researched deck ID, then updates `preferences_saved_at`. For a legacy deck it uses the supplied list and requires at least one ID. |
+
+### Planner RPCs
+
+These functions grant execute only to `service_role`. The Python endpoint authenticates the caller and verifies group membership before using them.
+
+| RPC | Return | Role in planning |
+| --- | --- | --- |
+| `trip_planner_inputs(target_group uuid)` | `jsonb` | Reads destination, timezone, dates, budget, members, votes and flight selections. Arrays have stable ordering. |
+| `claim_trip_planner_job(target_group uuid, viewer uuid, token uuid)` | `boolean` | Checks membership and claims an unoccupied or expired group lease. |
+| `finish_trip_planner_job(target_group uuid, viewer uuid, token uuid, operation text, result jsonb, expected_inputs jsonb default null)` | `boolean` | Checks lease and membership. Discovery fills an empty researched deck. Planning compares the input snapshot, then inserts or replaces the group itinerary. |
 
 ## JSON payloads
 
@@ -192,16 +221,19 @@ Sources include [`boardHandlers.js`](src/api/mock/boardHandlers.js), [`preferenc
 
 ### Stored plan and rendered itinerary
 
-| Field in `itineraries.plan` | Shape |
+| Plan field | Shape |
 | --- | --- |
 | `days` | `[{ date, title, stopIds }]`. Stop IDs reference keys in `stops`. |
-| `stops` | Object keyed by stop ID. Each record has `{ id, kind: 'place', source, slot, name, area, description, minutes, cost, costLabel, photo, thumb, alt, start, end, startTime, endTime }`. Voted stops add `placeId`, `durationLabel`, `liked` and `total` and use `place-<id>`. Suggested stops add `suggestedId` and use `suggested-<id>`. `start` and `end` are trip minutes since midnight Tokyo time on day one. |
-| `maybe`, `didNotFit` | Arrays of bare place IDs. `maybe` includes minority picks with a like and winners that did not fit. `didNotFit` contains those unplaced winners. |
-| `free` | `{ freeFrom, freeUntil }` in trip minutes. Either value can be null for an open boundary. |
-| `problems` | Array of strings from `checkPlan()` at generation time. |
-| `builtAt` | Browser-generated build timestamp in epoch milliseconds. |
+| `stops` | Object keyed by stop ID. Each record has `{ id, kind: 'place', source, slot, name, area, description, minutes, cost, costLabel, photo, thumb, alt, start, end, startTime, endTime }`. Voted stops add `placeId`, `durationLabel`, `liked` and `total` and use `place-<id>`. Suggested stops add `suggestedId`. Mock fillers use `suggested-<id>`. Shared generic meals use `meal-<date>-<meal>` with an `x` suffix on collisions, and free time uses `free-<date>-<minute>`. `start` and `end` are trip minutes since midnight Tokyo time on day one. |
+| `maybe`, `didNotFit` | Arrays of place IDs. Shared `maybe` includes any liked place left out. Mock `maybe` includes minority picks with a like and winners that did not fit. Mock `didNotFit` contains those unplaced winners. |
+| `free` (mock) | `{ freeFrom, freeUntil }` in trip minutes. Either value can be null for an open boundary. |
+| `problems` (mock) | Array of strings from `checkPlan()` at generation time. |
+| `builtAt` | Build timestamp in epoch milliseconds, from the browser in mock and the server in shared mode. |
+| `builtBy`, `fingerprint` (shared AI) | `builtBy: 'ai'` and a fingerprint of current member IDs, vote choices and selected flight instants. |
+| `transfers` (shared AI) | `{ between, fallbackMinutes, usesOpenStreetMap, usesGeoapify }`. The symmetric table is keyed by place IDs or generic meal stop IDs. Missing pairs use 30 minutes. |
+| `sources`, `review` (shared AI) | Cited source summaries `[{ id, title, url }]` and `{ approved, summary, issues, suggestions, attempts }`. An issue includes `severity`, `day`, `message` and `suggested_fix`. |
 
-The edit request is `{ days: [{ date, stopIds }] }`. It references existing stops and supplies every trip day. On read, `bodyFor()` and `assemble()` return `{ group, members, builtAt, days, maybe, summary }`. Rendered days have `{ index, date, weekday, label, longLabel, title, items, totals }`. Items are place stops or viewer-specific flight cards or placeholders, with a nullable `travelBefore: { minutes, text }`. Day totals are `{ cost, allowance, minutes, travelMinutes }`. The summary has `{ places, voted, days, costPerPerson, avgTravelMinutes, firstDate, lastDate }`. Maybe entries add display data and vote counts. A stop-detail response adds a day label and vote rows with viewer flags and initials. Sources include [`itineraryHandlers.js`](src/api/mock/itineraryHandlers.js) and [`itineraryData.js`](src/api/mock/itineraryData.js).
+The edit request is `{ days: [{ date, stopIds }] }`. It references existing stops and supplies every trip day. On read, `bodyFor()` and `assemble()` return `{ group, members, builtAt, days, maybe, summary }`, with optional `builtBy`, `usesOpenStreetMap` and `usesGeoapify` for shared AI plans. Rendered days have `{ index, date, weekday, label, longLabel, title, items, totals }`. Items are place stops or viewer-specific flight cards or placeholders, with a nullable `travelBefore: { minutes, text }`. Day totals are `{ cost, allowance, minutes, travelMinutes }`. The summary has `{ places, voted, days, costPerPerson, avgTravelMinutes, firstDate, lastDate }`. Maybe entries add display data and vote counts. A stop-detail response adds a day label and vote rows with viewer flags and initials. Sources include [`itineraryHandlers.js`](src/api/mock/itineraryHandlers.js) and [`itineraryData.js`](src/api/mock/itineraryData.js).
 
 ## Bundled data and mock storage
 

@@ -1,4 +1,4 @@
-# API contract (Flow A: travel groups and invitations; Flow B: flight booking)
+# API contract
 
 The front end talks to the backend only through `src/api/groups.js`, `src/api/flights.js` and `src/api/users.js`.
 Those call `request(method, path, body)` in `src/api/http.js`. Today `request` is answered by an
@@ -7,7 +7,7 @@ in-browser mock (`src/api/mock/`, saved in `localStorage`). To use a real server
 (`src/api/errors.js`) for any non-2xx response.
 
 - Base path: `/api` (prefix it in `request()`).
-- JSON in, JSON out. Dates are display strings for now (see "Notes").
+- JSON in, JSON out. Trip and flight date fields use ISO formats, and labels are formatted for display.
 - The caller is identified by the session (cookie or bearer token). It is the "signed-in person".
 - Group mutations resolve with the full updated `Group`. The delete and leave endpoints return JSON `null`.
 
@@ -358,13 +358,13 @@ Members only (`403 not_a_member`). Tokyo groups only (`404 no_suggestions` other
 
 ### `POST /groups/:id/itinerary/build`
 
-No body. Shared mode builds a plan from the saved deck and every member’s saved swipes, or returns the existing plan. It returns `422 not_ready` when anyone has yet to save, `422 nothing_to_plan` when nobody liked an activity, `409 planner_busy` when a job is already running and `409 planner_changed` if the inputs changed during generation. Provider failures can be retried. Responds with the same body as `GET`, with `builtBy: "ai"` for plans built by the shared planner.
+No body. Shared mode builds a plan from the saved deck and every member’s saved swipes, or returns the existing plan when its fingerprint matches current members, votes and flight times. The screen can open a saved plan directly before calling this build route. It returns `422 not_ready` when anyone has yet to save, `422 nothing_to_plan` when nobody liked an activity, `409 planner_busy` when a job is already running and `409 planner_changed` if the inputs changed during generation. Provider failures can be retried. Responds with the same body as `GET`, with `builtBy: "ai"` for plans built by the shared planner.
 
 The shared planner prioritizes activities liked by at least half the group and can schedule other liked activities when time permits. Unscheduled liked activities go to Maybe. The model proposes meals and free time. Mock mode continues to use the strict-majority scheduler with preset fillers. Both modes display the viewer's own booked flights.
 
 ### `POST /api/planner` (shared transport)
 
-The same-origin Python endpoint accepts `{ "groupId": "<uuid>", "action": "discover" | "plan" }` and a Supabase bearer token. It checks membership and reads trip inputs itself. `discover` persists one deck and its evidence. `plan` reads that deck, saved swipes, flight timestamps and budget, validates the result and inserts it if the trip is current and has no plan. Success returns `{ "ready": true }`.
+The same-origin Python endpoint accepts `{ "groupId": "<uuid>", "action": "discover" | "plan" }` and a Supabase bearer token. It checks membership and reads trip inputs itself. `discover` persists one deck and its evidence. `plan` reads that deck, saved swipes, flight timestamps and budget, reviews the result and inserts or replaces the itinerary if the original trip inputs still match. Success returns `{ "ready": true }`.
 
 ### `GET /groups/:id/itinerary`
 
@@ -387,17 +387,17 @@ The same-origin Python endpoint accepts `{ "groupId": "<uuid>", "action": "disco
 }
 ```
 
-`kind` is `flight-arrival`, `flight-departure`, `flight-missing` (the caller has not chosen that flight) or `place`. Costs are rough yen estimates (midpoints) and travel times are approximate. `cost` totals per day include a transport allowance (¥1,000 on the first and last day, ¥500 on others). Errors: `404 itinerary_not_built`.
+`kind` is `flight-arrival`, `flight-departure`, `flight-missing` (the caller has not chosen that flight) or `place`. Costs and travel times are estimates. Mock `cost` totals per day include a transport allowance (¥1,000 on the first and last day, ¥500 on others). Errors: `404 itinerary_not_built`.
 
 New shared plans store `transfers` with a symmetric `between` matrix keyed by place ID or by a generic meal’s stop ID, with `fallbackMinutes` set to 30. The server gives venue estimates to the AI and resolves generic meals to district centres with Geoapify before reviewing the draft. The itinerary reads the same estimates into `travelBefore` and the daily travel total.
 
-| Shared transfer | Minimum gap |
+| Shared transfer | Estimated time |
 | --- | --- |
 | Both coordinates known, estimated street distance up to 1.2 km | Haversine distance × 1.3, at 5 km/h |
 | Both known, estimated street distance over 1.2 km | Haversine distance × 1.3, at 25 km/h plus 10 min |
 | One or both coordinates missing | 30 min |
 
-Round up to the next five minutes, with a five-minute minimum. Check transfers between physical stops on the same day, after any intervening free-time block. Airport buffers are 90 minutes after the last arrival and three hours before the earliest departure. Shared plans have zero transport allowance. Transfer shortfalls appear as review warnings. If no readable draft is available, the app offers **Try again**.
+Round up to the next five minutes, with a five-minute minimum. Check transfers between physical stops on the same day, after any intervening free-time block. Airport buffers are 90 minutes after the last arrival and three hours before the earliest departure. Shared plans have zero transport allowance. Transfer shortfalls appear as review warnings. The planner can try one revision and save the reviewed draft with the fewest errors. If no usable draft is available, the app offers **Try again**.
 
 ### `PUT /groups/:id/itinerary`
 
@@ -409,11 +409,10 @@ One place stop: `{ group, day: { index, label }, stop, votes }`. `votes` is `[{ 
 
 ## Notes for the backend
 
-- `datesLabel` is a display string today. Send ISO 8601 dates later and format them in the UI.
+- `datesLabel` is a display string. Shared trip inputs also include the stored dates and flight instants.
 - There is no decision deadline and no member limit.
 - Cover photos are chosen in the UI by destination; add an `imageUrl` field if you want the server to own them.
-- Flights and fares are fictional demo data generated from the traveller's airport and the group's window. A real server owns schedules and fares.
-- Later flows (preferences, itinerary) will extend this contract.
+- Flight numbers and scheduled times come from the bundled OAG snapshot. Fares, availability, holds and payments are simulated.
 - Group timing no longer uses fixed demo times: members without a chosen flight are left out of the comparison.
 - `src/demo` calls the mock database directly (switch person, add members, force errors). None of it
   maps to a real endpoint.

@@ -30,7 +30,7 @@ export function bodyFor(ctx) {
 
 // Builds a new plan from everyone's saved swipes. Refuses until every member is ready.
 // `ctx.names` is { [userId]: name }.
-export function buildItinerary(ctx) {
+function buildItinerary(ctx) {
   const waiting = ctx.group.members.filter((m) => !ctx.group.preferences?.[m.userId]?.saved).map((m) => ctx.names[m.userId]);
   if (waiting.length) throw new ApiError(422, 'not_ready', `Waiting for ${waiting.join(', ')} to finish swiping.`, { waiting });
   return { ...buildPlan({ dates: ctx.dates, votes: ctx.votes, selections: ctx.group.selections }), builtAt: Date.now() };

@@ -66,7 +66,7 @@ export default function InvitePage() {
           <Button to="/groups/new" variant="secondary">
             {copy.unavailable.create}
           </Button>
-          <DemoControls context="invite" inviteCode={code} />
+          <DemoControls context="invite" />
         </StateMessage>,
       );
     }
@@ -121,7 +121,7 @@ export default function InvitePage() {
             {copy.actionFailed}
           </p>
         )}
-        <DemoControls context="invite" group={group} inviteCode={code} />
+        <DemoControls context="invite" group={group} />
       </StateMessage>,
     );
   }
@@ -168,7 +168,7 @@ export default function InvitePage() {
             </p>
           )}
         </div>
-        <DemoControls context="invite" group={group} inviteCode={code} />
+        <DemoControls context="invite" group={group} />
       </main>
       <BottomNav variant="groups" />
       <Sheet open={confirmOpen} onClose={closeConfirm} title={copy.sheet.title} titleId="decline-title">

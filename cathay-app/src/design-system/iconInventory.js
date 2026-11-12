@@ -2743,4 +2743,4 @@ export const ICONS = [
     ]
   }
 ];
-export const OTHER_ASSETS = ["1b4c7.png","2c161.png","4922e.png","52e22.png","71254.png","9266b.png","96c30.png","ab624.png","culture-photo.jpg","e1c39.png","e555a.png","photos","shopping-photo.jpg"];
+export const OTHER_ASSETS = ["2c161.png","52e22.png","71254.png","ab624.png","culture-photo.jpg","e1c39.png","photos","shopping-photo.jpg"];
