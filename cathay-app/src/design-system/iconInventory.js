@@ -241,7 +241,8 @@ export const ICONS = [
     ],
     "usedIn": [
       "src/data/nav.js",
-      "src/design-system/IconSection.jsx"
+      "src/design-system/IconSection.jsx",
+      "src/features/flights/SuggestionPanel.jsx"
     ]
   },
   {
@@ -1567,6 +1568,7 @@ export const ICONS = [
     ],
     "roles": [],
     "usedIn": [
+      "src/components/domain/GroupCard.jsx",
       "src/features/groups/MembersPage.jsx",
       "src/features/itinerary/ItineraryPage.jsx"
     ]
@@ -1586,6 +1588,7 @@ export const ICONS = [
     ],
     "roles": [],
     "usedIn": [
+      "src/components/domain/GroupCard.jsx",
       "src/features/board/BoardPage.jsx",
       "src/features/groups/MembersPage.jsx",
       "src/features/itinerary/BuildingPage.jsx",
@@ -1705,7 +1708,8 @@ export const ICONS = [
     ],
     "roles": [],
     "usedIn": [
-      "src/features/flights/FlightSearchPage.jsx"
+      "src/features/flights/FlightSearchPage.jsx",
+      "src/features/flights/SuggestionPanel.jsx"
     ]
   },
   {
@@ -1722,7 +1726,9 @@ export const ICONS = [
       "1.8"
     ],
     "roles": [],
-    "usedIn": []
+    "usedIn": [
+      "src/features/flights/SuggestionPanel.jsx"
+    ]
   },
   {
     "file": "ui-chevron-steel.svg",
@@ -1920,6 +1926,24 @@ export const ICONS = [
     ],
     "roles": [],
     "usedIn": []
+  },
+  {
+    "file": "ui-gift-teal.svg",
+    "width": "24",
+    "height": "24",
+    "colours": [
+      {
+        "hex": "#336c6a",
+        "token": "--color-text-brand, --color-border-brand, --color-icon-brand, --color-focus-ring"
+      }
+    ],
+    "strokeWidths": [
+      "2"
+    ],
+    "roles": [],
+    "usedIn": [
+      "src/features/board/ConfirmedPage.jsx"
+    ]
   },
   {
     "file": "ui-heart-light.svg",
@@ -2375,6 +2399,7 @@ export const ICONS = [
     ],
     "roles": [],
     "usedIn": [
+      "src/components/ui/CalendarSheet.jsx",
       "src/features/groups/MembersPage.jsx"
     ]
   },
@@ -2396,6 +2421,7 @@ export const ICONS = [
       "src/components/domain/FlightCard.jsx",
       "src/components/domain/ItineraryStop.jsx",
       "src/components/domain/MemberRow.jsx",
+      "src/components/ui/CalendarSheet.jsx",
       "src/design-system/ComponentSections.jsx",
       "src/features/board/BoardPage.jsx",
       "src/features/board/BookingOverlays.jsx",
@@ -2470,6 +2496,24 @@ export const ICONS = [
     ],
     "roles": [],
     "usedIn": []
+  },
+  {
+    "file": "ui-sign-out-teal.svg",
+    "width": "24",
+    "height": "24",
+    "colours": [
+      {
+        "hex": "#336c6a",
+        "token": "--color-text-brand, --color-border-brand, --color-icon-brand, --color-focus-ring"
+      }
+    ],
+    "strokeWidths": [
+      "2"
+    ],
+    "roles": [],
+    "usedIn": [
+      "src/features/groups/GroupsPage.jsx"
+    ]
   },
   {
     "file": "ui-sparkle.svg",
@@ -2629,8 +2673,10 @@ export const ICONS = [
     ],
     "roles": [],
     "usedIn": [
+      "src/components/domain/GroupCard.jsx",
       "src/features/board/BoardPage.jsx",
       "src/features/board/ConfirmedPage.jsx",
+      "src/features/groups/GroupsPage.jsx",
       "src/features/groups/MembersPage.jsx",
       "src/features/itinerary/BuildingPage.jsx"
     ]
@@ -2650,8 +2696,10 @@ export const ICONS = [
     ],
     "roles": [],
     "usedIn": [
+      "src/components/domain/GroupCard.jsx",
       "src/features/board/BoardPage.jsx",
       "src/features/board/ConfirmedPage.jsx",
+      "src/features/groups/GroupsPage.jsx",
       "src/features/groups/MembersPage.jsx",
       "src/features/itinerary/BuildingPage.jsx"
     ]

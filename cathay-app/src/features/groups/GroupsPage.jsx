@@ -78,7 +78,8 @@ export default function GroupsPage() {
 
   const accountAction = isShared && (
     <button className="groups__sign-out" type="button" onClick={switchAccount} disabled={signingOut} aria-busy={signingOut || undefined}>
-      {signingOut ? COPY.signIn.signingOut : COPY.signIn.signOut}
+      <img src="/assets/ui-sign-out-teal.svg" alt="" />
+      <span>{signingOut ? COPY.signIn.signingOut : COPY.signIn.signOut}</span>
     </button>
   );
 

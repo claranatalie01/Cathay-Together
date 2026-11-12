@@ -44,7 +44,7 @@ function BonusMiles() {
   return (
     <section className="confirmed__miles" aria-label={copy.label}>
       <span className="confirmed__miles-icon">
-        <img src="/assets/ui-asia-miles-teal.svg" alt="" />
+        <img src="/assets/ui-gift-teal.svg" alt="" />
       </span>
       <div>
         <p>{copy.lead}<strong>{copy.amount}</strong>{copy.detail}</p>

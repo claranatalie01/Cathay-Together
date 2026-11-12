@@ -67,6 +67,9 @@
 }
 
 .groups__sign-out {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
   max-width: 100%;
   min-height: var(--size-touch-target);
   padding-inline: var(--space-xs);
@@ -74,6 +77,12 @@
   font-size: var(--text-body-sm-size);
   font-weight: var(--weight-semibold);
   line-height: var(--text-body-sm-leading);
+}
+
+.groups__sign-out img {
+  flex-shrink: 0;
+  width: var(--space-optical-14);
+  height: var(--space-optical-14);
 }
 
 .groups__sign-out:active:not(:disabled) {
