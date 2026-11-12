@@ -11,6 +11,7 @@ from .llm import AgentError, NothingToPlan, PlanConstraints
 from .photos import attach_photos, find_place_images
 from .plan import prepare_places, to_app_plan
 from .places import photo_fields
+from .repair import adopt_liked_food
 from .reviewer import feedback_text, quality_check_agent
 from .schedule import InvalidDraft, normalize_schedule, sanitize_plan_cards
 from .scheduler import scheduler_agent, split_cards, trip_dates
@@ -96,7 +97,7 @@ def run_plan(context: dict, raw_cards, raw_sources, model: str | None = None, ll
     for attempt in range(1, config.MAX_REVIEW_ATTEMPTS + 2):
         try:
             raw = scheduler_agent(llm, model, context, liked, maybe, sources, transfers, feedback)
-            schedule = normalize_schedule(raw, dates, eligible, known)
+            schedule = adopt_liked_food(normalize_schedule(raw, dates, eligible, known), eligible, known)
             review = quality_check_agent(llm, model, context, schedule, eligible, sources, transfers)
         except InvalidDraft as exc:
             feedback = last_problem = str(exc)

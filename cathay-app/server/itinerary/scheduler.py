@@ -135,7 +135,8 @@ RULES:
 8. Include one "free" slot of 60-120 minutes per full day.
 9. Activities with more votes get priority. Use each card at most once, and only card ids listed above.
 10. Keep the running cost per person under ¥{budget}.
-11. Meals: name a specific place only if the evidence supports it, otherwise describe the meal type and area and say "Not verified". Never invent prices or hours.
+11. A liked card whose category is "food" belongs in a lunch or dinner slot: schedule it as {{"type": "meal", "meal": "lunch", "card_id": "an id from the lists above", "start": "12:30"}} instead of an unnamed meal. Never write a liked restaurant into a generic meal's text and leave its card out.
+    Other meals: name a specific place only if the evidence supports it, otherwise describe the meal type and area and say "Not verified". Never invent prices or hours.
 12. Keep every stop within 08:00–21:30 local time.
 
 Return ONLY valid JSON in this exact format:

@@ -102,6 +102,11 @@ def to_app_plan(schedule: dict, places: list[dict], sources: list[dict], review:
                 built = _activity(stop, place)
                 scheduled.add(place["id"])
                 cited += place["source_ids"]
+            elif stop["type"] == "meal" and stop.get("card_id") in by_id:
+                place = by_id[stop["card_id"]]
+                built = {**_activity(stop, place), "name": f"{stop['meal'].title()}: {place['name']}"}
+                scheduled.add(place["id"])
+                cited += place["source_ids"]
             elif stop["type"] == "meal":
                 built = _meal(stop, day["date"], set(stops))
                 cited += stop["source_ids"]

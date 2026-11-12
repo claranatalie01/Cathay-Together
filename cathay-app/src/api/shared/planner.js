@@ -1,6 +1,9 @@
 import { ApiError } from '../errors';
 import { getSupabase } from '../supabaseClient';
 
+// Shown only on a developer's machine: the Python planner is a separate program that must be started.
+const NOT_RUNNING = 'The trip planner is not running. In a second terminal run "npm run dev:api", then try again.';
+
 const running = new Map();
 const warmed = new Set();
 
@@ -15,9 +18,11 @@ async function callPlanner(action, groupId, accessToken) {
       signal,
     });
   } catch {
-    throw new ApiError(502, 'planner_unavailable', 'The trip planner could not finish. Try again.');
+    throw new ApiError(502, 'planner_unavailable', import.meta.env.DEV ? NOT_RUNNING : 'The trip planner could not finish. Try again.');
   }
   const data = await response.json().catch(() => null);
+  // The dev server answers with an empty error when nothing is listening on the planner's port.
+  if (!response.ok && !data && import.meta.env.DEV) throw new ApiError(502, 'planner_unavailable', NOT_RUNNING);
   if (!response.ok || data?.ready !== true) {
     throw new ApiError(response.ok ? 502 : response.status, data?.code ?? 'planner_unavailable',
       data?.message ?? 'The trip planner could not finish. Try again.');

@@ -179,6 +179,7 @@ def test_plan_accepts_a_short_transfer_with_a_warning_and_saves_the_estimate():
 
 def test_a_majority_liked_place_left_out_is_flagged_but_does_not_block():
     cards = voted_cards()
+    cards[0]["category"] = "culture"  # a food place would be moved into a meal slot instead (see below)
     plan_without = good_plan()
     plan_without["days"][1]["stops"] = [s for s in plan_without["days"][1]["stops"] if s.get("card_id") != "card_aaaaaaaa"]
     plan = pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([plan_without, REVIEW_OK]))["plan"]
@@ -235,3 +236,101 @@ def test_http_validation_and_authentication():
     assert bad.status_code == 422 and bad.json()["code"] == "validation_failed"
     res = client.post("/api/planner", json={"action": "discover", "groupId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"})
     assert res.status_code == 401 and res.json()["code"] == "unauthenticated"
+
+
+# ---- liked restaurants fill meal slots; saved plans are rebuilt when their inputs change -------------------
+
+def test_a_liked_food_place_takes_over_a_generic_meal_slot():
+    cards = voted_cards()  # Tsukiji (food, liked 2 of 2, open 09:00-17:00); the draft has a generic lunch at 12:30
+    plan_without = good_plan()
+    plan_without["days"][1]["stops"] = [s for s in plan_without["days"][1]["stops"] if s.get("card_id") != "card_aaaaaaaa"]
+    out = pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([plan_without, REVIEW_OK]))["plan"]
+    stop = out["stops"]["place-card_aaaaaaaa"]
+    assert stop["name"] == "Lunch: Tsukiji" and stop["source"] == "voted" and stop["placeId"] == "card_aaaaaaaa"
+    assert stop["startTime"] == "12:30" and stop["liked"] == 2 and stop["total"] == 2
+    assert "card_aaaaaaaa" not in out["maybe"]
+    assert not any("is not in the plan" in i["message"] for i in out["review"]["issues"])
+
+
+def test_the_model_may_schedule_a_liked_food_place_as_a_meal_itself():
+    draft = good_plan()
+    meals = [s for s in draft["days"][1]["stops"] if s["type"] == "meal"]
+    draft["days"][1]["stops"] = [s for s in draft["days"][1]["stops"] if s.get("card_id") != "card_aaaaaaaa" and s is not meals[0]]
+    draft["days"][1]["stops"].append({"type": "meal", "meal": "lunch", "card_id": "card_aaaaaaaa", "start": "12:30"})
+    out = pipeline.run_plan(CONTEXT, voted_cards(), SOURCES, "m", llm=FakeLLM([draft, REVIEW_OK]))["plan"]
+    assert out["stops"]["place-card_aaaaaaaa"]["name"] == "Lunch: Tsukiji"
+    assert sum(1 for stop in out["stops"].values() if stop.get("placeId") == "card_aaaaaaaa") == 1
+
+
+def test_a_liked_food_place_is_not_moved_into_a_meal_when_it_is_closed_then():
+    cards = voted_cards()
+    cards[0]["opening_hours"] = "17:00-21:00"  # closed at the 12:30 lunch; the 19:00 dinner would fit
+    plan_without = good_plan()
+    plan_without["days"][1]["stops"] = [s for s in plan_without["days"][1]["stops"] if s.get("card_id") != "card_aaaaaaaa"]
+    out = pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([plan_without, REVIEW_OK]))["plan"]
+    assert out["stops"]["place-card_aaaaaaaa"]["startTime"] == "19:00"
+    assert out["stops"]["place-card_aaaaaaaa"]["name"].startswith("Dinner")
+
+
+def test_a_meal_that_is_a_place_uses_real_coordinates_for_its_transfers():
+    cards = voted_cards()
+    cards[0]["coordinates"] = {"lat": 0, "lon": 0}
+    cards[1]["coordinates"] = {"lat": 0, "lon": 0.07}
+    out = pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([good_plan(), REVIEW_OK]))["plan"]
+    assert out["transfers"]["between"]["card_aaaaaaaa"]["card_bbbbbbbb"] == 35
+    meal_place = [s for s in out["stops"].values() if s.get("placeId") == "card_aaaaaaaa"]
+    assert len(meal_place) == 1
+
+
+def test_plan_fingerprint_changes_when_members_swipes_or_flights_change():
+    from server.app import plan_fingerprint
+
+    base = {"members": [{"user_id": "a"}, {"user_id": "b"}],
+            "votes": [{"user_id": "a", "place_id": "p", "choice": "like"}],
+            "flights": [{"user_id": "a", "direction": "outbound", "depart_at": "x", "arrive_at": "y"}]}
+    same_but_reordered = {**base, "members": list(reversed(base["members"]))}
+    assert plan_fingerprint(base) == plan_fingerprint(same_but_reordered)
+    assert plan_fingerprint(base) != plan_fingerprint({**base, "members": base["members"] + [{"user_id": "c"}]})
+    assert plan_fingerprint(base) != plan_fingerprint({**base, "votes": [{"user_id": "a", "place_id": "p", "choice": "pass"}]})
+    assert plan_fingerprint(base) != plan_fingerprint({**base, "flights": []})
+
+
+class FakeStore:
+    def __init__(self, saved_fingerprint):
+        self.saved, self.finished, self.viewer = saved_fingerprint, [], "a"
+        self.inputs = {"destination": "Tokyo", "time_zone": "Asia/Tokyo", "start": "2026-11-21", "end": "2026-11-23",
+                       "budget": 15000, "members": [{"user_id": "a", "preferences_saved_at": "t"}], "votes": [], "flights": []}
+
+    def row(self, table, fields):
+        if table == "itineraries":
+            return {"fingerprint": self.saved} if self.saved else None
+        return {"legacy": False, "places": [{"id": "p"}], "sources": []}
+
+    def rpc(self, name, **args):
+        if name == "trip_planner_inputs":
+            return self.inputs
+        if name == "finish_trip_planner_job":
+            self.finished.append(args["result"])
+        return True
+
+    def release(self, token):
+        pass
+
+
+def test_a_saved_plan_is_reused_only_while_its_inputs_are_unchanged(monkeypatch):
+    from server import app as app_module
+
+    monkeypatch.setattr(app_module, "cards_for_plan", lambda deck, inputs: [])
+    monkeypatch.setattr(app_module, "context_for", lambda inputs: {})
+    monkeypatch.setattr(app_module.pipeline, "run_plan", lambda *a, **k: {"plan": {"days": []}})
+    current = FakeStore(None)
+    current.saved = app_module.plan_fingerprint(current.inputs)
+    assert app_module.run_job(current, "plan") == {"ready": True} and current.finished == []  # nothing rebuilt
+
+    stale = FakeStore("old-fingerprint")
+    assert app_module.run_job(stale, "plan") == {"ready": True}
+    assert len(stale.finished) == 1 and stale.finished[0]["fingerprint"] == app_module.plan_fingerprint(stale.inputs)
+
+    first = FakeStore(None)  # no plan yet: built
+    app_module.run_job(first, "plan")
+    assert len(first.finished) == 1

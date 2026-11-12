@@ -33,13 +33,15 @@ Leave `VITE_DATA_MODE` unset or set it to `mock`. The demo starts with Gaudi as 
 3. Copy [`.env.example`](.env.example) to `.env` (the one environment file) if you do not already have one. Set the Supabase URL and publishable key in `.env`.
 4. Run `npm run check:backend` to verify connectivity and check that the tables and RPCs are closed to signed-out visitors. Run `npm run dev:shared` and sign in. To try a shared trip, copy an invitation link from Members and open it on a second device or browser session with a different account. Use an app URL reachable by both devices.
 
-`npm run dev:shared` sets `VITE_DATA_MODE=shared` for the dev server. In a second terminal, start Stacia’s Python planner from `cathay-app/` with Python 3.12:
+`npm run dev:shared` sets `VITE_DATA_MODE=shared` for the dev server. In a second terminal, start Stacia’s Python planner from `cathay-app/` with Python 3.12 (it needs `SUPABASE_SECRET_KEY`, `POE_API_KEY` and `TAVILY_API_KEY` in `.env`; `GEOAPIFY_API_KEY` is optional):
 
 ```bash
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python -m uvicorn server.app:app --host 127.0.0.1 --port 8000
+npm run dev:api
 ```
+
+Or start both in one terminal with `npm run dev:all` (after the one-time setup above). Ctrl+C stops both.
 
 For production, apply [`20261112020000_researched_itineraries.sql`](supabase/migrations/20261112020000_researched_itineraries.sql) after the earlier migrations. In Vercel, keep the project root set to `cathay-app`, enable Fluid Compute for the planner’s 300-second limit, and redeploy after setting the variables below. The React app and `/api/planner` deploy together. Use `npm run dev:shared` with the local planner to test the whole workflow locally.
 

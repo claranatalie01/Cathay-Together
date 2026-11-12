@@ -1,7 +1,8 @@
 """Authenticated shared-trip entry point for Stacia's itinerary pipeline."""
+import hashlib
 import logging
 from datetime import datetime
-from json import loads
+from json import dumps, loads
 from pathlib import Path
 from typing import Literal
 from uuid import UUID, uuid4
@@ -137,17 +138,36 @@ def cards_for_plan(deck, inputs):
              "like_count": sum(choices[(m["user_id"], place["id"])] == "like" for m in members)} for place in places]
 
 
-def finished(store, action, deck):
+def plan_fingerprint(inputs) -> str:
+    """What a plan was built from: who is in the group, every swipe, and every chosen flight.
+
+    If any of these change, a saved plan is out of date and must be built again.
+    """
+    payload = {
+        "members": sorted(m["user_id"] for m in inputs["members"]),
+        "votes": sorted([v["user_id"], v["place_id"], v["choice"]] for v in inputs["votes"]),
+        "flights": sorted([f["user_id"], f["direction"], f.get("depart_at"), f.get("arrive_at")] for f in inputs["flights"]),
+    }
+    return hashlib.sha256(dumps(payload, sort_keys=True, default=str).encode()).hexdigest()[:16]
+
+
+def plan_is_current(store, inputs) -> bool:
+    """A saved plan counts only if it was built from the group's current members, swipes and flights."""
+    row = store.row("itineraries", "fingerprint:plan->>fingerprint")
+    return bool(row) and row.get("fingerprint") == plan_fingerprint(inputs)
+
+
+def finished(store, action, deck, inputs=None):
     if action == "discover":
         return deck and (deck["legacy"] or (
             deck["places"] and all("photoSourceUrl" in place and "coordinates" in place for place in deck["places"])
         ))
-    return store.row("itineraries", "group_id")
+    return inputs is not None and plan_is_current(store, inputs)
 
 
 def run_job(store, action):
     deck = store.row("group_place_decks", "legacy,places,sources")
-    if finished(store, action, deck):
+    if finished(store, action, deck, store.rpc("trip_planner_inputs") if action == "plan" else None):
         return {"ready": True}
     token = str(uuid4())
     if not store.rpc("claim_trip_planner_job", viewer=store.viewer, token=token):
@@ -155,9 +175,9 @@ def run_job(store, action):
     try:
         # Check again after taking the lease, in case the previous request just finished.
         deck = store.row("group_place_decks", "legacy,places,sources")
-        if finished(store, action, deck):
-            return {"ready": True}
         inputs = store.rpc("trip_planner_inputs")
+        if finished(store, action, deck, inputs):
+            return {"ready": True}
         if not inputs or not any(m["user_id"] == store.viewer for m in inputs["members"]):
             raise PlannerError(404, "group_not_found", "This trip is unavailable.")
         if action == "discover":
@@ -181,6 +201,7 @@ def run_job(store, action):
                     cards = cards_for_plan(deck, inputs)
             result = pipeline.run_plan(context_for(inputs), cards, deck["sources"])["plan"]
             result["builtAt"] = int(datetime.now().timestamp() * 1000)
+            result["fingerprint"] = plan_fingerprint(inputs)
         if not store.rpc("finish_trip_planner_job", viewer=store.viewer, token=token, operation=action, result=result,
                          expected_inputs=inputs if action == "plan" else None):
             raise PlannerError(409, "planner_changed", "The trip changed while the planner was running. Try again.")

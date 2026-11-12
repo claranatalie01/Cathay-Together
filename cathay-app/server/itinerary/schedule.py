@@ -78,6 +78,21 @@ def sanitize_plan_cards(raw_cards) -> list[dict]:
         )
     return cards
 
+def meal_from_card(card: dict, meal: str, minutes: int, note: str, known_sources: set) -> dict:
+    """A lunch, breakfast or dinner stop that is one of the group's liked places."""
+    return {
+        "type": "meal",
+        "meal": meal,
+        "minutes": minutes,
+        "name": card["name"],
+        "area": card["location"],
+        "estimated_cost_jpy": card["estimated_cost_jpy"],
+        "note": note,
+        "source_ids": [s for s in card["source_ids"] if s in known_sources],
+        "card_id": card["id"],
+    }
+
+
 def _day_stops(raw_day, cards_by_id: dict, used: set, known_sources: set) -> list[dict]:
     stops, cursor = [], 9 * 60
     raw_stops = raw_day.get("stops") if isinstance(raw_day, dict) else None
@@ -93,6 +108,14 @@ def _day_stops(raw_day, cards_by_id: dict, used: set, known_sources: set) -> lis
             used.add(card["id"])
             minutes = clean_int(raw.get("minutes"), card["estimated_duration_min"], 15, 480)
             stop = {"type": "activity", "card_id": card["id"], "minutes": minutes, "note": note}
+        elif kind == "meal" and cards_by_id.get(raw.get("card_id")) is not None and raw["card_id"] not in used:
+            # A liked restaurant that fills a meal slot: it counts as scheduled and keeps its coordinates.
+            card = cards_by_id[raw["card_id"]]
+            used.add(card["id"])
+            meal = clean_text(raw.get("meal"), 12).lower()
+            meal = meal if meal in MEALS else "lunch"
+            stop = meal_from_card(card, meal, clean_int(raw.get("minutes"), min(card["estimated_duration_min"], 120), 20, 180), note, known_sources)
+            start = start if start is not None else MEAL_DEFAULT_START[meal]
         elif kind == "meal":
             meal = clean_text(raw.get("meal"), 12).lower()
             meal = meal if meal in MEALS else "lunch"

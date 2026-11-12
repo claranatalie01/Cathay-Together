@@ -62,8 +62,8 @@ def _stop_issues(stop, day, number, cards_by_id, weekday, arrival, departure):
         issues.append(_issue("error", number, f"{name} starts before everyone has landed and cleared the airport.", "Start at least 90 minutes after the last arrival."))
     if departure and midnight + timedelta(minutes=end) > departure - timedelta(minutes=config.DEPARTURE_BUFFER_MIN):
         issues.append(_issue("error", number, f"{name} ends less than 3 hours before the earliest departure.", "End at least 3 hours before departure."))
-    if stop["type"] == "activity":
-        card = cards_by_id[stop["card_id"]]
+    card = cards_by_id.get(stop.get("card_id")) if stop["type"] in ("activity", "meal") else None
+    if card is not None:
         if any(closed.lower()[:3] == weekday.lower()[:3] for closed in card["closed_days"]):
             issues.append(_issue("error", number, f"{name} is closed on {weekday}.", "Move it to another day."))
         window = opening_window(card["opening_hours"])
@@ -117,7 +117,7 @@ def _day_issues(day, number, last, cards_by_id, context, arrival, departure, tra
 
 def _left_out_issues(schedule: dict, cards: list[dict]) -> list[dict]:
     """A place at least half the group liked that is not in the plan. A warning: it may truly not fit."""
-    scheduled = {s["card_id"] for day in schedule["days"] for s in day["stops"] if s["type"] == "activity"}
+    scheduled = {s["card_id"] for day in schedule["days"] for s in day["stops"] if s.get("card_id")}  # activities and liked meals
     out = []
     def share(card):
         return card.get("like_count", 0) / max(card.get("total_members", 1), 1)
