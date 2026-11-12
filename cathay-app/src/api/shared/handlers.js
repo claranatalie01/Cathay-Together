@@ -2,13 +2,11 @@
 // Same shape as src/api/mock/handlers.js: [method, path pattern, handler], and each
 // handler returns { status, body } as described in docs/api-contract.md.
 //
-// Connected so far: GET /me, the group, flight, board, booking, preference and itinerary endpoints (list, create, open, join, decline,
-// invite preview, invite copied, date windows). Every other request answers
+// Connected: profile, group, flight, board, booking, preference and itinerary endpoints.
+// Every other request answers
 // "not connected yet" (see http.js) until its endpoint is added here.
 //
-// Groups are read and changed only through the database functions in
-// supabase/migrations/20261111010000_group_functions.sql. Those functions decide who may
-// do what; nothing in this file is a security check.
+// The group RPCs in supabase/migrations decide who may read or change groups and memberships.
 import { ApiError } from '../errors';
 import { getSupabase } from '../supabaseClient';
 // Fixtures, not user data: the date window and the sample fares are the same in both modes.
@@ -63,6 +61,8 @@ const REFUSALS = {
   group_not_found: [404, 'That group does not exist.'],
   invite_not_found: [404, 'This invitation link is not valid.'],
   invalid_invite_code: [403, 'That invite code does not match this group.'],
+  creator_required: [403, 'Only the creator can delete this group.'],
+  creator_cannot_leave: [409, 'The creator can delete this group from the group list.'],
   validation_failed: [422, 'Some fields need attention.'],
   no_flights: [409, 'Choose your outbound and return flights first.'],
   already_booked: [409, 'You have already booked this trip.'],
@@ -230,6 +230,21 @@ const groupRoutes = [
     const raw = await call(supabase, 'join_group', { target_group: id, code: String(body?.inviteCode ?? '') });
     declined.delete(id);
     return { status: 200, body: toGroup(raw, userId) };
+  }],
+
+  ['DELETE', '/groups/:id', async ({ params }) => {
+    const id = groupId(params);
+    const { supabase } = await context();
+    await call(supabase, 'delete_group', { target_group: id });
+    declined.delete(id);
+    return { status: 200, body: null };
+  }],
+
+  ['DELETE', '/groups/:id/membership', async ({ params }) => {
+    const id = groupId(params);
+    const { supabase } = await context();
+    await call(supabase, 'leave_group', { target_group: id });
+    return { status: 200, body: null };
   }],
 
   // POST /groups/:id/decline   { inviteCode } – not stored in the database (see `declined`).

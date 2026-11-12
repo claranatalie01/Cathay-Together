@@ -9,7 +9,7 @@ in-browser mock (`src/api/mock/`, saved in `localStorage`). To use a real server
 - Base path: `/api` (prefix it in `request()`).
 - JSON in, JSON out. Dates are display strings for now (see "Notes").
 - The caller is identified by the session (cookie or bearer token). It is the "signed-in person".
-- Mutations resolve with the full updated `Group`.
+- Group mutations resolve with the full updated `Group`. The delete and leave endpoints return JSON `null`.
 
 ## Error format
 
@@ -30,9 +30,11 @@ Every non-2xx response has this body:
 | 401 | `unauthenticated` | No signed-in person |
 | 403 | `invalid_invite_code` | `inviteCode` does not match the group and the user was not invited |
 | 403 | `not_a_member` | Action needs group membership |
+| 403 | `creator_required` | A member tried to delete a group they did not create |
 | 404 | `group_not_found` | Unknown group id |
 | 404 | `invite_not_found` | Unknown invite code |
 | 409 | `already_member` | Declining while already a member |
+| 409 | `creator_cannot_leave` | A group creator tried to leave their own group |
 | 422 | `validation_failed` | Invalid request body |
 | 503 | `service_unavailable` | Temporary outage (the UI shows "Retry") |
 
@@ -153,6 +155,18 @@ Errors: `403 invalid_invite_code`, `409 already_member`.
 
 No body. Marks that a member copied the invite link (`inviteCopied: true`). Response `200`: a **Group**.
 Errors: `403 not_a_member`.
+
+### `DELETE /groups/:id`
+
+The creator permanently deletes the group. Memberships, flight picks, votes, simulated bookings and the itinerary are deleted with it. The invite link becomes invalid. Response `200` with JSON `null`.
+
+A non-member or missing group returns `404 group_not_found`. A member who is not the creator receives `403 creator_required`.
+
+### `DELETE /groups/:id/membership`
+
+A member leaves the group. Their membership, flight picks, votes and simulated booking are deleted. The group, saved itinerary and other members' records stay available. The member can rejoin using a valid invite link. Response `200` with JSON `null`.
+
+A non-member or missing group returns `404 group_not_found`. The creator receives `409 creator_cannot_leave`.
 
 ## Flight booking (Flow B)
 

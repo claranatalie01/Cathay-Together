@@ -186,6 +186,7 @@ function ButtonBlock() {
       <div className="ds-specs">
         <Spec label="Primary"><Button>Create group</Button></Spec>
         <Spec label="Secondary"><Button variant="secondary">Back to groups</Button></Spec>
+        <Spec label="Destructive"><Button variant="destructive">Delete group</Button></Spec>
         <Spec label="Hover"><Button className="is-hover">Create group</Button></Spec>
         <Spec label="Pressed"><Button className="is-pressed">Create group</Button></Spec>
         <Spec label="Focus"><Button className="is-focus">Create group</Button></Spec>

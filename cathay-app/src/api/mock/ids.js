@@ -16,9 +16,17 @@ export function uniqueGroupId(name, existingIds) {
   return id;
 }
 
-// Deterministic six-character invite code for a group id.
-export function makeInviteCode(id) {
+function codeFor(key) {
   let hash = 7;
-  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  for (const ch of key) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
   return hash.toString(36).toUpperCase().padStart(6, 'X').slice(0, 6);
+}
+
+// Deterministic six-character code, including a fallback for collisions.
+export function makeInviteCode(id, reserved) {
+  let code = codeFor(id);
+  for (let suffix = 2; reserved.has(code); suffix += 1) {
+    code = codeFor(`${id}-${suffix}`);
+  }
+  return code;
 }

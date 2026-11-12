@@ -3,9 +3,11 @@ import Chip from '../ui/Chip';
 import './GroupCard.css';
 
 // One row in the Travel Groups list.
-export default function GroupCard({ to, photo, name, meta, status, chip, className = '' }) {
+export default function GroupCard({ to, onClick, photo, name, meta, status, chip, className = '' }) {
+  const Card = onClick ? 'button' : Link;
+  const action = onClick ? { type: 'button', onClick } : { to };
   return (
-    <Link className={`group-card ${className}`.trim()} to={to}>
+    <Card className={`group-card ${className}`.trim()} {...action}>
       <span className="group-card__thumb">
         <img src={photo.src} alt="" />
       </span>
@@ -20,7 +22,10 @@ export default function GroupCard({ to, photo, name, meta, status, chip, classNa
           {status}
         </span>
       </span>
-      <Chip tone={chip.tone}>{chip.label}</Chip>
-    </Link>
+      <span className="group-card__actions">
+        <Chip tone={chip.tone}>{chip.label}</Chip>
+        {onClick && <span className="group-card__remove" aria-hidden="true">−</span>}
+      </span>
+    </Card>
   );
 }

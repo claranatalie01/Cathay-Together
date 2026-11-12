@@ -6,7 +6,7 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [ta
 // Bottom sheet dialog over a dimmed page. Closes with Escape, the × button or a
 // tap on the dimmed area; keeps keyboard focus inside while open and returns it
 // to the control that opened it. Render it as a direct child of <Screen>.
-export default function Sheet({ open, onClose, title, titleId, className = '', children }) {
+export default function Sheet({ open, onClose, title, titleId, descriptionId, className = '', children }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function Sheet({ open, onClose, title, titleId, className = '', c
   return (
     <>
       <div className="scrim" onClick={onClose} />
-      <aside className={`sheet ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
+      <aside className={`sheet ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} ref={ref}>
         <div className="sheet__handle">
           <span className="sheet__handle-bar" />
         </div>

@@ -10,6 +10,7 @@ export const CONTRAST_PAIRS = [
   { fg: '--color-text-warning', bg: '--color-surface-warning', use: '"Booked" chip', min: 4.5 },
   { fg: '--color-text-caution', bg: '--color-surface-caution', use: 'Arrival-window badge', min: 4.5 },
   { fg: '--color-text-danger', bg: '--color-surface-default', use: 'Field error text', min: 4.5 },
+  { fg: '--color-text-inverse', bg: '--color-surface-destructive', use: 'Delete and Leave buttons', min: 4.5 },
   { fg: '--color-text-accent', bg: '--color-surface-default', use: '"Lowest Fare"', min: 4.5 },
   { fg: '--color-border-default', bg: '--color-surface-default', use: 'Field border (non-text 3:1)', min: 3 },
   { fg: '--color-focus-ring', bg: '--color-surface-default', use: 'Focus ring (non-text 3:1)', min: 3 },

@@ -67,6 +67,11 @@
   font-weight: var(--weight-medium);
 }
 
+.button--destructive {
+  border-color: var(--color-surface-destructive);
+  background: var(--color-surface-destructive);
+}
+
 /* Sizes (real app): 56 for Continue and Express checkout, 38 for Select in a fare card. */
 .button--lg {
   height: var(--size-button-lg);

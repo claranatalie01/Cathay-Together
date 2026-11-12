@@ -1,7 +1,7 @@
 // Everything the UI needs for travel groups. Pages call only these functions.
 // Each one is async and resolves with the JSON a REST API would return.
 import { notifyDataChanged } from './events';
-import { request } from './http';
+import { invalidateGet, request } from './http';
 
 const enc = encodeURIComponent;
 
@@ -40,6 +40,20 @@ export async function joinGroup(groupId, inviteCode) {
   const group = await request('POST', `/groups/${enc(groupId)}/join`, { inviteCode });
   notifyDataChanged();
   return group;
+}
+
+async function removeFromGroups(path) {
+  await request('DELETE', path);
+  invalidateGet('/groups');
+  notifyDataChanged();
+}
+
+export function deleteGroup(groupId) {
+  return removeFromGroups(`/groups/${enc(groupId)}`);
+}
+
+export function leaveGroup(groupId) {
+  return removeFromGroups(`/groups/${enc(groupId)}/membership`);
 }
 
 export async function declineInvite(groupId, inviteCode) {

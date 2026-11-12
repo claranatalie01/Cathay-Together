@@ -110,6 +110,7 @@ Figma defined only three shared styles (v1.0 section 1): colour style "Dark" `#1
 | `--color-surface-default` | `#ffffff` | **Cards**, sheets, bars, secondary button | **Real** (was "screen") |
 | `--color-surface-panel` **new** | `#f9f9f9` | Inner panel inside fare cards, comparison footer | Real (est.) |
 | `--color-surface-brand-subtle` | `#e9f3f2` | Selected option, Flex column, tinted callouts | Real (was `#e6f2ef`; within ±3, so effectively the same) |
+| `--color-surface-destructive` | `#a82432` | Delete group and Leave group confirmation buttons | PROPOSAL (approved in the removal preview) |
 | `--color-surface-banner` **new** | `#e5eeeb` | "Flying soon?" banner (darker `#d8e6e6` toward lower left; may be a gradient) | Real (est.) |
 | `--color-surface-chip-brand` **new** | `#e4eeef` | "Economy Light" chip | Real (est.) |
 | `--color-surface-table-head-a` / `-b` **new** | `#f9fdfe` / `#f6fafb` | Comparison column heads (Light / Essential) | Real |
@@ -325,6 +326,7 @@ Sizes below are Real (est.) at ±1.5 sp, from cap-height ÷ 0.71 (assumed ratio)
 | Button sizes (built, Flow B) | `size="sm"` 38, default 52, `size="lg"` 56 | R |
 | Chip `peach` (built, Flow B) | Peach fill, radius 4, "Recommended" | R (S6) |
 | Sheet + scrim (decline-invite sheet) | Structure follows the bottom sheet above | F + R |
+| Remove group | Secondary action beside Your groups with a 44 px touch target. Selection mode adds a minus marker to each eligible group card. The bottom sheet shows the selected group, Cancel, and a destructive Delete group or Leave group button. | PROPOSAL (approved) |
 | Select travel dates sheet (`CalendarSheet`, Create group) | Real-app date sheet: × and centred title, route header (origin, plane, destination with long dates), weekday row, two months, window ends `--color-surface-brand` with inverse text, days between `--color-surface-brand-subtle`, lowest economy fare under each open day (caption-sm), other days muted at `--opacity-disabled`, demo note, Done button. Not selectable beyond the one demo window; the real app's Reset is left out because nothing can change | R + PROPOSAL |
 | State message | confirmation, building | F; real loading is the veil and mark above |
 | Skeleton, Toast, inline field error | Not visible | P |

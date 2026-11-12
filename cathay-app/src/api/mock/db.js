@@ -21,7 +21,7 @@ export const inviteUrlFor = (code) => `${INVITE_BASE_URL}${code}`;
 
 // The demo starts with no groups: the first thing a visitor does is create one.
 function seed() {
-  return { session: { currentUserId: 'gaudi' }, groups: [] };
+  return { session: { currentUserId: 'gaudi' }, groups: [], deletedGroups: [] };
 }
 
 // Members who are already "picked" or "booked" get real flight choices, so the board, the Members
@@ -57,7 +57,10 @@ let db = null;
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
-    if (saved && Array.isArray(saved.groups) && saved.session) return ensurePreferences(ensureSelections(saved));
+    if (saved && Array.isArray(saved.groups) && saved.session) {
+      saved.deletedGroups ??= [];
+      return ensurePreferences(ensureSelections(saved));
+    }
   } catch {
     // Missing or corrupt: start from the seed.
   }

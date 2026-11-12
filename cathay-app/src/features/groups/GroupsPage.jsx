@@ -1,5 +1,6 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getGroups } from '../../api';
+import { ApiError, deleteGroup, getGroups, leaveGroup } from '../../api';
 import Screen from '../../components/layout/Screen';
 import StatusBar from '../../components/layout/StatusBar';
 import PageHeader from '../../components/layout/PageHeader';
@@ -8,7 +9,9 @@ import GroupCard from '../../components/domain/GroupCard';
 import Button from '../../components/ui/Button';
 import ErrorState from '../../components/ui/ErrorState';
 import LoadingState from '../../components/ui/LoadingState';
+import Sheet from '../../components/ui/Sheet';
 import StateMessage from '../../components/ui/StateMessage';
+import { useToast } from '../../components/ui/Toast';
 import { DemoControls } from '../../demo';
 import { COPY } from '../../data/copy';
 import { photoFor } from '../../data/trip';
@@ -16,6 +19,8 @@ import { memberSummary } from './groupSelectors';
 import { useAsync } from '../../hooks/useAsync';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import './GroupsPage.css';
+
+const canRemove = (group) => group.viewerRole === 'creator' || group.viewerRole === 'member';
 
 // How one group appears in the list, depending on the signed-in person's role.
 function describe(group) {
@@ -40,14 +45,33 @@ export default function GroupsPage() {
   const navigate = useNavigate();
   const copy = COPY.groups;
   const { status, data: groups, error, reload } = useAsync(getGroups, []);
+  const toast = useToast();
+  const [managing, setManaging] = useState(false);
+  const [selection, setSelection] = useState(null);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState('');
+  const requestInProgress = useRef(false);
+  const focusAfterRemoval = useRef(false);
+  const manageButton = useRef(null);
+  const createButton = useRef(null);
+  const closeRemoval = useCallback(() => {
+    if (!requestInProgress.current) setSelection(null);
+  }, []);
   useDocumentTitle(copy.title);
 
-  const frame = (body) => (
+  useEffect(() => {
+    if (status !== 'success' || !focusAfterRemoval.current) return;
+    focusAfterRemoval.current = false;
+    (manageButton.current ?? createButton.current)?.focus();
+  }, [status, groups]);
+
+  const frame = (body, sheet) => (
     <Screen>
       <StatusBar />
       <PageHeader title={copy.title} />
       {body}
       <BottomNav variant="groups" />
+      {sheet}
     </Screen>
   );
 
@@ -57,11 +81,41 @@ export default function GroupsPage() {
   if (groups.length === 0) {
     return frame(
       <StateMessage mark="+" title={copy.emptyTitle} text={copy.emptyText}>
-        <Button onClick={() => navigate('/groups/new')}>{copy.create}</Button>
+        <Button ref={createButton} onClick={() => navigate('/groups/new')}>{copy.create}</Button>
         <DemoControls context="groups" />
       </StateMessage>,
     );
   }
+
+  const removableGroups = groups.filter(canRemove);
+  const choosing = managing && removableGroups.length > 0;
+  const selected = selection && removableGroups.find((group) => group.id === selection.id && group.viewerId === selection.viewerId);
+  const removal = selected && copy.remove[selected.viewerRole];
+
+  const confirmRemoval = async () => {
+    if (requestInProgress.current || !selected) return;
+    requestInProgress.current = true;
+    setRemoving(true);
+    setRemoveError('');
+    let message = removal.success;
+    try {
+      await (selected.viewerRole === 'creator' ? deleteGroup : leaveGroup)(selected.id);
+    } catch (actionError) {
+      if (!(actionError instanceof ApiError) || actionError.code !== 'group_not_found') {
+        setRemoveError(actionError instanceof ApiError ? actionError.message : copy.remove.failed);
+        return;
+      }
+      message = copy.remove.unavailable;
+    } finally {
+      requestInProgress.current = false;
+      setRemoving(false);
+    }
+    if (removableGroups.length === 1) setManaging(false);
+    setSelection(null);
+    focusAfterRemoval.current = true;
+    reload();
+    toast(message);
+  };
 
   return frame(
     <main className="groups">
@@ -71,14 +125,24 @@ export default function GroupsPage() {
           <img src="/assets/ui-users-group.svg" alt="" />
         </span>
         <h2 className="gd__title">{copy.heading}</h2>
+        {removableGroups.length > 0 && (
+          <Button ref={manageButton} variant="secondary" className="groups__manage" data-managing={choosing || undefined} onClick={() => setManaging(!choosing)}>
+            {choosing ? copy.remove.done : copy.remove.manage}
+          </Button>
+        )}
       </div>
+      {choosing && <p className="groups__remove-hint" role="status">{copy.remove.choose}</p>}
       <ul className="groups__list">
-        {groups.map((group) => {
+        {(choosing ? removableGroups : groups).map((group) => {
           const info = describe(group);
           return (
             <li key={group.id}>
               <GroupCard
                 to={info.to}
+                onClick={choosing ? () => {
+                  setRemoveError('');
+                  setSelection({ id: group.id, viewerId: group.viewerId });
+                } : undefined}
                 photo={photoFor(group.destination, group.id)}
                 name={group.name}
                 meta={`${group.destination} · ${group.datesLabel}`}
@@ -89,10 +153,29 @@ export default function GroupsPage() {
           );
         })}
       </ul>
-      <Button to="/groups/new" className="groups__create">
+      <Button ref={createButton} to="/groups/new" className="groups__create">
         {copy.create}
       </Button>
       <DemoControls context="groups" />
     </main>,
+    selected && (
+      <Sheet open onClose={closeRemoval} title={removal.title} titleId="remove-group-title" descriptionId="remove-group-description" className="groups__remove-sheet">
+        <div className="groups__remove-summary">
+          <img src={photoFor(selected.destination, selected.id).src} alt="" />
+          <div>
+            <p className="groups__remove-name">{selected.name}</p>
+            <p>{memberSummary(selected.members)}</p>
+          </div>
+        </div>
+        <p className="sheet__text" id="remove-group-description">{removal.description}</p>
+        {removeError && <p className="groups__remove-error" role="alert">{removeError}</p>}
+        <div className="groups__remove-actions">
+          <Button variant="secondary" onClick={closeRemoval} disabled={removing} data-autofocus>{copy.remove.cancel}</Button>
+          <Button variant="destructive" onClick={confirmRemoval} disabled={removing} aria-busy={removing || undefined}>
+            {removing ? removal.pending : removal.confirm}
+          </Button>
+        </div>
+      </Sheet>
+    ),
   );
 }

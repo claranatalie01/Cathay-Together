@@ -244,6 +244,28 @@ export const COPY = {
     create: 'Create group',
     emptyTitle: 'No travel groups yet',
     emptyText: 'Create a group, share the link and plan flights together, from any airport.',
+    remove: {
+      manage: 'Remove group',
+      done: 'Done',
+      choose: 'Choose a group to remove.',
+      cancel: 'Cancel',
+      unavailable: 'This group is no longer on your list.',
+      failed: 'We could not remove the group. Try again.',
+      creator: {
+        title: 'Delete group?',
+        confirm: 'Delete group',
+        pending: 'Deleting…',
+        description: 'This permanently deletes this group and its trip plans for everyone.',
+        success: 'Group deleted.',
+      },
+      member: {
+        title: 'Leave group?',
+        confirm: 'Leave group',
+        pending: 'Leaving…',
+        description: 'Your flight picks, votes and simulated booking will be removed. Other members will keep access.',
+        success: 'You left the group.',
+      },
+    },
     chips: {
       creator: { label: 'Creator', tone: 'neutral' },
       member: { label: 'Member', tone: 'tint' },

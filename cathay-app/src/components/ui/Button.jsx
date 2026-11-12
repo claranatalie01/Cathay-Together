@@ -4,7 +4,8 @@ import './Button.css';
 // Full-width action. Renders a router link when `to` is given, otherwise a <button>.
 // size: 'md' (52, default), 'lg' (56: Continue, Express checkout) or 'sm' (38: Select in a fare card).
 export default function Button({ to, variant = 'primary', size = 'md', type = 'button', className = '', children, ...rest }) {
-  const classes = `button${variant === 'secondary' ? ' button--secondary' : ''}${size === 'md' ? '' : ` button--${size}`} ${className}`.trim();
+  const tone = ['secondary', 'destructive'].includes(variant) ? ` button--${variant}` : '';
+  const classes = `button${tone}${size === 'md' ? '' : ` button--${size}`} ${className}`.trim();
   if (to) {
     return (
       <Link className={classes} to={to} {...rest}>

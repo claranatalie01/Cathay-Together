@@ -8,13 +8,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const TABLES = ['airports', 'profiles', 'groups', 'group_members', 'flight_selections', 'votes', 'bookings', 'itineraries'];
-// Database functions the app calls to create, join and read groups.
+// Database functions the app calls for shared trips.
 const FUNCTIONS = {
   list_my_groups: {},
   get_group: { target_group: '00000000-0000-0000-0000-000000000000' },
   preview_invitation: { code: 'AAAAAA' },
   create_group: { group_name: 'check', trip_start: '2026-11-21', trip_end: '2026-11-24' },
   join_group: { target_group: '00000000-0000-0000-0000-000000000000', code: 'AAAAAA' },
+  delete_group: { target_group: '00000000-0000-0000-0000-000000000000' },
+  leave_group: { target_group: '00000000-0000-0000-0000-000000000000' },
   mark_invite_copied: { target_group: '00000000-0000-0000-0000-000000000000' },
   get_booking: { target_group: '00000000-0000-0000-0000-000000000000' },
   start_booking: { target_group: '00000000-0000-0000-0000-000000000000' },

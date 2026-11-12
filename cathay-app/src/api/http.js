@@ -52,10 +52,16 @@ async function execute(method, path, body) {
 // React's development double-render from sending everything twice).
 const inFlight = new Map();
 
+export function invalidateGet(path) {
+  inFlight.delete(path);
+}
+
 export function request(method, path, body) {
   if (method !== 'GET') return execute(method, path, body);
   if (!inFlight.has(path)) {
-    const call = execute(method, path).finally(() => inFlight.delete(path));
+    const call = execute(method, path).finally(() => {
+      if (inFlight.get(path) === call) inFlight.delete(path);
+    });
     inFlight.set(path, call);
   }
   return inFlight.get(path);

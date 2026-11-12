@@ -52,6 +52,14 @@ function validateCreate(body) {
   return { name, dates };
 }
 
+function memberGroup(db, id, userId) {
+  const group = findGroup(db, id);
+  if (!group.members.some((member) => member.userId === userId)) {
+    throw new ApiError(404, 'group_not_found', 'That group does not exist.');
+  }
+  return group;
+}
+
 export const routes = [
   // GET /me
   ['GET', '/me', () => {
@@ -94,13 +102,15 @@ export const routes = [
     const db = getDb();
     const user = currentUser(db);
     const { name, dates } = validateCreate(body);
-    const id = uniqueGroupId(name, db.groups.map((g) => g.id));
+    // Keep deleted IDs and codes reserved so old group and invite links stay invalid.
+    const reserved = [...db.groups, ...db.deletedGroups];
+    const id = uniqueGroupId(name, reserved.map((g) => g.id));
     const group = {
       id,
       name,
       destination: 'Tokyo, Japan',
       datesLabel: DATE_WINDOWS[dates].label,
-      code: makeInviteCode(id),
+      code: makeInviteCode(id, new Set(reserved.map((g) => g.code))),
       creatorId: user.id,
       inviteCopied: false,
       createdAt: Date.now(),
@@ -135,6 +145,33 @@ export const routes = [
     group.invitations = group.invitations.filter((i) => i.userId !== user.id);
     saveDb();
     return { status: 200, body: serialize(group, user.id) };
+  }],
+
+  ['DELETE', '/groups/:id', ({ params }) => {
+    const db = getDb();
+    const user = currentUser(db);
+    const group = memberGroup(db, params.id, user.id);
+    if (group.creatorId !== user.id) throw new ApiError(403, 'creator_required', 'Only the creator can delete this group.');
+    db.groups = db.groups.filter((entry) => entry.id !== group.id);
+    db.deletedGroups.push({ id: group.id, code: group.code });
+    saveDb();
+    return { status: 200, body: null };
+  }],
+
+  ['DELETE', '/groups/:id/membership', ({ params }) => {
+    const db = getDb();
+    const user = currentUser(db);
+    const group = memberGroup(db, params.id, user.id);
+    if (group.creatorId === user.id) {
+      throw new ApiError(409, 'creator_cannot_leave', 'The creator can delete this group from the group list.');
+    }
+    group.members = group.members.filter((member) => member.userId !== user.id);
+    group.invitations = group.invitations.filter((invite) => invite.userId !== user.id);
+    delete group.selections?.[user.id];
+    delete group.bookings?.[user.id];
+    delete group.preferences?.[user.id];
+    saveDb();
+    return { status: 200, body: null };
   }],
 
   // POST /groups/:id/decline   { inviteCode }

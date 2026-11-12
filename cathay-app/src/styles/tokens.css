@@ -24,6 +24,7 @@
   --color-surface-field: #fbfbfb; /* near-duplicate of surface-subtle */
   --color-surface-brand: #2c4035;
   --color-surface-brand-subtle: #e9f3f2;
+  --color-surface-destructive: #a82432; /* PROPOSAL (approved): group removal confirmation */
   --color-surface-warning: #fbf5ea;
   --color-surface-caution: #fff3d6; /* near-duplicate of surface-warning */
   --color-surface-fare: #a8dcab; /* used at 25% opacity */
@@ -163,6 +164,7 @@
   --text-button-size: 18px; --text-button-leading: 22px; /* v2: button label (Real, est.) */
   --text-bar-title-size: 20px; --text-bar-title-leading: 24px; /* v2: app-bar and sheet title (Real, est.) */
   --size-header: 56px; /* PROPOSAL: real app bar height is not separable from the status bar */
+  --size-touch-target: 44px; /* minimum target for the compact Remove group control */
 
   /* ---- Flow B (flight booking): added from the real-app audit (docs/screenshot-audit.md) ---- */
   --color-gradient-segment: linear-gradient(to right, #337776, #056065); /* selected cabin segment (Real, est.) */

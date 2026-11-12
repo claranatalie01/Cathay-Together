@@ -9,6 +9,29 @@
   overflow: hidden;
 }
 
+.group-card[type='button'] {
+  width: 100%;
+  text-align: start;
+}
+
+.group-card__actions {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-xs);
+}
+
+.group-card__remove {
+  display: grid;
+  place-content: center;
+  width: var(--space-optical-18);
+  height: var(--space-optical-18);
+  border: var(--border-width-default) solid currentColor;
+  border-radius: var(--radius-pill);
+  color: var(--color-surface-destructive);
+  font-size: var(--text-body-size);
+  line-height: 1;
+}
+
 /* States: PROPOSAL (Figma shows the default card only) */
 @media (hover: hover) {
   .group-card:hover {
