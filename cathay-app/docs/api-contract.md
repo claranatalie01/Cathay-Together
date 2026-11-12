@@ -323,7 +323,7 @@ Members only (`403 not_a_member`). Only Tokyo groups have suggestions (`404 no_s
 
 ### `GET /groups/:id/preferences`
 
-Response `200`: the suggestions (11 in the demo), the caller's choices and everyone's readiness.
+Response `200` contains the suggestions, the caller's choices and everyone's readiness. Shared mode uses the trip's saved research deck. Trips already in progress at migration time keep the original deck. `?prepare=0` reads status and available cards without waiting for research, so booking screens stay accessible.
 
 ```json
 {
@@ -338,7 +338,7 @@ Response `200`: the suggestions (11 in the demo), the caller's choices and every
 }
 ```
 
-Place ids are `food`, `scenery`, `culture`, `shopping`. A member is `ready` once they have saved. `itineraryBuilt` is `true` once the group's itinerary exists (Group details then shows "View itinerary").
+The local and legacy decks keep their existing IDs, including `food`, `scenery`, `culture` and `shopping`. Researched decks use stable `card_…` IDs for the life of the trip. A member is `ready` once they have saved. `itineraryBuilt` is `true` once the group's itinerary exists (Group details then shows "View itinerary").
 
 ### `PUT /groups/:id/preferences/choices`
 
@@ -354,9 +354,13 @@ Members only (`403 not_a_member`). Tokyo groups only (`404 no_suggestions` other
 
 ### `POST /groups/:id/itinerary/build`
 
-No body. Builds (or rebuilds) the plan from every member's saved preferences. Errors: `422 not_ready` (`fields.waiting` lists who has not saved). Responds with the same body as the `GET`.
+No body. Shared mode builds a plan from the saved deck and every member’s saved swipes, or returns the existing plan. It returns `422 not_ready` when anyone has yet to save, `422 nothing_to_plan` when nobody liked an activity, `409 planner_busy` when a job is already running and `409 planner_changed` if the inputs changed during generation. Provider failures can be retried. Responds with the same body as `GET`, with `builtBy: "ai"` for plans built by the shared planner.
 
-How it is built: a voted place is scheduled when more than half the group liked it; places with at least one like that miss that bar go to the Maybe list. The scheduled places fill the middle days' mornings. Stops tagged `source: "suggested"` only fill the days and carry no vote count. Day 1 starts with the caller's arrival flight and the last day ends with their departure flight (from their chosen flights).
+The shared planner prioritizes activities liked by at least half the group and can schedule other liked activities when time permits. Unscheduled liked activities go to Maybe. The model proposes meals and free time. Mock mode continues to use the strict-majority scheduler with preset fillers. Both modes display the viewer's own booked flights.
+
+### `POST /api/planner` (shared transport)
+
+The same-origin Python endpoint accepts `{ "groupId": "<uuid>", "action": "discover" | "plan" }` and a Supabase bearer token. It checks membership and reads trip inputs itself. `discover` persists one deck and its evidence. `plan` reads that deck, saved swipes, flight timestamps and budget, validates the result and inserts it if the trip is current and has no plan. Success returns `{ "ready": true }`.
 
 ### `GET /groups/:id/itinerary`
 

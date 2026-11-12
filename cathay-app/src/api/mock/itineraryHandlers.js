@@ -24,7 +24,7 @@ export function bodyFor(ctx) {
   return {
     group: { id: group.id, name: group.name, destination: group.destination, datesLabel: group.datesLabel },
     members: group.members.length,
-    ...assemble({ plan: group.itinerary, selection: group.selections?.[user.id], votes, dates }),
+    ...assemble({ plan: group.itinerary, selection: group.selections?.[user.id], votes, dates, places: ctx.places }),
   };
 }
 
@@ -37,7 +37,7 @@ export function buildItinerary(ctx) {
 }
 
 // Applies "remove and reorder" to a plan in place: body is { days: [{ date, stopIds: [] }] }.
-export function applyItineraryEdit(plan, body) {
+export function applyItineraryEdit(plan, body, { retime = retimePlan } = {}) {
   if (!plan) throw new ApiError(404, 'itinerary_not_built', 'The itinerary has not been built yet.');
   const seen = new Set();
   const next = plan.days.map((day) => {
@@ -49,8 +49,8 @@ export function applyItineraryEdit(plan, body) {
     });
     return { ...day, stopIds: sent.stopIds };
   });
+  retime(plan, next);
   plan.days = next;
-  retimePlan(plan);
 }
 
 // One stop, with each member's vote for a voted place. `initials` is { [userId]: 'G' }.
@@ -59,12 +59,12 @@ export function stopBody(ctx, stopId, initials) {
   for (const day of full.days) {
     const stop = day.items.find((item) => item.id === stopId && item.kind === 'place');
     if (!stop) continue;
-    const place = stop.placeId ? PLACES.find((p) => p.id === stop.placeId) : null;
+    const place = stop.placeId ? (ctx.places ?? PLACES).find((p) => p.id === stop.placeId) : null;
     return {
       group: full.group,
       day: { index: day.index, label: day.label },
       stop: { ...stop, budget: place?.budget ?? stop.costLabel, durationBest: place ? `${place.duration} · ${place.bestTime}` : (stop.minutes === 60 ? '1 hr' : `${Math.round(stop.minutes / 6) / 10} hrs`), tip: place?.tip ?? null },
-      votes: stop.placeId ? ctx.votes[stop.placeId].votes.map((v) => ({ ...v, initial: initials[v.userId], isViewer: v.userId === ctx.user.id })) : null,
+      votes: ctx.votes[stop.placeId]?.votes.map((v) => ({ ...v, initial: initials[v.userId], isViewer: v.userId === ctx.user.id })) ?? null,
     };
   }
   throw new ApiError(404, 'stop_not_found', 'That stop is not in the itinerary.');

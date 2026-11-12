@@ -7,7 +7,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const TABLES = ['airports', 'profiles', 'groups', 'group_members', 'flight_selections', 'votes', 'bookings', 'itineraries'];
+const TABLES = ['airports', 'profiles', 'groups', 'group_members', 'flight_selections', 'votes', 'bookings', 'itineraries', 'group_place_decks'];
 // Database functions the app calls for shared trips.
 const FUNCTIONS = {
   list_my_groups: {},

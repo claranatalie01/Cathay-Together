@@ -33,7 +33,15 @@ Leave `VITE_DATA_MODE` unset or set it to `mock`. The demo starts with Gaudi as 
 3. Copy [`.env.example`](.env.example) to `.env.local` if you do not already have one. Set the Supabase URL and publishable key in `.env.local`.
 4. Run `npm run check:backend` to verify connectivity and check that the tables and RPCs are closed to signed-out visitors. Run `npm run dev:shared` and sign in. To try a shared trip, copy an invitation link from Members and open it on a second device or browser session with a different account. Use an app URL reachable by both devices.
 
-`npm run dev:shared` sets `VITE_DATA_MODE=shared` for the dev server. For a shared production build, set `VITE_DATA_MODE=shared` along with the two public Supabase values in the build environment. `npm run preview` serves the mode already built into `dist/`.
+`npm run dev:shared` sets `VITE_DATA_MODE=shared` for the dev server. In a second terminal, start Stacia’s Python planner from `cathay-app/` with Python 3.12:
+
+```bash
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m uvicorn server.app:app --host 127.0.0.1 --port 8000
+```
+
+For production, apply [`20261112020000_researched_itineraries.sql`](supabase/migrations/20261112020000_researched_itineraries.sql) after the earlier migrations. In Vercel, keep the project root set to `cathay-app`, enable Fluid Compute for the planner’s 300-second limit, and redeploy after setting the variables below. The React app and `/api/planner` deploy together. Use `npm run dev:shared` with the local planner to test the whole workflow locally.
 
 ### Environment variables
 
@@ -42,9 +50,18 @@ Leave `VITE_DATA_MODE` unset or set it to `mock`. The demo starts with Gaudi as 
 | `VITE_DATA_MODE` | `mock` by default. The exact value `shared` selects Supabase. |
 | `VITE_SUPABASE_URL` | Supabase project URL. Required in shared mode and exposed in the browser bundle. |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Public `sb_publishable_…` key or legacy `anon` key. Required in shared mode and exposed in the browser bundle. |
+| `SUPABASE_SECRET_KEY` | Server only. Supabase `sb_secret_…` key or legacy `service_role` key used to store the group deck and generated plan. |
+| `TAVILY_API_KEY` | Server only. Required for researching places. |
+| `POE_API_KEY` | Server only. Required for search planning, curation, scheduling and review. |
+| `POE_MODEL`, `POE_BASE_URL` | Optional server settings. Defaults to `GPT-4o-Mini` and `https://api.poe.com/v1/`. |
+| `GOOGLE_PLACES_API_KEY` | Optional server key for ratings enrichment. |
 | `OAG_SUBSCRIPTION_KEY` | Optional local credential for `npm run fetch:oag`, which refreshes `src/data/oagSnapshot.json`. Both modes can run from the checked-in snapshot. |
 
-**Never commit the Supabase secret key (`sb_secret_…`) or legacy `service_role` key.** Keep both out of frontend code and browser configuration, including `.env.local` for this app. Keep the OAG subscription key in the git-ignored local environment and use its unprefixed name. Vite exposes `VITE_` variables to the browser.
+Set server keys as Vercel **Secrets** or in the git-ignored `server/.env` for local development. Keep them out of `VITE_` variables. The Python service verifies the caller’s Supabase session and membership before contacting Tavily or Poe. Keep the OAG subscription key in the git-ignored local environment and use its unprefixed name.
+
+Shared mode prepares the latest trip after sign-in and researches other trips as they are opened or created. Trips with existing swipes or plans retain their original deck. Existing plans open as saved, and the planner saves a new plan only after every traveller saves their choices. Research and planning errors offer a retry. The mock workflow uses its local deck and scheduler.
+
+The shared planner keeps the 90-minute arrival buffer, three-hour departure buffer and 08:00–21:30 local planning window. It checks known opening hours, closures and overlaps. It prioritizes places liked by at least half the group and estimates transfers. The model proposes meals and free time within the trip's activity and meal budget.
 
 ## Review shortcuts
 

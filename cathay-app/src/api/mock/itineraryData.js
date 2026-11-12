@@ -86,10 +86,10 @@ const dayLong = (iso) => {
 const weekday = (iso) => DAY_NAMES[new Date(`${iso}T12:00:00Z`).getUTCDay()];
 
 // Votes per place from the saved preferences of the group's members.
-export function votesFor(group, userNames) {
+export function votesFor(group, userNames, places = PLACES) {
   const voters = group.members.map((m) => ({ userId: m.userId, name: userNames[m.userId], prefs: group.preferences?.[m.userId] }));
   return Object.fromEntries(
-    PLACES.map((place) => {
+    places.map((place) => {
       const votes = voters.map((v) => ({ userId: v.userId, name: v.name, choice: v.prefs?.saved ? v.prefs.choices[place.id] ?? null : null }));
       return [place.id, { votes, liked: votes.filter((v) => v.choice === 'like').length, passed: votes.filter((v) => v.choice === 'pass').length, total: votes.length }];
     }),
@@ -162,13 +162,13 @@ export function buildPlan({ dates, votes, selections }) {
 const timesOf = (timed) => ({ start: timed.start, end: timed.end, startTime: clockOf(timed.start), endTime: clockOf(timed.end), slot: slotOf(clockOf(timed.start)) });
 
 // After someone reorders or removes stops, give the day's stops new times in the new order.
-export function retimePlan(plan) {
+export function retimePlan(plan, days = plan.days) {
   if (!plan.free) return; // A plan saved before times existed: leave it as it is.
-  plan.days.forEach((day, d) => {
+  days.forEach((day, d) => {
     const items = day.stopIds.map((id) => {
       const stop = plan.stops[id];
       const place = PLACES.find((p) => p.id === stop.placeId);
-      const base = place ? placeItem(place, plan.days.map((day) => day.date)) : fillerItem({ ...stop, id: stop.suggestedId, slot: 'Morning' }, d);
+      const base = place ? placeItem(place, days.map((day) => day.date)) : fillerItem({ ...stop, id: stop.suggestedId, slot: 'Morning' }, d);
       // A moved suggested stop may happen at any time of day.
       return place ? { ...base, kind: 'voted' } : { ...base, kind: 'filler', open: RULES.dayStart, close: RULES.dayEnd };
     });
@@ -202,15 +202,27 @@ function travelBetween(a, b) {
 }
 
 // Reads the stored plan for one viewer: adds their own flights, travel between stops and totals.
-export function assemble({ plan, selection, votes, dates }) {
+export function assemble({ plan, selection, votes, dates, places = PLACES }) {
   const days = plan.days.map((day, index) => {
     const items = [];
     if (index === 0) items.push(selection?.outbound ? flightStop(selection.outbound, true) : { id: 'flight-arrival', kind: 'flight-missing', slot: 'Afternoon', title: 'Arrival' });
     // A timed stop shows its time after the part of the day: "Morning · 09:00–10:30".
     day.stopIds.forEach((id) => plan.stops[id] && items.push(plan.stops[id].startTime ? { ...plan.stops[id], slot: `${plan.stops[id].slot.split(' · ')[0]} · ${plan.stops[id].startTime}–${plan.stops[id].endTime}` } : plan.stops[id]));
     if (index === plan.days.length - 1 && plan.days.length > 1) items.push(selection?.return ? flightStop(selection.return, false) : { id: 'flight-departure', kind: 'flight-missing', slot: 'Afternoon', title: 'Departure' });
-    const withTravel = items.map((item, i) => ({ ...item, travelBefore: i > 0 && items[i - 1].kind !== 'flight-missing' && item.kind !== 'flight-missing' ? travelBetween(items[i - 1], item) : null }));
-    const allowance = index === 0 || index === plan.days.length - 1 ? 1000 : 500;
+    const withTravel = items.map((item, i) => {
+      const previous = items[i - 1];
+      let travelBefore = null;
+      if (previous && previous.kind !== 'flight-missing' && item.kind !== 'flight-missing') {
+        if (plan.builtBy === 'ai' && previous.kind === 'place' && item.kind === 'place') {
+          const minutes = Math.min(30, item.start - previous.end);
+          if (minutes > 0 && previous.suggestedId !== 'free' && item.suggestedId !== 'free') travelBefore = { minutes, text: 'Estimated transfer' };
+        } else {
+          travelBefore = travelBetween(previous, item);
+        }
+      }
+      return { ...item, travelBefore };
+    });
+    const allowance = plan.builtBy === 'ai' ? 0 : (index === 0 || index === plan.days.length - 1 ? 1000 : 500);
     const travelMinutes = withTravel.reduce((sum, item) => sum + (item.travelBefore?.minutes ?? 0), 0);
     const visitMinutes = items.reduce((sum, item) => sum + (item.minutes ?? 0), 0);
     return {
@@ -227,12 +239,13 @@ export function assemble({ plan, selection, votes, dates }) {
   const placeCount = days.reduce((n, d) => n + d.items.filter((i) => i.kind === 'place').length, 0);
   const totalCost = days.reduce((n, d) => n + d.totals.cost, 0);
   const totalTravel = days.reduce((n, d) => n + d.totals.travelMinutes, 0);
-  const maybe = plan.maybe.map((id) => {
-    const place = PLACES.find((p) => p.id === id);
-    return { placeId: id, name: place.name, liked: votes[id].liked, passed: votes[id].passed, duration: place.duration, savedNote: place.savedNote };
+  const maybe = plan.maybe.flatMap((id) => {
+    const place = places.find((p) => p.id === id);
+    return place ? [{ placeId: id, name: place.name, liked: votes[id]?.liked ?? 0, passed: votes[id]?.passed ?? 0, duration: place.duration, savedNote: place.savedNote }] : [];
   });
   return {
     builtAt: plan.builtAt,
+    builtBy: plan.builtBy,
     days,
     maybe,
     summary: { places: placeCount, voted: days.reduce((n, d) => n + d.items.filter((i) => i.source === 'voted').length, 0), days: days.length, costPerPerson: totalCost, avgTravelMinutes: days.length ? Math.round(totalTravel / days.length) : 0, firstDate: dates[0], lastDate: dates[dates.length - 1] },

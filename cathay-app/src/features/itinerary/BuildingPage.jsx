@@ -31,8 +31,9 @@ export default function BuildingPage() {
   useDocumentTitle(copy.title);
 
   const ready = prefs.data && prefs.data.readiness.every((m) => m.ready);
+  const canOpen = ready || prefs.data?.itineraryBuilt;
   useEffect(() => {
-    if (!ready) return undefined;
+    if (!canOpen) return undefined;
     let cancelled = false;
     setFailure(null);
     (async () => {
@@ -53,7 +54,7 @@ export default function BuildingPage() {
     return () => {
       cancelled = true;
     };
-  }, [ready, groupId, navigate, attempt]);
+  }, [canOpen, groupId, navigate, attempt]);
 
   const frame = (body) => (
     <Screen>
@@ -84,6 +85,7 @@ export default function BuildingPage() {
         {failure ? (
           <>
             <h2 className="building__title">{copy.buildFailed}</h2>
+            {failure instanceof ApiError && <p className="building__text">{failure.message}</p>}
             <Button onClick={() => setAttempt((n) => n + 1)}>{copy.retry}</Button>
           </>
         ) : waiting.length ? (

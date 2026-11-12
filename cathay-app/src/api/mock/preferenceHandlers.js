@@ -20,7 +20,7 @@ function memberContext(params) {
 
 // `people` is { [userId]: { name, initial, airport } }: demo users in the mock, real members in
 // the shared backend.
-export function responseFor(group, user, people = USERS) {
+export function responseFor(group, user, people = USERS, places = PLACES) {
   const mine = group.preferences[user.id] ?? { choices: {}, saved: false };
   const readiness = [...group.members]
     .sort((a, b) => (a.userId === user.id ? -1 : b.userId === user.id ? 1 : 0) || (a.userId === group.creatorId ? -1 : b.userId === group.creatorId ? 1 : 0))
@@ -33,14 +33,14 @@ export function responseFor(group, user, people = USERS) {
       isCreator: member.userId === group.creatorId,
       ready: Boolean(group.preferences[member.userId]?.saved),
     }));
-  const liked = PLACE_IDS.filter((id) => mine.choices[id] === 'like').length;
-  const passed = PLACE_IDS.filter((id) => mine.choices[id] === 'pass').length;
+  const liked = places.filter(({ id }) => mine.choices[id] === 'like').length;
+  const passed = places.filter(({ id }) => mine.choices[id] === 'pass').length;
   return {
     group: { id: group.id, name: group.name, destination: group.destination, datesLabel: group.datesLabel },
-    places: PLACES,
+    places,
     choices: mine.choices,
     saved: mine.saved,
-    counts: { total: PLACES.length, chosen: liked + passed, liked, passed },
+    counts: { total: places.length, chosen: liked + passed, liked, passed },
     readiness,
     readyCount: readiness.filter((m) => m.ready).length,
     itineraryBuilt: Boolean(group.itinerary),

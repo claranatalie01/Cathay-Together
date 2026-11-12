@@ -31,7 +31,7 @@ export default function MembersPage({ details = false }) {
   const navigate = useNavigate();
   const toast = useToast();
   const { status, data: group, error, reload } = useAsync(() => getGroup(groupId), [groupId]);
-  const prefs = useAsync(details ? () => getPreferences(groupId) : () => Promise.resolve(null), [groupId, details]);
+  const prefs = useAsync(details ? () => getPreferences(groupId, { prepare: false }) : () => Promise.resolve(null), [groupId, details]);
   // The viewer's chosen flights, for the pay step. A member with none simply has no booking yet.
   const booking = useAsync(() => getBooking(groupId).catch(() => null), [groupId]);
   const [justCopied, setJustCopied] = useState(false);
@@ -118,6 +118,7 @@ export default function MembersPage({ details = false }) {
   };
 
   const places = details ? prefs.data.places : [];
+  const swipePath = `/groups/${group.id}/preferences/${places[0]?.id ?? 'start'}`;
   // Where the viewer is in the journey (their own flight status, before it is relabelled Ready/Choosing).
   const flightStatus = group.members.find((m) => m.userId === group.viewerId)?.status;
   const viewer = members.find((m) => m.isViewer);
@@ -225,7 +226,7 @@ export default function MembersPage({ details = false }) {
             <Button size="lg" to={`/groups/${group.id}/itinerary`}>
               {COPY.prefs.viewItinerary}
             </Button>
-            <Button size="lg" variant="secondary" to={`/groups/${group.id}/preferences/${places[0].id}`}>
+            <Button size="lg" variant="secondary" to={swipePath}>
               <img className="gd__button-icon" src="/assets/ui-heart-teal.svg" alt="" />
               {COPY.prefs.start}
             </Button>
@@ -239,7 +240,7 @@ export default function MembersPage({ details = false }) {
                 </span>
                 <h3 className="gd__callout-title">{COPY.prefs.calloutTitle}</h3>
               </div>
-              <p className="gd__callout-text">{COPY.prefs.calloutShort(places.length)}</p>
+              <p className="gd__callout-text">{places.length ? COPY.prefs.calloutShort(places.length) : COPY.prefs.researchLead}</p>
               <ul className="gd__photos">
                 {places.map((place) => (
                   <li key={place.id}>
@@ -250,7 +251,7 @@ export default function MembersPage({ details = false }) {
               </ul>
               <p className="gd__callout-meta">{COPY.prefs.calloutMeta}</p>
             </NextStep>
-            <Button size="lg" to={`/groups/${group.id}/preferences/${places[0].id}`}>
+            <Button size="lg" to={swipePath}>
               <img className="gd__button-icon" src="/assets/ui-heart-light.svg" alt="" />
               {COPY.prefs.start}
             </Button>

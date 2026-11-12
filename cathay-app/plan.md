@@ -271,6 +271,8 @@ Keep provider secrets and administrative database keys server-side. Browser-visi
 
 ### DEV-05 · Conflict-aware itinerary scheduling · P0 · After DEV-03/DEV-04
 
+**Shared planner integration.** Stacia’s Tavily and Poe workflow prepares a stable deck after sign-in and generates a reviewed plan when everyone has saved. Existing swipes keep their original cards and saved plans stay available for viewing and edits. Local mock mode uses the original deterministic scheduler.
+
 Use a greedy heuristic: examine promising activities in a fixed order and add each only if it fits. This is manageable for a small demo; it is not a globally optimal route solver.
 
 - [ ] Choose a single shared Tokyo city hub as the itinerary's start/end location and document it in fixture data.

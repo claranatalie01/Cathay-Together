@@ -32,10 +32,13 @@ import {
 } from '../mock/flightData';
 // The same builders the mock uses, fed with real data, so both modes answer alike.
 import { boardFor, bookingFor } from '../mock/boardHandlers';
-import { applyItineraryEdit, bodyFor as itineraryBody, buildItinerary, stopBody } from '../mock/itineraryHandlers';
-import { datesBetween, votesFor } from '../mock/itineraryData';
-import { PLACE_IDS } from '../mock/placeData';
+import { applyItineraryEdit, bodyFor as itineraryBody, stopBody } from '../mock/itineraryHandlers';
+import { datesBetween, groupFreeTime, votesFor } from '../mock/itineraryData';
+import { RULES } from '../../algorithms/itinerary';
+import { PLACES } from '../mock/placeData';
 import { responseFor as preferencesBody } from '../mock/preferenceHandlers';
+import { planSharedTrip, warmTripSuggestions } from './planner';
+import { retimeResearchedPlan } from './itineraryEdits';
 
 const UNREACHABLE = () => new ApiError(503, 'service_unavailable', 'The service is temporarily unavailable.');
 
@@ -192,7 +195,9 @@ const groupRoutes = [
   ['GET', '/groups', async () => {
     const { supabase, userId } = await context();
     const list = await call(supabase, 'list_my_groups');
-    return { status: 200, body: { groups: list.map((raw) => toGroup(raw, userId)) } };
+    const groups = list.map((raw) => toGroup(raw, userId));
+    warmTripSuggestions(groups[0]);
+    return { status: 200, body: { groups } };
   }],
 
   // GET /date-windows – fixture fares from the person's own airport.
@@ -217,14 +222,18 @@ const groupRoutes = [
     const { name, window } = validateCreate(body);
     const { supabase, userId } = await context();
     const raw = await call(supabase, 'create_group', { group_name: name, trip_start: window.start, trip_end: window.end });
-    return { status: 201, body: toGroup(raw, userId) };
+    const group = toGroup(raw, userId);
+    warmTripSuggestions(group);
+    return { status: 201, body: group };
   }],
 
   // GET /groups/:id – members only; to anyone else the group does not exist.
   ['GET', '/groups/:id', async ({ params }) => {
     const id = groupId(params);
     const { supabase, userId } = await context();
-    return { status: 200, body: toGroup(await call(supabase, 'get_group', { target_group: id }), userId) };
+    const group = toGroup(await call(supabase, 'get_group', { target_group: id }), userId);
+    warmTripSuggestions(group);
+    return { status: 200, body: group };
   }],
 
   // POST /groups/:id/join   { inviteCode } – the database checks the code.
@@ -452,11 +461,19 @@ async function tripContext(params, want = {}) {
     preferences: Object.fromEntries(raw.members.map((m) => [m.userId, { choices: {}, saved: Boolean(m.preferencesSaved) }])),
     itinerary: null,
   };
+  const [deck] = want.votes ? await rows(supabase.from('group_place_decks').select('legacy, places').eq('group_id', id)) : [];
+  const places = deck?.legacy ? PLACES : deck?.places ?? [];
   if (want.votes) {
     const votes = await rows(supabase.from('votes').select('user_id, place_id, choice').eq('group_id', id));
+    const ids = new Set(places.map((place) => place.id));
     votes.forEach((v) => {
-      if (group.preferences[v.user_id] && PLACE_IDS.includes(v.place_id)) group.preferences[v.user_id].choices[v.place_id] = v.choice;
+      if (group.preferences[v.user_id] && ids.has(v.place_id)) group.preferences[v.user_id].choices[v.place_id] = v.choice;
     });
+    if (deck?.places) {
+      Object.values(group.preferences).forEach((pref) => {
+        pref.saved = pref.saved && places.every((place) => pref.choices[place.id]);
+      });
+    }
   }
   if (want.itinerary) {
     const [saved] = await rows(supabase.from('itineraries').select('plan').eq('group_id', id));
@@ -470,9 +487,10 @@ async function tripContext(params, want = {}) {
     group,
     people,
     names,
+    places,
     user: { id: userId },
     dates: datesBetween(raw.startDate, raw.endDate),
-    votes: want.votes ? votesFor(group, names) : null,
+    votes: want.votes ? votesFor(group, names, places) : null,
   };
 }
 
@@ -496,11 +514,23 @@ const bookingAction = (name) => async ({ params }) => {
 };
 
 const saveItinerary = async (ctx) => {
-  const { error } = await ctx.supabase
+  const { data, error } = await ctx.supabase
     .from('itineraries')
-    .upsert({ group_id: ctx.id, plan: ctx.group.itinerary, updated_by: ctx.userId, updated_at: new Date().toISOString() }, { onConflict: 'group_id' });
+    .update({ plan: ctx.group.itinerary, updated_by: ctx.userId, updated_at: new Date().toISOString() })
+    .eq('group_id', ctx.id).select('group_id').maybeSingle();
   if (error) throw UNREACHABLE();
+  if (!data) throw new ApiError(404, 'itinerary_not_built', 'The itinerary is unavailable.');
 };
+
+async function preferenceContext(params, prepare) {
+  const options = { votes: true, itinerary: true };
+  const ctx = await tripContext(params, options);
+  if (ctx.places.length || !prepare) return ctx;
+  await planSharedTrip('discover', ctx.id);
+  const updated = await tripContext(params, options);
+  if (!updated.places.length) throw new ApiError(502, 'planner_unavailable', 'The suggestions are unavailable. Try again.');
+  return updated;
+}
 
 const tripRoutes = [
   // GET /groups/:id/board – "View everyone's flights"
@@ -521,17 +551,17 @@ const tripRoutes = [
   ['POST', '/groups/:id/booking/pay', bookingAction('pay_booking')],
 
   // GET /groups/:id/preferences – the places, the caller's swipes and who is ready
-  ['GET', '/groups/:id/preferences', async ({ params }) => {
-    const ctx = await tripContext(params, { votes: true, itinerary: true });
-    return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people) };
+  ['GET', '/groups/:id/preferences', async ({ params, query }) => {
+    const ctx = await preferenceContext(params, query.prepare !== '0');
+    return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people, ctx.places) };
   }],
 
   // PUT /groups/:id/preferences/choices  { placeId, choice } – one swipe, one row in `votes`
   ['PUT', '/groups/:id/preferences/choices', async ({ params, body }) => {
-    if (!PLACE_IDS.includes(body?.placeId) || !['like', 'pass'].includes(body?.choice)) {
+    const ctx = await preferenceContext(params, false);
+    if (!ctx.places.some((place) => place.id === body?.placeId) || !['like', 'pass'].includes(body?.choice)) {
       throw new ApiError(422, 'validation_failed', 'Choose Pass or Like for a suggestion.', { choice: 'Choose Pass or Like.' });
     }
-    const ctx = await tripContext(params, { votes: true, itinerary: true });
     const { error } = await ctx.supabase
       .from('votes')
       .upsert({ group_id: ctx.id, user_id: ctx.userId, place_id: body.placeId, choice: body.choice, updated_at: new Date().toISOString() }, { onConflict: 'group_id,user_id,place_id' });
@@ -540,22 +570,21 @@ const tripRoutes = [
     const mine = ctx.group.preferences[ctx.userId];
     mine.choices[body.placeId] = body.choice;
     mine.saved = false;
-    return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people) };
+    return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people, ctx.places) };
   }],
 
   // POST /groups/:id/preferences/save – the database checks every place has an answer
   ['POST', '/groups/:id/preferences/save', async ({ params }) => {
     const ctx = await tripContext(params, { votes: true, itinerary: true });
-    await call(ctx.supabase, 'save_preferences', { target_group: ctx.id, place_ids: PLACE_IDS });
+    await call(ctx.supabase, 'save_preferences', { target_group: ctx.id, place_ids: ctx.places.map((place) => place.id) });
     ctx.group.preferences[ctx.userId].saved = true;
-    return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people) };
+    return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people, ctx.places) };
   }],
 
-  // POST /groups/:id/itinerary/build – needs everyone ready; saved once so every phone shows the same plan
+  // POST /groups/:id/itinerary/build – the server plans from verified shared votes.
   ['POST', '/groups/:id/itinerary/build', async ({ params }) => {
+    await planSharedTrip('plan', groupId(params));
     const ctx = await tripContext(params, { votes: true, itinerary: true });
-    ctx.group.itinerary = buildItinerary(ctx);
-    await saveItinerary(ctx);
     return { status: 200, body: itineraryBody(ctx) };
   }],
 
@@ -568,7 +597,11 @@ const tripRoutes = [
   // PUT /groups/:id/itinerary  { days: [{ date, stopIds }] } – remove and reorder stops
   ['PUT', '/groups/:id/itinerary', async ({ params, body }) => {
     const ctx = await tripContext(params, { votes: true, itinerary: true });
-    applyItineraryEdit(ctx.group.itinerary, body);
+    const retime = ctx.group.itinerary?.builtBy === 'ai' ? (plan, days) => {
+      const free = groupFreeTime({ selections: ctx.group.selections, dates: ctx.dates, rules: RULES });
+      retimeResearchedPlan(plan, days, ctx.places, free);
+    } : undefined;
+    applyItineraryEdit(ctx.group.itinerary, body, { retime });
     await saveItinerary(ctx);
     return { status: 200, body: itineraryBody(ctx) };
   }],

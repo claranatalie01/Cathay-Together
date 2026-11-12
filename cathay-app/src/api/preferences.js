@@ -6,8 +6,8 @@ const enc = encodeURIComponent;
 
 // The suggestions, the caller's choices so far, and who in the group is ready.
 // Rejects with no_suggestions (404) for destinations without suggestions.
-export function getPreferences(groupId) {
-  return request('GET', `/groups/${enc(groupId)}/preferences`);
+export function getPreferences(groupId, { prepare = true } = {}) {
+  return request('GET', `/groups/${enc(groupId)}/preferences${prepare ? '' : '?prepare=0'}`);
 }
 
 // Records Pass or Like for one suggestion. `choice` is 'like' or 'pass'.

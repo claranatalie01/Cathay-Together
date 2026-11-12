@@ -81,8 +81,8 @@ export default function ItineraryPage() {
       await saveItinerary(groupId, days.map((d) => ({ date: d.date, stopIds: draft[d.date] })));
       setEditing(false);
       toast(copy.saved);
-    } catch {
-      toast(copy.saveFailed);
+    } catch (saveError) {
+      toast(saveError instanceof ApiError && saveError.code === 'invalid_edit' ? saveError.message : copy.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -144,7 +144,7 @@ export default function ItineraryPage() {
                 <img src="/assets/ui-yen-sand.svg" alt="" />
                 {copy.dayTotal(day.totals.cost, hours(day.totals.minutes))}
               </p>
-              <p className="itinerary__total-note">{copy.allowance(day.totals.allowance, day.totals.travelMinutes)}</p>
+              <p className="itinerary__total-note">{data.builtBy === 'ai' ? copy.researchedTravel(day.totals.travelMinutes) : copy.allowance(day.totals.allowance, day.totals.travelMinutes)}</p>
             </div>
           )}
         </section>
