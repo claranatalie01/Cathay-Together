@@ -4,11 +4,11 @@ Updated: 10 November 2026 · Event: 14–15 November 2026 · All times: Hong Kon
 
 Build the smallest shared travel-planning demo that proves three friends can coordinate flights and create an itinerary together. Keep the existing React interface and replace browser-only state with a shared backend.
 
-This is the active technical roadmap. The previous frontend plan is preserved unchanged in [docs/frontend-plan-archive.md](docs/frontend-plan-archive.md). Its completed work remains valid; its frontend-only scope describes the previous stage. Future implementation should follow this roadmap, `CLAUDE.md`, and `docs/design-system.md`; confirm stale documentation against the actual code.
+This roadmap preserves the original hackathon proposals and dated progress notes. The [archived frontend plan](docs/frontend-plan-archive.md) records the browser-only prototype. Use the [README](README.md) for current setup and the [architecture](ARCHITECTURE.md) for implemented behavior.
 
 **Progress:** `[x]` verified existing capability or completed task; `[ ]` outstanding. **P0** = required for the core demo; **P1** = supporting work after P0; **P2** = defer. Planning a task does not mean it has been implemented or tested.
 
-**Why and how:** the algorithms, data, services and backend are explained in plain language, with worked examples, in [docs/technical-guide.md](docs/technical-guide.md).
+The [technical guide](docs/technical-guide.md) records the original proposals and mentor examples.
 
 The [architecture](ARCHITECTURE.md), [data dictionary](DATA_DICTIONARY.md) and [logic](LOGIC.md) describe the current implementation. Earlier decisions and progress notes below record the hackathon plan.
 
@@ -27,7 +27,7 @@ Do item 1 first. Items 3 to 6 are only allowed if the answer to item 1 permits p
 - [ ] 2. Ask your teammates whether the AWS, GCP or GitHub Copilot request form was submitted. If not, the team must visit the Tech Help Desk before 14:00 on Saturday.
 - [ ] 3. Register at developers.oag.com, click "Try it" on the Flight Info API, and run one test query: Cathay (`CX`) from `HKG` to `HND` on 2026-11-21. Save the response. See PRE-02 and the technical guide, section 5.
 - [x] 4. Create a free Supabase account and confirm it is reachable. Whether you may use it is one of the questions in PRE-02. *Done 11 November: organisation and project "Cathay Together" created on the Free plan in Singapore, no GitHub connection. Still open: whether the organisers allow it.*
-- [ ] 5. Check that the current demo runs on your laptop without internet (`npm run dev`), and record a short fallback video. See PRE-03.
+- [ ] 5. Run the shared demo with a connection to Supabase and record a short fallback video. See PRE-03.
 - [ ] 6. Collect the real opening times of the four Tokyo places for 21–24 November from their official sites. See DATA-01.
 - [ ] 7. Settle the open decisions below with your team.
 - [ ] 8. Give each workstream an owner: backend, algorithms and data, frontend integration, pitch and submission. See PRE-01.
@@ -78,22 +78,20 @@ Missing either deadline removes the team from the First Pitch. The full schedule
 - Destination: Tokyo; destination airport: HND only.
 - Three travellers: Gaudi/HKG, Clara/PVG (Shanghai Pudong; changed from SHA on 12 Nov because Cathay has about ten flights a day from PVG and one from SHA), Kabe/SIN, using separate demo accounts.
 - Travel window: 21–24 November 2026; round trips and one adult per member.
-- Rank one member's flight options against existing selections; no joint flight-combination optimizer.
-- Use clearly labelled fictional flight offers and curated activities initially. Live inventory is optional.
+- Rank individual flights by group timing and show group combinations by price, timing and balance.
+- Use the bundled OAG schedule snapshot with simulated fares and availability. Research activities with Tavily.
 - Booking, payment, fare holds, and tickets remain simulations; collect no card or passport data.
-- Use deterministic JavaScript rules, meaning the same inputs produce the same result. No LLM or machine learning is required.
+- Use deterministic JavaScript for flight ranking and the Python planner with Poe for the shared itinerary.
 - Do not expand into multi-city search, real reservations, ticket issuance, seat holds, or a new visual design.
 
 ### Current state confirmed from code
 
 - [x] React/Vite app with group setup, invitations, flight selection, board, simulated booking, preferences, and itinerary screens.
 - [x] Async API wrappers and an existing REST-shaped contract in `docs/api-contract.md`.
-- [x] Browser mock database in `src/api/mock/`, persisted in localStorage; this is not shared across devices.
-- [x] Flight comparison calculates latest minus earliest clock time and excludes members without selections.
-- [x] Preferences count saved votes; strict majority places enter the plan and minority picks enter “Maybe”.
-- [x] Basic itinerary assembly, editing, estimated costs, and fixed travel durations exist.
-- [ ] Full-date flight comparisons, genuine authentication, shared storage, and conflict-aware itinerary scheduling are not implemented.
-- [ ] Correct stale documentation: API timing text contradicts itself; older notes describe routes, storage keys, and itinerary behavior that have changed.
+- [x] Supabase Auth and Postgres handle sign-in and shared trip state.
+- [x] Flight comparisons use full timestamps and leave out members without selections.
+- [x] The planner reads saved preferences, prioritizes places liked by at least half the group, and shows unscheduled liked places under “Maybe”.
+- [x] Shared plans store transfer estimates and remain editable. Existing shared trips retain their saved cards and plans.
 
 ## 2. Preparation before the event
 
@@ -125,13 +123,14 @@ Missing either deadline removes the team from the First Pitch. The full schedule
 
 - [ ] Understand frontend vs server vs database; HTTP requests; authentication; database access rules; timestamps with time zones; basic sorting and scheduling.
 - [ ] Where permitted, prepare the three demo accounts and the flight/place fixtures described below.
-- [ ] Preserve the current mock demo and write instructions to start it locally.
 - [ ] Prepare a short fallback recording, where permitted, and label it as a recorded demo.
 - [ ] Agree on the fallback for the live shared demo, such as a recording from two signed-in sessions.
 
 ## 3. Architecture and minimum data
 
-### Chosen starting stack
+### Original stack proposal
+
+The [architecture](ARCHITECTURE.md#data-flow) shows the implemented Supabase and Vercel flow.
 
 | Part | Choice and responsibility |
 | --- | --- |
@@ -183,6 +182,8 @@ Supabase provides the proposed database, identity, and function capabilities; ac
 
 ## 4. Build tasks in dependency order
 
+This checklist includes the original build proposals. Dated notes record later decisions. See [Architecture](ARCHITECTURE.md) and [Logic](LOGIC.md) for the implementation.
+
 ### DEV-01 · Baseline and API contract · P0 · First
 
 - [x] Run `npm run check:tokens` and `npm run build`; record any existing failures. *11 November: both pass, no failures.*
@@ -190,7 +191,7 @@ Supabase provides the proposed database, identity, and function capabilities; ac
 - [ ] Update `docs/api-contract.md` for authentication, full timestamps, comparison coverage, itinerary times, and input/revision versions.
 - [ ] Preserve existing response fields where possible; add canonical timestamps and derive legacy display values during migration.
 - [ ] Preserve `{ code, message, fields }` errors and make validation errors visible in the existing UI.
-- [ ] Add an explicit mock/shared data-mode setting; keep the mock demo isolated and visibly labelled.
+- [x] Start the shared app directly with `npm run dev`.
 - [x] Add `.env.example` containing variable names only; exclude local credentials from version control. *11 November: `.env.example` added; `.env.local` is ignored by the repository's root `.gitignore`.*
 
 **Done when:** frontend and backend owners agree on request/response examples without redesigning the app.
@@ -209,9 +210,9 @@ Supabase provides the proposed database, identity, and function capabilities; ac
 - [ ] Configure browser cross-origin access for localhost and the actual deployed frontend; verify preflight requests.
 - [ ] Use the Edge Function base URL directly so the existing Vercel SPA rewrite does not return HTML for API calls.
 - [ ] Build copied invite links from the app's own origin plus `/invite/:code`; remove the Cathay-owned placeholder domain.
-- [x] Hide person-switching, force-error, and mock-reset controls in shared mode; clear cached user data on sign-out.
+- [x] Remove the browser-only persona switcher, force-error control and reset route. Clear cached user data on sign-out.
 
-Keep provider secrets and administrative database keys server-side. Browser-visible configuration may contain only the intended public project key, URL, and mode settings. Sources: [row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security), [function authentication](https://supabase.com/docs/guides/functions/auth), [browser CORS](https://supabase.com/docs/guides/functions/cors).
+Keep provider secrets and administrative database keys server-side. The browser receives the public Supabase project key and URL. Sources: [row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security), [function authentication](https://supabase.com/docs/guides/functions/auth), [browser CORS](https://supabase.com/docs/guides/functions/cors).
 
 **Done when:** device A creates a group, device B signs in as another user and joins through its link, and both see the same membership after reload. A third non-member is denied private group data.
 
@@ -283,7 +284,7 @@ Keep provider secrets and administrative database keys server-side. Browser-visi
 - [x] Look up named venues, check AI drafts against the coordinate-based transfer matrix, and use the saved estimates in the itinerary and its edits.
 - [x] Search Tavily for named food venues and resolve generic meals to Geoapify district centres before itinerary review.
 
-Use a greedy heuristic: examine promising activities in a fixed order and add each only if it fits. This is manageable for a small demo; it is not a globally optimal route solver.
+**Original scheduler proposal.** This checklist describes the earlier greedy design. The shared app now uses [the AI planner](LOGIC.md#2-shared-ai-itinerary-planner).
 
 - [ ] Choose a single shared Tokyo city hub as the itinerary's start/end location and document it in fixture data.
 - [ ] Compute the shared start as the latest of each member's arrival + airport-exit buffer + airport-to-hub travel.
@@ -318,7 +319,7 @@ Use a greedy heuristic: examine promising activities in a fixed order and add ea
 - [ ] Label payment, holds, and confirmations as simulated; do not describe a countdown as a real airline inventory hold.
 - [ ] Add Realtime subscriptions only as P1 if polling is already reliable; retain polling as fallback.
 
-**Done when:** a remote selection/vote appears within 10 seconds on a healthy connection and the current frontend journey completes without using mock-person switching.
+**Done when:** a remote selection or vote appears within 10 seconds on a healthy connection and two separately signed-in travellers can complete the journey.
 
 ### DEV-07 · Optional provider integration · P1 · Only after P0 passes
 
@@ -336,6 +337,8 @@ Use a greedy heuristic: examine promising activities in a fixed order and add ea
 
 ## 5. Test and reliability checklist
 
+The shared-only change passed the production build, 50 JavaScript tests, 48 Python tests and the local Postgres suites. A two-session browser test with local fixtures covered sign-in, booking confirmation, saved swipes, planner retries and the shared plan.
+
 ### TEST-01 · Focused automated checks · P0
 
 Add tests for algorithm correctness and shared data/access behavior; do not spend the event writing snapshot tests for unchanged screens.
@@ -348,7 +351,7 @@ Add tests for algorithm correctness and shared data/access behavior; do not spen
 - [ ] Editing: removing/reordering revalidates times; changed input marks stale; two editors cannot silently overwrite a newer revision.
 - [ ] Access: missing/expired session, invalid invite, non-member access, editing another person's selection/vote, and creator-only itinerary editing.
 - [ ] Concurrent writes: repeated join creates one membership; different users' votes survive simultaneous updates; repeated demo pay creates one confirmation.
-- [ ] Add and document the selected test command, then run it. The repository currently has no automated test suite.
+- [x] Document and run the automated checks. See [local setup](README.md#run-it) for JavaScript commands and [development conventions](CLAUDE.md#commands) for Python.
 
 **Progress note, 11 November 2026.** `npm test` runs 24 checks with Node's built-in test runner (no new dependency, instead of the proposed Vitest): 11 for the arrival window (time zones, the overnight case, window edges, whole-group spread) and 13 for the itinerary (majority rule, votes changing the plan, opening hours, travel gaps, late landing, early departure, a winner that cannot fit, the checker catching broken plans, no randomness). All pass. No item above is ticked.
 
@@ -364,7 +367,7 @@ Add tests for algorithm correctness and shared data/access behavior; do not spen
 - [ ] Run `npm run check:tokens`, `npm run build`, and the new focused tests after implementation.
 - [ ] Keep design tokens and reusable components; update the design-system docs/style guide only if those change.
 - [ ] Keep a repeatable demo-reset/seed procedure restricted to the team; never expose an unauthenticated shared-database reset.
-- [ ] Test the locally served mock fallback before relying on it; distinguish it from the shared online demo.
+- [ ] Verify the shared demo recording before relying on it as a fallback.
 
 **Release gate:** all P0 success checks in section 1 pass, known limitations are documented, and a teammate can repeat the demo from the README.
 
@@ -404,7 +407,7 @@ This is a timeboxed team schedule, not a promise that every optional feature fit
 
 **P2 / after the hackathon:** joint flight optimization, multiple destination airports, real payments/ticketing, global place coverage, live disruption handling, complex route solvers, LLM-generated plans, public signup polish, and broad UI redesign.
 
-If time is tight, cut provider integration and Realtime first. Keep shared-device state, correct flight comparisons, votes affecting the plan, and basic conflict checks. If shared state cannot be completed, present the local experience transparently as a prototype and list the missing capability.
+If time is tight, defer optional provider integration and Realtime first. Keep shared-device state, correct flight comparisons, votes affecting the plan, and basic conflict checks. Use the shared demo recording if a live connection is unavailable.
 
 **Next action:** complete PRE-01 (rules and reuse permission). At the permitted development start, begin DEV-01, DATA-01, and DEV-02. Do not start optional APIs before two devices can join the same shared group.
 

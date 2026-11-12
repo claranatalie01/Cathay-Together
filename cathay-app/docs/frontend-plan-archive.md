@@ -1,6 +1,6 @@
 # Cathay Together: Master Plan
 
-**Read this first in every session**, then `CLAUDE.md` and `docs/design-system.md`. Update the checklist at the end of every task.
+> **Archived frontend plan.** The checklist below records the original browser-only prototype. Use the [README](../README.md) and [architecture](../ARCHITECTURE.md) for the current shared app.
 
 ## 0. Working agreement
 

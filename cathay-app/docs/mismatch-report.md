@@ -1,5 +1,7 @@
 # Mismatch report
 
+> **Historical prototype audit.** See the [design system](design-system.md) for the current UI and the [README](../README.md) for current setup.
+
 Where this demo differs from the real Cathay Android app and from the Figma file. Source priority is real-app screenshots, then `docs/design-system.md` (v2.0), then Figma and the original prototype. Anything marked PROPOSAL was not in a source and was approved or built on your request.
 
 ## Differs from the real app (screenshots S1 to S14)
@@ -45,4 +47,4 @@ Where this demo differs from the real Cathay Android app and from the Figma file
 
 ## Demo-only parts
 
-The mock backend (`src/api/mock`, `localStorage` key `cathay-mock-db-v3`), the "Demo only" panel (`src/demo`) and `/reset` are not part of the product. Removal steps are in `README.md`.
+The prototype used a browser mock backend (`src/api/mock`, `localStorage` key `cathay-mock-db-v3`), a "Demo only" panel (`src/demo`) and `/reset`. The shared app has since retired all three.

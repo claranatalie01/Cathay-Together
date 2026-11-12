@@ -16,7 +16,7 @@ React 19 + Vite 8 + react-router-dom 7 demo app: a phone-sized (440 px) "Travel 
 
 1. **Source priority:** the real-app screenshots beat the design doc; where the screenshots are silent, keep the doc's value; anything else is a PROPOSAL that needs approval. Measurements and the screenshot key (S1 to S14) are in `docs/screenshot-audit.md`. The screenshots themselves are not in the repo.
 2. **Tokens only.** Raw colours, font sizes, radii, spacing and shadows are allowed only in `src/styles/tokens.css`. Everywhere else use `var(--token)`. `scripts/check-tokens.mjs` enforces this. Do not add a raw value to get around it; add or reuse a token.
-3. **v2.0 is the live look** on every screen (grey canvas, white cards, centred 56 px app bar, underlined fields, dark-green buttons, 5-item bottom nav). `docs/design-system.v1.0.backup.md` is the old system, kept for reference only.
+3. **v2.0 is the live look** on every screen (grey canvas, white cards, centred 56 px app bar, underlined fields, dark-green buttons, 5-item bottom nav). Use [the design system](docs/design-system.md) for the current rules.
 4. **Reuse components** in `src/components` before writing new markup. If none fits, propose one and wait for approval.
 5. Update `docs/design-system.md` and the style guide (`src/design-system`) when a token or component changes. Label new values Real, Real (est.), Figma (kept) or PROPOSAL.
 

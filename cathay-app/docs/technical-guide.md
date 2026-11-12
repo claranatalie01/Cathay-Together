@@ -2,8 +2,7 @@
 
 Historical mentor notes for the Cathay Hackathon, written 10 November 2026. For the implemented flows, use the [current architecture](../ARCHITECTURE.md) and [logic](../LOGIC.md).
 
-- [plan.md](../plan.md) says **what to do and in what order**. This guide explains **why, and how each part works**.
-- Where this guide and `plan.md` disagree, `plan.md` wins. Differences are listed as open decisions in `plan.md` section 0.
+- [plan.md](../plan.md) records the roadmap and dated decisions. This guide explains the original design rationale.
 - Technical terms are explained when first used and again in the [glossary](#9-glossary).
 
 Three labels are used throughout:

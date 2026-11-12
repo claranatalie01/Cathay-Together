@@ -5,8 +5,7 @@ Every screen follows this system. The live style guide is at **`/design-system`*
 
 > **Status of this document.** v2.0 is **applied to every screen** (approved). `src/styles/tokens.css`,
 > the component CSS and the style guide now hold the v2.0 values, and the old per-screen trial switch is gone.
-> The previous version is kept as `docs/design-system.v1.0.backup.md`. Section 10 shows what was applied and
-> what is still open.
+> The v1.0 spec is available in Git history. Section 10 shows what was applied and what is still open.
 
 ## 0. Source priority (this is the rule)
 
