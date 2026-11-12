@@ -3,12 +3,15 @@ import logging
 import re
 
 from . import config, llm as llm_module
+from .checks import day_window, flight_limits
 from .curator import clean_text, curator_agent
 from .explorer import explorer_agent
-from .llm import AgentError, NothingToPlan
+from .llm import AgentError, NothingToPlan, PlanConstraints
+from .photos import attach_photos, find_place_images
 from .plan import prepare_places, to_app_plan
+from .places import photo_fields
 from .reviewer import feedback_text, quality_check_agent
-from .schedule import normalize_schedule, sanitize_plan_cards
+from .schedule import InvalidDraft, normalize_schedule, sanitize_plan_cards
 from .scheduler import scheduler_agent, split_cards, trip_dates
 
 log = logging.getLogger(__name__)
@@ -47,9 +50,8 @@ def run_discover(context: dict, model: str | None = None, llm=None, search=None)
     llm = llm or llm_module.make_llm_client()
     search = search or llm_module.make_search_client()
     try:
-        sources, _, search_log = explorer_agent(llm, search, model, context)
-        # Use the app's category photos to keep remote photo URLs out of the swipe UI.
-        places = curator_agent(llm, model, context, sources)
+        sources, images, search_log = explorer_agent(llm, search, model, context)
+        places = curator_agent(llm, model, context, sources, images, search_client=search)
     except AgentError:
         raise
     except Exception as exc:  # noqa: BLE001
@@ -58,8 +60,15 @@ def run_discover(context: dict, model: str | None = None, llm=None, search=None)
     return {"places": places, "sources": app_sources, "search_log": search_log}
 
 
-def _errors(review: dict) -> int:
-    return sum(1 for i in review["issues"] if i["severity"] == "error")
+def refresh_place_photos(places: list[dict], destination: str, search=None) -> list[dict]:
+    """Enrich a saved deck without asking the curator to change its places or IDs."""
+    search = search or llm_module.make_search_client()
+    candidates = find_place_images(search, places, destination)
+    matches = attach_photos([{"id": place["id"], "name": place["name"]} for place in places], candidates, [])
+    return [
+        {**place, **photo_fields({**place, "web_photo": match["web_photo"]})}
+        for place, match in zip(places, matches)
+    ]
 
 
 def run_plan(context: dict, raw_cards, raw_sources, model: str | None = None, llm=None) -> dict:
@@ -72,27 +81,30 @@ def run_plan(context: dict, raw_cards, raw_sources, model: str | None = None, ll
     if not liked:
         raise NothingToPlan("Nobody liked any of the places yet, so there is nothing to schedule.")
 
-    llm = llm or llm_module.make_llm_client()
     dates, known = trip_dates(context), {s["id"] for s in sources}
+    arrival, departure = flight_limits(context.get("flights", []))
+    if not any(end > start for start, end in (day_window(day, arrival, departure) for day in dates)):
+        raise PlanConstraints("The group’s flights leave no shared time after the airport buffers.")
+
+    llm = llm or llm_module.make_llm_client()
     eligible = liked + maybe  # only places somebody liked can be scheduled
-    attempts, feedback = [], ""
-    for _ in range(config.MAX_REVIEW_ATTEMPTS + 1):
+    feedback = ""
+    for attempt in range(1, config.MAX_REVIEW_ATTEMPTS + 2):
         try:
             raw = scheduler_agent(llm, model, context, liked, maybe, sources, feedback)
             schedule = normalize_schedule(raw, dates, eligible, known)
             review = quality_check_agent(llm, model, context, schedule, eligible, sources)
+        except InvalidDraft as exc:
+            feedback = reason = str(exc)
+            continue
         except Exception as exc:  # noqa: BLE001
             if isinstance(exc, AgentError):
                 raise
             raise _wrap(exc) from exc
-        attempts.append((schedule, review))
         if review["approved"]:
-            break
+            review["attempts"] = attempt
+            plan = to_app_plan(schedule, prepare_places(cards), sources, review, context["destination"])
+            return {"plan": plan}
         feedback = feedback_text(review)
-
-    schedule, review = min(reversed(attempts), key=lambda pair: _errors(pair[1]))
-    if not review["approved"]:
-        raise AgentError("The planner could not fit the itinerary within the trip’s constraints. Try again.")
-    review["attempts"] = len(attempts)
-    plan = to_app_plan(schedule, prepare_places(cards), sources, review, context["destination"])
-    return {"plan": plan}
+        reason = review.get("rule_error") or "The itinerary reviewer flagged a problem with the draft."
+    raise PlanConstraints(reason)

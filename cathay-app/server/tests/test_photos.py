@@ -1,6 +1,5 @@
 """Photo selection: a web photo is used only when it names the place, and each photo is used once."""
 from server.itinerary.explorer import SourceBook
-from server.itinerary.explorer import SourceBook
 from server.itinerary.photos import attach_photos, best_photo, clean_images, find_place_images, matches_place
 from server.itinerary.places import enrich_cards, images_for
 
@@ -37,11 +36,16 @@ def test_clean_images_keeps_https_and_drops_social_and_bad_urls():
     assert images[0]["page_title"] == "Page"
 
 
-def test_source_book_collects_images_from_results():
+def test_source_book_collects_images_from_both_response_fields():
     book = SourceBook()
-    book.add([{"url": "https://guide.example/s", "title": "Senso-ji guide", "content": "text",
-               "images": [{"url": "https://img.example/s.jpg", "description": "Senso-ji pagoda"}]}])
+    book.add_images({
+        "results": [{"url": "https://guide.example/s", "title": "Senso-ji guide",
+                     "images": [{"url": "https://img.example/s.jpg", "description": "Senso-ji pagoda"}]}],
+        "images": [{"url": "https://img.example/tsukiji.jpg", "description": "Tsukiji market"}],
+    })
     assert book.images[0]["page_url"] == "https://guide.example/s"
+    assert book.images[1]["page_url"] is None
+    assert book.images[1]["description"] == "Tsukiji market"
 
 
 def test_best_photo_picks_matching_candidate_and_ignores_others():
@@ -121,5 +125,5 @@ def test_enrich_uses_web_photo_or_local_fallback():
     plain = {"name": "B", "category": "food", "web_photo": None}
     enrich_cards([verified, plain])
     assert verified["photo"] == verified["thumb"] == "https://x.example/a.jpg"
-    assert verified["photo_source"] == "Guide"
-    assert plain["photo"] == images_for("food")[0] and plain["photo_source"] is None
+    assert verified["photoSource"] == "Guide"
+    assert plain["photo"] == images_for("food")[0] and plain["photoSource"] is None

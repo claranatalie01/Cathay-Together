@@ -11,6 +11,7 @@ import StateMessage from '../../components/ui/StateMessage';
 import IconHeading, { avatarTone } from '../../components/ui/IconHeading';
 import StatTile from '../../components/ui/StatTile';
 import { COPY } from '../../data/copy';
+import { fallbackTo } from '../../data/photos';
 import { useAsync } from '../../hooks/useAsync';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import './PlaceDetailPage.css';
@@ -51,7 +52,7 @@ export default function PlaceDetailPage() {
   return frame(
     copy.stopTitle(day.index, stop.slot),
     <main className="place">
-      <img className="place__photo" src={stop.photo} alt={stop.alt} />
+      <img className="place__photo" src={stop.photo} alt={stop.alt} referrerPolicy="no-referrer" onError={fallbackTo(stop.category_key)} />
       <div className="place__head">
         <h2 className="place__name">{stop.name}</h2>
         <p className="place__area">

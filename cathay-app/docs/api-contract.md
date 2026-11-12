@@ -340,6 +340,8 @@ Response `200` contains the suggestions, the caller's choices and everyone's rea
 
 The local and legacy decks keep their existing IDs, including `food`, `scenery`, `culture` and `shopping`. Researched decks use stable `card_…` IDs for the life of the trip. A member is `ready` once they have saved. `itineraryBuilt` is `true` once the group's itinerary exists (Group details then shows "View itinerary").
 
+Researched cards use a Tavily image when its description matches the place. `photoSource` and `photoSourceUrl` record the source when available. Bundled category photos cover unmatched or broken links. Older researched decks can refresh their photo fields in place, preserving their IDs and saved choices.
+
 ### `PUT /groups/:id/preferences/choices`
 
 Request: `{ "placeId": "food", "choice": "like" }` (`like` or `pass`). Saves one choice and responds with the same body as the `GET`. Changing a choice after saving sets `saved` back to `false` until the member saves again. Errors: `422 validation_failed`.

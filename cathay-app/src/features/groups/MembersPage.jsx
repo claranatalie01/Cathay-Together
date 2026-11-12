@@ -16,6 +16,7 @@ import StateMessage from '../../components/ui/StateMessage';
 import { useToast } from '../../components/ui/Toast';
 import { DemoControls } from '../../demo';
 import { COPY } from '../../data/copy';
+import { fallbackTo } from '../../data/photos';
 import { TRIP_PHOTO } from '../../data/trip';
 import { copyText } from '../../hooks/copyText';
 import { useAsync } from '../../hooks/useAsync';
@@ -244,7 +245,7 @@ export default function MembersPage({ details = false }) {
               <ul className="gd__photos">
                 {places.map((place) => (
                   <li key={place.id}>
-                    <img src={place.thumb} alt="" />
+                    <img src={place.thumb} alt="" referrerPolicy="no-referrer" onError={fallbackTo(place.category_key)} />
                     <span>{place.category}</span>
                   </li>
                 ))}

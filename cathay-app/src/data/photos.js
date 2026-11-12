@@ -39,3 +39,22 @@ export const WING_PHOTO = {
   alt: 'Aircraft wing above the clouds at sunset',
   cover: '/assets/52e22.png',
 };
+
+const PLACE_FALLBACKS = new Map([
+  ['food', '/assets/ab624.png'],
+  ['culture', '/assets/culture-photo.jpg'],
+  ['nature', '/assets/e1c39.png'],
+  ['shopping', '/assets/shopping-photo.jpg'],
+  ['nightlife', '/assets/photos/shinjuku-neon-night-cover.jpg'],
+  ['adventure', '/assets/photos/tokyo-skyline-night-cover.jpg'],
+  ['relaxation', '/assets/e1c39.png'],
+]);
+
+// A photo host can remove an image or block embedding after the deck is saved.
+export function fallbackTo(category) {
+  const fallback = PLACE_FALLBACKS.get(category) ?? PLACE_FALLBACKS.get('culture');
+  return (event) => {
+    const img = event.currentTarget;
+    if (img.getAttribute('src') !== fallback) img.src = fallback;
+  };
+}

@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from . import config
 from .llm import AgentError, ask_json
-from .photos import clean_images
+from .photos import search_images
 
 SYSTEM = (
     "You are a travel research planning agent for Cathay Together, "
@@ -22,9 +22,9 @@ class SourceBook:
         self._urls: set[str] = set()
         self._image_urls: set[str] = set()
 
-    def add_images(self, page_url: str, page_title: str, raw_images) -> None:
-        for image in clean_images(raw_images, page_url, page_title):
-            if image["url"] in self._image_urls:
+    def add_images(self, response: dict) -> None:
+        for image in search_images(response):
+            if not image["description"] or image["url"] in self._image_urls:
                 continue
             self._image_urls.add(image["url"])
             self.images.append(image)
@@ -53,7 +53,6 @@ class SourceBook:
                     "retrieved_at": datetime.now(timezone.utc).isoformat(),
                 }
             )
-            self.add_images(url, title, item.get("images"))
             new += 1
         return usable, new
 
@@ -88,6 +87,7 @@ def _run_queries(search_client, queries: list[str], book: SourceBook, log: list[
             entry.update({"status": "error", "error_type": type(error).__name__})
         else:
             usable, new = book.add((result or {}).get("results", []))
+            book.add_images(result or {})
             entry.update({"status": "ok", "usable_results": usable, "new_sources": new})
         log.append(entry)
 

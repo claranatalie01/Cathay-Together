@@ -488,6 +488,7 @@ async function tripContext(params, want = {}) {
     people,
     names,
     places,
+    deck,
     user: { id: userId },
     dates: datesBetween(raw.startDate, raw.endDate),
     votes: want.votes ? votesFor(group, names, places) : null,
@@ -525,8 +526,15 @@ const saveItinerary = async (ctx) => {
 async function preferenceContext(params, prepare) {
   const options = { votes: true, itinerary: true };
   const ctx = await tripContext(params, options);
-  if (ctx.places.length || !prepare) return ctx;
-  await planSharedTrip('discover', ctx.id);
+  if (!prepare || ctx.deck?.legacy || (ctx.places.length && ctx.places.every((place) => 'photoSourceUrl' in place))) {
+    return ctx;
+  }
+  try {
+    await planSharedTrip('discover', ctx.id);
+  } catch (error) {
+    if (ctx.places.length) return ctx; // Optional photos must not block swiping on a saved deck.
+    throw error;
+  }
   const updated = await tripContext(params, options);
   if (!updated.places.length) throw new ApiError(502, 'planner_unavailable', 'The suggestions are unavailable. Try again.');
   return updated;

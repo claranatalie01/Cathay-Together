@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { COPY } from '../../data/copy';
+import { fallbackTo } from '../../data/photos';
 import './SuggestionCard.css';
 
 const SWIPE_DISTANCE = 80; // px of horizontal drag that counts as a choice
@@ -41,7 +42,7 @@ export default function SuggestionCard({ place, choice, onChoose }) {
       onPointerCancel={up}
     >
       <div className="suggestion__photo">
-        <img src={place.photo} alt={place.alt} draggable="false" />
+        <img src={place.photo} alt={place.alt} draggable="false" referrerPolicy="no-referrer" onError={fallbackTo(place.category_key)} />
         <span className="suggestion__tag">{place.category}</span>
         {choice && (
           <span className={`suggestion__stamp suggestion__stamp--${choice}`}>

@@ -29,6 +29,13 @@ class NothingToPlan(AgentError):
     code = "nothing_to_plan"
 
 
+class PlanConstraints(AgentError):
+    """No draft passed the trip's validation checks."""
+
+    status = 422
+    code = "plan_constraints"
+
+
 def make_llm_client() -> OpenAI:
     key = config.env("POE_API_KEY")
     if not key:

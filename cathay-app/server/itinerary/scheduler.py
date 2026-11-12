@@ -3,7 +3,9 @@ import json
 from datetime import date
 
 from . import config
+from .checks import day_window, flight_limits
 from .llm import ask_json
+from .schedule import clock
 
 SYSTEM = (
     "You are the Scheduler agent for Cathay Together, a group travel planning app by Cathay Pacific. "
@@ -68,7 +70,17 @@ def scheduler_agent(
     feedback: str = "",
 ) -> dict:
     dates = trip_dates(context)
-    date_lines = "\n".join(f"  - {d} ({date.fromisoformat(d).strftime('%A')})" for d in dates)
+    arrival, departure = flight_limits(context.get("flights", []))
+    windows = []
+    for index, day in enumerate(dates):
+        start, end = day_window(day, arrival, departure)
+        if end <= start:
+            window = "no shared time, return an empty stops array"
+        else:
+            full = 0 < index < len(dates) - 1 and (start, end) == (config.DAY_START, config.DAY_END)
+            window = f"{clock(start)}–{clock(end)} ({'lunch and dinner required' if full else 'meals optional'})"
+        windows.append(f"  - {day} ({date.fromisoformat(day).strftime('%A')}): {window}")
+    date_lines = "\n".join(windows)
     budget = context.get("budget_per_person", config.DEFAULT_BUDGET_PER_PERSON)
     pace = context.get("pace", "moderate")
     max_activities = config.PACE_LIMIT.get(pace, 3)
@@ -76,7 +88,9 @@ def scheduler_agent(
         {"id": s["id"], "title": s["title"], "url": s["url"], "excerpt": s["excerpt"][:1200]} for s in sources
     ]
     feedback_block = (
-        f"\nREVIEWER FEEDBACK ON YOUR PREVIOUS DRAFT (fix every item):\n{feedback}\n" if feedback else ""
+        f"\nPREVIOUS DRAFT FEEDBACK:\n{feedback}\n"
+        "Build a simpler draft. Keep at least one liked activity if it fits, and leave out "
+        "optional stops that would make the schedule fail a rule.\n" if feedback else ""
     )
     return ask_json(
         llm,
@@ -88,13 +102,13 @@ GROUP SIZE: {context['group_size']}
 BUDGET: ¥{budget}/person for activities + meals
 PACE: {pace}
 
-TRIP DAYS (output exactly these dates, in this order):
+TRIP DAYS AND SHARED WINDOWS (local times with the flight buffers already applied):
 {date_lines}
 
 FLIGHT DETAILS:
 {_flight_text(context)}
 
-LIKED ACTIVITIES (include these, ordered by group consensus):
+LIKED ACTIVITIES (consider in order of group consensus and include only those that fit):
 {json.dumps([_compact(c) for c in liked], ensure_ascii=False)}
 
 MAYBE ACTIVITIES (only if time permits):
@@ -105,8 +119,8 @@ RETRIEVED EVIDENCE (for opening hours and details):
 Use supplied card hours and costs as estimates when a previously started trip has no web sources.
 {feedback_block}
 RULES:
-1. First day: nothing starts before the latest member has landed plus {config.ARRIVAL_BUFFER_MIN} minutes. Keep the first activity nearby and easy.
-2. Last day: everything ends at least {config.DEPARTURE_BUFFER_MIN // 60} hours before the earliest departure.
+1. Return exactly the listed dates in order. Every stop, including meals and free time, must start and finish inside that day's shared window.
+2. A day with no shared time has no stops. Keep the first activity nearby and easy.
 3. At most {max_activities} activities per day (type "activity"). Meals and free time do not count.
 4. Every full day has a lunch (12:00-13:30) and a dinner (18:30-20:00) as type "meal". A full day is a middle day without flight buffers cutting into it. Breakfast is optional and is skipped on the arrival day.
 5. Respect opening_hours, closed_days and best_time_of_day. Never schedule a closed day.

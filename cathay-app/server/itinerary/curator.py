@@ -119,7 +119,6 @@ def to_place(card: dict) -> dict:
         "bestTime": TIME_LABELS[card["best_time_of_day"]],
         "tip": " · ".join(tip),
         "alt": f"{label} idea: {card['name']}",
-        "photoSource": card.get("photo_source"),
     }
 
 

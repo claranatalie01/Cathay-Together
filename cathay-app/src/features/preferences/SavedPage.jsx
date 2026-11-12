@@ -11,6 +11,7 @@ import ErrorState from '../../components/ui/ErrorState';
 import LoadingState from '../../components/ui/LoadingState';
 import StateMessage from '../../components/ui/StateMessage';
 import { COPY } from '../../data/copy';
+import { fallbackTo } from '../../data/photos';
 import { useAsync } from '../../hooks/useAsync';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import './SavedPage.css';
@@ -73,7 +74,7 @@ export default function SavedPage() {
           <ul className="saved__list">
             {liked.map((place) => (
               <li className="saved__place" key={place.id}>
-                <img className="saved__thumb" src={place.thumb} alt={place.alt} />
+                <img className="saved__thumb" src={place.thumb} alt={place.alt} referrerPolicy="no-referrer" onError={fallbackTo(place.category_key)} />
                 <div className="saved__info">
                   <p className="saved__name">{place.name}</p>
                   <p className="saved__meta">

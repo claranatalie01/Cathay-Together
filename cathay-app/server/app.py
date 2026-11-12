@@ -91,6 +91,15 @@ class TripStore:
                             params={"group_id": f"eq.{self.group_id}", "select": fields})
         return rows[0] if rows else None
 
+    def save_deck_photos(self, token, places):
+        rows = request_json(self.client, "PATCH", "/rest/v1/group_place_decks",
+                            {**self.service, "Prefer": "return=representation"},
+                            params={"group_id": f"eq.{self.group_id}", "job_token": f"eq.{token}",
+                                    "legacy": "is.false", "select": "group_id"},
+                            json={"places": places})
+        if not rows:
+            raise PlannerError(409, "planner_changed", "The trip changed while the planner was running. Try again.")
+
     def release(self, token):
         request_json(self.client, "PATCH", "/rest/v1/group_place_decks", self.service,
                      params={"group_id": f"eq.{self.group_id}", "job_token": f"eq.{token}"},
@@ -129,7 +138,9 @@ def cards_for_plan(deck, inputs):
 
 def finished(store, action, deck):
     if action == "discover":
-        return deck and (deck["legacy"] or deck["places"])
+        return deck and (deck["legacy"] or (
+            deck["places"] and all("photoSourceUrl" in place for place in deck["places"])
+        ))
     return store.row("itineraries", "group_id")
 
 
@@ -148,13 +159,16 @@ def run_job(store, action):
         inputs = store.rpc("trip_planner_inputs")
         if not inputs or not any(m["user_id"] == store.viewer for m in inputs["members"]):
             raise PlannerError(404, "group_not_found", "This trip is unavailable.")
-        context = context_for(inputs)
         if action == "discover":
-            result = pipeline.run_discover(context)
+            if deck and deck["places"]:
+                places = pipeline.refresh_place_photos(deck["places"], inputs["destination"])
+                store.save_deck_photos(token, places)
+                return {"ready": True}
+            result = pipeline.run_discover(context_for(inputs))
         else:
-            if not (deck["legacy"] or deck["places"]):
+            if not (deck and (deck["legacy"] or deck["places"])):
                 raise PlannerError(422, "not_ready", "Prepare the suggestions and save everyone's choices first.")
-            result = pipeline.run_plan(context, cards_for_plan(deck, inputs), deck["sources"])["plan"]
+            result = pipeline.run_plan(context_for(inputs), cards_for_plan(deck, inputs), deck["sources"])["plan"]
             result["builtAt"] = int(datetime.now().timestamp() * 1000)
         if not store.rpc("finish_trip_planner_job", viewer=store.viewer, token=token, operation=action, result=result,
                          expected_inputs=inputs if action == "plan" else None):

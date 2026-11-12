@@ -39,6 +39,17 @@ def flight_limits(flights: list[dict]) -> tuple[datetime | None, datetime | None
     return (max(arrivals) if arrivals else None, min(departures) if departures else None)
 
 
+def day_window(day: str, arrival: datetime | None, departure: datetime | None) -> tuple[int, int]:
+    """The exact shared window in minutes from midnight for this local date."""
+    midnight = datetime.fromisoformat(day)
+    start, end = config.DAY_START, config.DAY_END
+    if arrival:
+        start = max(start, int((arrival - midnight).total_seconds() // 60) + config.ARRIVAL_BUFFER_MIN)
+    if departure:
+        end = min(end, int((departure - midnight).total_seconds() // 60) - config.DEPARTURE_BUFFER_MIN)
+    return start, end
+
+
 def _stop_issues(stop, day, number, cards_by_id, weekday, arrival, departure, previous_end, previous_kind):
     issues = []
     name = stop_name(stop, cards_by_id)
@@ -73,8 +84,7 @@ def _day_issues(day, number, last, cards_by_id, context, arrival, departure):
     weekday = midnight.strftime("%A")
     full_day = (
         number not in (1, last)
-        and (not arrival or midnight + timedelta(minutes=config.DAY_START) >= arrival + timedelta(minutes=config.ARRIVAL_BUFFER_MIN))
-        and (not departure or midnight + timedelta(minutes=config.DAY_END) <= departure - timedelta(minutes=config.DEPARTURE_BUFFER_MIN))
+        and day_window(day["date"], arrival, departure) == (config.DAY_START, config.DAY_END)
     )
     limit = config.PACE_LIMIT.get(context.get("pace", "moderate"), 3)
     activities = [s for s in stops if s["type"] == "activity"]

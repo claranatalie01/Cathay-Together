@@ -1,8 +1,4 @@
-"""Card images and optional Google Places ratings.
-
-Images always come from the photo set that already ships with the app (public/assets),
-so no remote image is ever hot-linked and no API key can leak into an image URL.
-"""
+"""Matched web photos, bundled category fallbacks and optional Google Places ratings."""
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
@@ -27,6 +23,15 @@ FIND_PLACE_URL = "https://maps.googleapis.com/maps/api/place/findplacefromtext/j
 
 def images_for(category: str) -> tuple[str, str]:
     return LOCAL_IMAGES.get(category, LOCAL_IMAGES["culture"])
+
+
+def photo_fields(card: dict) -> dict:
+    web = card.get("web_photo")
+    if web and web.get("verified"):
+        return {"photo": web["url"], "thumb": web["url"], "photoSource": web["page_title"],
+                "photoSourceUrl": web.get("page_url")}
+    photo, thumb = images_for(card.get("category_key") or card.get("category", "culture"))
+    return {"photo": photo, "thumb": thumb, "photoSource": None, "photoSourceUrl": None}
 
 
 def _lookup(card: dict, api_key: str) -> None:
@@ -56,13 +61,7 @@ def enrich_cards(cards: list[dict]) -> list[dict]:
     photo. The web photo's URL is https and is shown with its source page, so it can be checked.
     """
     for card in cards:
-        web = card.get("web_photo")
-        if web and web.get("verified"):
-            card["photo"] = card["thumb"] = web["url"]
-            card["photo_source"] = web["page_title"]
-        else:
-            card["photo"], card["thumb"] = images_for(card.get("category", "culture"))
-            card["photo_source"] = None
+        card.update(photo_fields(card))
         card["google_enriched"] = False
     api_key = config.env("GOOGLE_PLACES_API_KEY")
     if api_key and cards:

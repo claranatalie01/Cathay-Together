@@ -15,6 +15,10 @@ MEALS = ("breakfast", "lunch", "dinner")
 MEAL_DEFAULT_START = {"breakfast": 8 * 60, "lunch": 12 * 60 + 30, "dinner": 19 * 60}
 
 
+class InvalidDraft(AgentError):
+    """A new model draft is needed before review."""
+
+
 def parse_clock(value) -> int | None:
     match = TIME_RE.match(value.strip()) if isinstance(value, str) else None
     return int(match.group(1)) * 60 + int(match.group(2)) if match else None
@@ -62,7 +66,8 @@ def sanitize_plan_cards(raw_cards) -> list[dict]:
                 "source_ids": [clean_text(s, 8) for s in cited if isinstance(s, str)][:6] if isinstance(cited, list) else [],
                 "photo": clean_url(raw.get("photo")),
                 "thumb": clean_url(raw.get("thumb")),
-                "photo_source": clean_text(raw.get("photo_source"), 140) or None,
+                "photoSource": clean_text(raw.get("photoSource") or raw.get("photo_source"), 140) or None,
+                "photoSourceUrl": clean_url(raw.get("photoSourceUrl")) or None,
                 "like_count": clean_int(raw.get("like_count"), 0, 0, total),
                 "total_members": total,
             }
@@ -112,7 +117,7 @@ def _day_stops(raw_day, cards_by_id: dict, used: set, known_sources: set) -> lis
 def normalize_schedule(raw, dates: list[str], cards: list[dict], known_sources: set) -> dict:
     raw_days = raw.get("days") if isinstance(raw, dict) else None
     if not isinstance(raw_days, list) or not raw_days:
-        raise AgentError("The scheduler returned a plan we could not read. Try again.")
+        raise InvalidDraft("The draft was missing a readable days array.")
     by_date = {d.get("date"): d for d in raw_days if isinstance(d, dict)}
     cards_by_id = {c["id"]: c for c in cards}
     used: set = set()
@@ -122,7 +127,7 @@ def normalize_schedule(raw, dates: list[str], cards: list[dict], known_sources: 
         title = clean_text(raw_day.get("title"), 40) if isinstance(raw_day, dict) else ""
         days.append({"date": day_date, "title": title, "stops": _day_stops(raw_day, cards_by_id, used, known_sources)})
     if not any(stop["type"] == "activity" for day in days for stop in day["stops"]):
-        raise AgentError("The scheduler did not place any of the liked activities. Try again.")
+        raise InvalidDraft("The draft did not schedule any of the liked activities.")
     return {"days": days}
 
 
@@ -152,8 +157,10 @@ def render_schedule(schedule: dict, cards: list[dict]) -> str:
                 cited = " " + " ".join(f"[{s}]" for s in cards_by_id[stop["card_id"]]["source_ids"])
             elif stop["type"] == "meal":
                 cited = " " + " ".join(f"[{s}]" for s in stop["source_ids"])
+            cost = stop_cost(stop, cards_by_id)
+            cost_label = "cost unverified" if stop["type"] == "meal" and not cost else f"¥{cost:,}"
             lines.append(
                 f"  {clock(stop['start'])}-{clock(end)} {stop['type']}: {stop_name(stop, cards_by_id)}"
-                f" (¥{stop_cost(stop, cards_by_id):,}){cited}"
+                f" ({cost_label}){cited}"
             )
     return "\n".join(lines)

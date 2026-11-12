@@ -6,7 +6,7 @@ Tavily returns photos from whole web pages, so a photo can show something else o
    it for niche topics such as single restaurants and small temples).
 2. The photos from the discovery searches (a fallback).
 
-A photo is accepted only if its description or its page title names the place (over half of the
+A photo is accepted only if its description names the place (at least half of the
 distinctive words in the name must appear), and its URL is https from a non-social host.
 Otherwise the card keeps the local category photo.
 """
@@ -51,7 +51,7 @@ def is_small(url: str) -> bool:
     return False
 
 
-def clean_images(raw_images, page_url: str, page_title: str) -> list[dict]:
+def clean_images(raw_images, page_url: str | None, page_title: str) -> list[dict]:
     """Keep usable https images. Tavily gives objects with url/title/description, but strings also work."""
     images = []
     for raw in raw_images if isinstance(raw_images, list) else []:
@@ -77,6 +77,14 @@ def clean_images(raw_images, page_url: str, page_title: str) -> list[dict]:
                 "page_title": str(title or page_title or page_url)[:300],
             }
         )
+    return images
+
+
+def search_images(response: dict) -> list[dict]:
+    images = []
+    for item in response.get("results") or []:
+        images.extend(clean_images(item.get("images"), item.get("url"), item.get("title") or ""))
+    images.extend(clean_images(response.get("images"), None, "Tavily image search"))
     return images
 
 
@@ -125,14 +133,12 @@ def _targeted_images(search_client, card: dict, destination: str) -> list[dict]:
             include_raw_content=False,
             include_images=True,
             include_image_descriptions=True,
+            timeout=12,
         )
     except Exception as exc:  # noqa: BLE001 - a failed photo search must not fail the deck
         log.info("Targeted photo search failed for %s: %s", card["name"], type(exc).__name__)
         return []
-    images = []
-    for item in (result or {}).get("results", []):
-        images += clean_images(item.get("images"), item.get("url") or "", item.get("title") or "")
-    return images
+    return search_images(result or {})
 
 
 def find_place_images(search_client, cards: list[dict], destination: str) -> dict[str, list[dict]]:

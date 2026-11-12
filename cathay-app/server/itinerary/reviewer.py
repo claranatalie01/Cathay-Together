@@ -61,6 +61,11 @@ Return ONLY valid JSON:
 {REVIEW_FORMAT}
 
 Use severity "error" only for real infeasibility or unsupported facts; otherwise "warning".
+Reject the draft only when you can name a specific blocking stop or unsupported claim. Treat
+optional improvements and omitted activities as warnings. A day with no shared time can be empty.
+An explicitly unverified meal suggestion is acceptable when it makes no specific claim.
+When no web evidence is supplied for a previously started trip, accept the supplied card hours
+and costs as estimates. Flag new specific claims that have no supporting evidence.
 """,
         temperature=0.2,
     )
@@ -82,6 +87,9 @@ def _clean_issue(raw) -> dict | None:
 def quality_check_agent(llm, model, context, schedule, cards, sources) -> dict:
     """Return {approved, issues, suggestions, summary}. Any 'error' issue means not approved."""
     rule_issues = deterministic_checks(schedule, cards, context)
+    first_error = next((issue["message"] for issue in rule_issues if issue["severity"] == "error"), None)
+    if first_error:
+        return {"approved": False, "issues": rule_issues, "rule_error": first_error}
     review = _model_review(llm, model, context, schedule, cards, sources, rule_issues)
     if not isinstance(review.get("approved"), bool):
         raise AgentError("The itinerary review was incomplete. Try again.")
@@ -101,7 +109,8 @@ def quality_check_agent(llm, model, context, schedule, cards, sources) -> dict:
 
 
 def feedback_text(review: dict) -> str:
+    issues = sorted(review["issues"], key=lambda issue: issue["severity"] != "error")
     return "\n".join(
         f"- [{i['severity'].upper()}] Day {i['day'] or '?'}: {i['message']} -> Fix: {i['suggested_fix']}"
-        for i in review["issues"]
-    )
+        for i in issues[:12]
+    ) or "The reviewer did not approve the previous draft. Review the shared windows and the evidence again."

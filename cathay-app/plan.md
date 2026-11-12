@@ -273,6 +273,9 @@ Keep provider secrets and administrative database keys server-side. Browser-visi
 
 **Shared planner integration.** Stacia’s Tavily and Poe workflow prepares a stable deck after sign-in and generates a reviewed plan when everyone has saved. Existing swipes keep their original cards and saved plans stay available for viewing and edits. Local mock mode uses the original deterministic scheduler.
 
+- [x] Reconnect Tavily place photos with bundled fallbacks and update photos in saved researched decks.
+- [x] Give the model the exact shared window for each day, request a simpler draft when a check fails, and report the specific scheduling rule when it blocks the revised draft.
+
 Use a greedy heuristic: examine promising activities in a fixed order and add each only if it fits. This is manageable for a small demo; it is not a globally optimal route solver.
 
 - [ ] Choose a single shared Tokyo city hub as the itinerary's start/end location and document it in fixture data.
