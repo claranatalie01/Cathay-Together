@@ -209,6 +209,7 @@ export function withTiming(flights, { direction, others }) {
 const extrasOf = (flight, direction) => ({
   nextDay: direction === 'outbound' && Boolean(flight.arriveDate) && flight.arriveDate !== flight.date,
   stops: flight.flightNo.includes(' + ') ? 1 : 0,
+  via: flight.via ?? null,
 });
 
 export function suggestionsFor({ members, direction, date, cabin = 'economy', othersLimit = 30 }) {
@@ -249,6 +250,7 @@ export function suggestionsFor({ members, direction, date, cabin = 'economy', ot
         time: f.time,
         nextDay: f.nextDay,
         stops: f.stops,
+        via: f.via,
         price: p.price,
         extra: p.extra,
         fixed,
@@ -290,5 +292,6 @@ export function makeSelection({ home, flightId, cabin, fare }) {
     departAt: flight.departAt,
     arriveAt: flight.arriveAt,
     flightNo: flight.flightNo,
+    via: flight.via,
   };
 }

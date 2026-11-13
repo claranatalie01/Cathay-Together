@@ -5,49 +5,90 @@ import './SuggestionCard.css';
 
 const SWIPE_DISTANCE = 80; // px of horizontal drag that counts as a choice
 
-// One itinerary suggestion (prototype): photo with category tag, name and area, description,
-// budget and timing, a tip. Drag it left to pass or right to like; `choice` shows the stamp.
-// Dragging is a shortcut only: the Pass and Like buttons beside it do the same for keyboard users.
-export default function SuggestionCard({ place, choice, onChoose }) {
+// Swipe horizontally to choose. Vertical scrolling cancels the gesture.
+export default function SuggestionCard({ place, choice, onChoose, describedBy }) {
   const copy = COPY.prefs;
-  const start = useRef(null);
-  const distanceRef = useRef(0);
+  const gesture = useRef(null);
+  const submitting = useRef(false);
   const [drag, setDrag] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [leaving, setLeaving] = useState(null);
 
   const down = (event) => {
-    start.current = event.clientX;
+    if (!event.isPrimary || event.button !== 0 || submitting.current) return;
+    gesture.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    setDragging(true);
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
   const move = (event) => {
-    if (start.current === null) return;
-    distanceRef.current = event.clientX - start.current;
-    setDrag(distanceRef.current);
+    const start = gesture.current;
+    if (start?.id !== event.pointerId) return;
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    setDrag(Math.abs(dx) > Math.abs(dy) ? dx : 0);
   };
-  const up = () => {
-    const distance = distanceRef.current;
-    start.current = null;
-    distanceRef.current = 0;
-    setDrag(0);
-    if (distance >= SWIPE_DISTANCE) onChoose('like');
-    else if (distance <= -SWIPE_DISTANCE) onChoose('pass');
+  const choose = async (next, card, byKeyboard = false) => {
+    if (submitting.current) return;
+    submitting.current = true;
+    setLeaving(next);
+    const exit = matchMedia('(prefers-reduced-motion: reduce)').matches ? null : card.animate(
+      [{ transform: getComputedStyle(card).transform },
+        { transform: `translateX(${next === 'like' ? 110 : -110}%) rotate(${next === 'like' ? 12 : -12}deg)` }],
+      { duration: 175, easing: 'ease-in', fill: 'forwards' },
+    );
+    try {
+      await onChoose(next, exit?.finished.catch(() => {}), byKeyboard);
+    } finally {
+      exit?.cancel();
+      setLeaving(null);
+      setDrag(0);
+      submitting.current = false;
+    }
   };
+  const end = (event) => {
+    const start = gesture.current;
+    if (start?.id !== event.pointerId) return;
+    gesture.current = null;
+    setDragging(false);
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    if (event.type === 'pointerup' && Math.abs(dx) >= SWIPE_DISTANCE && Math.abs(dx) > Math.abs(dy)) {
+      void choose(dx > 0 ? 'like' : 'pass', event.currentTarget);
+    } else {
+      setDrag(0);
+    }
+  };
+  const keyDown = (event) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    if (event.repeat || gesture.current) return;
+    void choose(event.key === 'ArrowRight' ? 'like' : 'pass', event.currentTarget, true);
+  };
+  const feedback = leaving ?? (dragging && Math.abs(drag) >= 12 ? (drag > 0 ? 'like' : 'pass') : null);
+  const stamp = feedback ?? choice;
 
   return (
     <article
-      className="suggestion"
-      style={{ transform: drag ? `translateX(${drag}px) rotate(${drag / 40}deg)` : undefined }}
+      className={`suggestion${dragging ? ' suggestion--dragging' : ''}`}
+      tabIndex={0}
+      aria-label={place.name}
+      aria-describedby={describedBy}
+      aria-busy={Boolean(leaving)}
+      style={{ transform: drag ? `translateX(${drag}px) rotate(${Math.max(-12, Math.min(12, drag / 18))}deg)` : undefined }}
       onPointerDown={down}
       onPointerMove={move}
-      onPointerUp={up}
-      onPointerCancel={up}
+      onPointerUp={end}
+      onPointerCancel={end}
+      onLostPointerCapture={end}
+      onKeyDown={keyDown}
     >
       <div className="suggestion__photo">
         <img src={place.photo} alt={place.alt} draggable="false" referrerPolicy="no-referrer" onError={fallbackTo(place.category_key)} />
         <span className="suggestion__tag">{place.category}</span>
-        {choice && (
-          <span className={`suggestion__stamp suggestion__stamp--${choice}`}>
-            <img src={choice === 'like' ? '/assets/5c16d.svg' : '/assets/9a5a4.svg'} alt="" />
-            {choice === 'like' ? copy.liked : copy.passed}
+        {stamp && (
+          <span className={`suggestion__stamp suggestion__stamp--${stamp}${feedback ? ' suggestion__stamp--swiping' : ''}`} aria-hidden={Boolean(feedback)}>
+            <img src={stamp === 'like' ? '/assets/5c16d.svg' : '/assets/9a5a4.svg'} alt="" />
+            {feedback ? (stamp === 'like' ? copy.like : copy.pass) : (stamp === 'like' ? copy.liked : copy.passed)}
           </span>
         )}
       </div>

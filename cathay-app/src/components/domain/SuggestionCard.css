@@ -9,6 +9,21 @@
   touch-action: pan-y;
   user-select: none;
   cursor: grab;
+  transition: transform 175ms ease-out;
+}
+
+.suggestion--dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.suggestion:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suggestion { transition: none; }
 }
 
 .suggestion__photo {
@@ -63,6 +78,22 @@
 .suggestion__stamp img {
   width: 20px;
   height: 20px;
+}
+
+.suggestion__stamp--swiping {
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  padding: var(--space-md) var(--space-xl);
+  gap: var(--space-md);
+  font-size: var(--text-heading-size);
+  line-height: var(--text-heading-leading);
+  box-shadow: var(--shadow-card);
+  pointer-events: none;
+}
+
+.suggestion__stamp--swiping img {
+  width: var(--space-xl);
+  height: var(--space-xl);
 }
 
 .suggestion__body {

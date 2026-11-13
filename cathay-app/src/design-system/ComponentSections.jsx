@@ -88,7 +88,7 @@ const SAMPLE_PLACE = { id: 'food', category: 'Food', name: 'Tsukiji Outer Market
 function PreferenceBlock() {
   const [choice, setChoice] = useState('like');
   return (
-    <Block id="ds-prefs" title="Itinerary preferences: suggestion card, progress, choices" figma="from the original Cathay Together prototype." proposal="hover and pressed states; the Choosing member chip." rule="Swiping is a shortcut. Pass and Like buttons always exist, so keyboard and screen reader users can choose.">
+    <Block id="ds-prefs" title="Itinerary preferences: suggestion card and progress" figma="from the original Cathay Together prototype." proposal="hover and pressed states; the Choosing member chip." rule="Swipe the card or use the arrow keys while it has focus. Right likes and left passes.">
       <div className="ds-specs">
         <Spec label="Next step card"><NextStep step={2}><p className="next-step__title">Your flight is picked. Review and pay</p></NextStep></Spec>
         <Spec label="Step progress"><StepProgress label="Tokyo · Your picks" current={2} total={4} stepText="2 of 4" /></Spec>
@@ -98,7 +98,7 @@ function PreferenceBlock() {
             <ChoicePill tone="like" selected={choice === 'like'} icon="/assets/5ea58.svg" onClick={() => setChoice('like')}>Like →</ChoicePill>
           </div>
         </Spec>
-        <Spec label="Suggestion card (liked)"><SuggestionCard place={SAMPLE_PLACE} choice="like" onChoose={noop} /></Spec>
+        <Spec label="Suggestion card (swipe right to like, left to pass)"><SuggestionCard place={SAMPLE_PLACE} choice="like" onChoose={noop} /></Spec>
         <Spec label="Suggestion card (passed)"><SuggestionCard place={SAMPLE_PLACE} choice="pass" onChoose={noop} /></Spec>
       </div>
     </Block>

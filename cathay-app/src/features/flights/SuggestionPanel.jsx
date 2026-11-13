@@ -58,9 +58,11 @@ function Combination({ option, groupId, direction, cabin, viewerId }) {
             <span className="suggest__who">
               {p.userId === viewerId ? copy.youName : p.name}
               <span className="suggest__sub">
-                {p.airport.code} · {p.stops ? copy.stops(p.stops) : p.flightNo}
+                {p.airport.code} · <strong>{p.flightNo}</strong>
+                {p.stops ? ` · ${copy.stops(p.stops)}` : ''}
                 {p.fixed ? ` · ${copy.alreadyChosen}${p.cabinLabel ? `, ${p.cabinLabel}` : ''}` : ''}
               </span>
+              {p.via && <span className="suggest__sub">Via Hong Kong · {p.via.layoverLabel} wait</span>}
             </span>
             <span className="suggest__time">
               {p.time}
@@ -81,7 +83,7 @@ function Combination({ option, groupId, direction, cabin, viewerId }) {
             already chosen needs no button. */}
         {me && !me.fixed && (
           <Button className="suggest__choose" to={`/groups/${groupId}/flights/${direction}/${me.flightId}/fares?cabin=${cabin}`} variant="secondary">
-            {me.stops ? copy.chooseMine : copy.choose(me.flightNo)}
+            {copy.choose(me.flightNo)}
           </Button>
         )}
       </div>

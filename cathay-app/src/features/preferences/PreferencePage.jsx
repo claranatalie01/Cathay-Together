@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ApiError, chooseSuggestion, getPreferences, savePreferences } from '../../api';
 import SuggestionCard from '../../components/domain/SuggestionCard';
@@ -7,7 +7,6 @@ import PageHeader from '../../components/layout/PageHeader';
 import Screen from '../../components/layout/Screen';
 import StatusBar from '../../components/layout/StatusBar';
 import Button from '../../components/ui/Button';
-import ChoicePill from '../../components/ui/ChoicePill';
 import ErrorState from '../../components/ui/ErrorState';
 import LoadingState from '../../components/ui/LoadingState';
 import StateMessage from '../../components/ui/StateMessage';
@@ -18,9 +17,13 @@ import { useAsync } from '../../hooks/useAsync';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import './PreferencePage.css';
 
-// One suggestion at a time (Food, Scenery, Culture, Shopping). Pass or Like is saved straight away,
-// so leaving and coming back keeps the choice. The last card saves the preferences.
+// Reset the local draft when opening another trip, but keep it between cards.
 export default function PreferencePage() {
+  const { groupId } = useParams();
+  return <PreferenceDeck key={groupId} />;
+}
+
+function PreferenceDeck() {
   const { groupId, category } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
@@ -28,6 +31,19 @@ export default function PreferencePage() {
   const { status, data, error, reload } = useAsync(() => getPreferences(groupId), [groupId]);
   const [latest, setLatest] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
+  const version = useRef(0);
+  const focusNext = useRef(false);
+  const mainRef = useRef(null);
+  useEffect(() => () => { version.current += 1; }, [category]);
+  useEffect(() => {
+    if (!focusNext.current) return;
+    focusNext.current = false;
+    // AppShell focuses the heading after navigation. Continue keyboard swiping
+    // from the next card once that route focus has run.
+    const frame = requestAnimationFrame(() => mainRef.current?.querySelector('.suggestion, button')?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [category]);
   const view = latest ?? data;
   useDocumentTitle(copy.title);
 
@@ -53,60 +69,70 @@ export default function PreferencePage() {
   if (!view) return frame(<LoadingState variant="detail" />);
 
   const { places, choices, counts } = view;
-  const index = places.findIndex((place) => place.id === category);
-  if (index === -1) return <Navigate to={`/groups/${groupId}/preferences/${places[0].id}`} replace />;
-  const place = places[index];
-  const choice = choices[place.id];
-  const last = index === places.length - 1;
   const path = (id) => `/groups/${groupId}/preferences/${id}`;
-  const back = index === 0 ? `/groups/${groupId}/details` : path(places[index - 1].id);
+  const unreviewed = places.find((place) => !choices[place.id]);
+  if (category === 'review' && unreviewed) return <Navigate to={path(unreviewed.id)} replace />;
 
-  const choose = async (next) => {
+  const save = async () => {
     if (busy) return;
+    const currentVersion = version.current;
     setBusy(true);
     try {
-      setLatest(await chooseSuggestion(groupId, place.id, next));
-    } catch {
-      toast(copy.saveFailed);
+      await savePreferences(groupId);
+      if (version.current === currentVersion) navigate(path('saved'), { replace: true });
+    } catch (saveError) {
+      toast(saveError instanceof ApiError ? saveError.message : copy.saveFailed);
     } finally {
       setBusy(false);
     }
   };
 
-  const proceed = async () => {
-    if (!last) {
-      navigate(path(places[index + 1].id));
-      return;
-    }
-    setBusy(true);
+  if (category === 'review') {
+    return frame(
+      <main className="prefs" ref={mainRef}>
+        <StepProgress label={copy.eyebrow} current={places.length} total={places.length} stepText={copy.reviewed(places.length)} />
+        <div className="prefs__review">
+          <h2>{copy.reviewTitle}</h2>
+          <p>{copy.savedCounts(counts.chosen, counts.liked, counts.passed)}</p>
+        </div>
+        <Button size="lg" onClick={save} disabled={busy} aria-busy={busy || undefined}>
+          {busy ? copy.saving : copy.save}
+        </Button>
+      </main>,
+      path(places.at(-1).id),
+    );
+  }
+
+  const index = places.findIndex((place) => place.id === category);
+  if (index === -1) return <Navigate to={path((unreviewed ?? places[0]).id)} replace />;
+  const place = places[index];
+  const back = index === 0 ? `/groups/${groupId}/details` : path(places[index - 1].id);
+
+  const choose = async (choice, animation, byKeyboard) => {
+    const currentVersion = version.current;
     try {
-      await savePreferences(groupId);
-      navigate(`/groups/${groupId}/preferences/saved`);
-    } catch (saveError) {
-      toast(saveError instanceof ApiError ? saveError.message : copy.saveFailed);
-      setBusy(false);
+      const updated = await chooseSuggestion(groupId, place.id, choice);
+      await animation;
+      setLatest(updated);
+      if (version.current !== currentVersion) return;
+      setAnnouncement(copy.swipeResult(place.name, choice));
+      const next = updated.places[index + 1] ?? updated.places.find(({ id }) => !updated.choices[id]);
+      focusNext.current = byKeyboard;
+      navigate(path(next?.id ?? 'review'));
+    } catch {
+      toast(copy.saveFailed);
     }
   };
 
   return frame(
-    <main className="prefs">
+    <main className="prefs" ref={mainRef}>
       <StepProgress label={copy.eyebrow} current={index + 1} total={places.length} stepText={copy.step(index + 1, places.length)} />
-      <SuggestionCard key={place.id} place={place} choice={choice} onChoose={choose} />
-      <div className="prefs__choices" role="group" aria-label={`${place.name}: ${copy.pass} or ${copy.like}`}>
-        <ChoicePill tone="pass" selected={choice === 'pass'} icon="/assets/9a5a4.svg" onClick={() => choose('pass')} disabled={busy}>
-          ← {copy.pass}
-        </ChoicePill>
-        <ChoicePill tone="like" selected={choice === 'like'} icon="/assets/5ea58.svg" onClick={() => choose('like')} disabled={busy}>
-          {copy.like} →
-        </ChoicePill>
+      <div className="prefs__stage">
+        <SuggestionCard key={place.id} place={place} choice={choices[place.id]} onChoose={choose} describedBy="prefs-swipe-hint prefs-swipe-keys" />
       </div>
-      <Button size="lg" onClick={proceed} disabled={!choice || busy} aria-busy={busy || undefined}>
-        {last ? (busy ? copy.saving : copy.save) : copy.next}
-      </Button>
-      {/* Only the useful hints stay: why Next is disabled, and the tally before saving. */}
-      <p className={`prefs__hint${!choice || last ? '' : ' sr-only'}`} role="status">
-        {!choice ? copy.chooseFirst : last ? copy.tally(counts.chosen, counts.total, counts.liked, counts.passed) : ''}
-      </p>
+      <p id="prefs-swipe-hint" className="prefs__hint"><span>{copy.swipeLeft}</span><span>{copy.swipeRight}</span></p>
+      <p id="prefs-swipe-keys" className="sr-only">{copy.swipeKeys}</p>
+      <p className="sr-only" role="status">{announcement}</p>
     </main>,
     back,
   );

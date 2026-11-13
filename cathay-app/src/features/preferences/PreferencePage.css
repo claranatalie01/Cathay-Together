@@ -10,13 +10,51 @@
 }
 
 .prefs__hint {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-xs) var(--space-sm);
   color: var(--color-text-secondary);
   font-size: var(--text-body-sm-size);
   line-height: var(--text-body-sm-leading);
-  text-align: center;
 }
 
-.prefs__choices {
+.prefs__hint span:last-child {
+  color: var(--color-text-brand);
+}
+
+.prefs__stage {
+  overflow-x: clip;
+  overflow-clip-margin: var(--space-sm);
+}
+
+.prefs__stage .suggestion {
+  display: grid;
+  grid-template-rows: minmax(var(--size-suggestion-photo), 1fr) auto;
+  aspect-ratio: 9 / 16;
+  min-block-size: min-content;
+}
+
+/* The photo fills the extra height while the details keep their natural size. */
+.prefs__stage .suggestion__photo {
+  height: auto;
+}
+
+.prefs__stage .suggestion__photo > img {
+  position: absolute;
+  inset: 0;
+}
+
+.prefs__review {
   display: flex;
-  gap: var(--space-md);
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-default);
+}
+
+.prefs__review h2 {
+  font-size: var(--text-heading-md-size);
+  line-height: var(--text-heading-md-leading);
 }
