@@ -1,6 +1,5 @@
-// Tiny change bus. Mutations call notifyDataChanged(); screens that show data
-// listen with onDataChanged() and quietly refetch. A real backend can keep
-// using it (or swap it for polling / websockets).
+// Local mutations, polling and trip preference notifications all use this
+// signal to quietly refetch the current screens.
 const listeners = new Set();
 
 export function onDataChanged(callback) {

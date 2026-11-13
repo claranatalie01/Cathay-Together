@@ -8,6 +8,8 @@ create role anon nologin;
 create role authenticated nologin;
 create role service_role nologin bypassrls;
 
+create publication supabase_realtime;
+
 create schema auth;
 create table auth.users (id uuid primary key, email text unique);
 

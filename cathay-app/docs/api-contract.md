@@ -344,6 +344,8 @@ Request: `{ "placeId": "food", "choice": "like" }` (`like` or `pass`). Saves one
 
 No body. Needs every suggestion chosen, then marks the caller ready. Responds with the same body as the `GET`. Errors: `422 choices_incomplete`.
 
+After commit, Supabase Realtime publishes a change to the trip's notification row. The row carries only an opaque ID, a trip ID and a revision. Row-level security limits delivery to signed-in trip members. The client quietly reloads readiness after an event or a reconnect. Visible pages still poll every five seconds to cover outages and shared changes other than a preference save.
+
 ## Itinerary (Flow E)
 
 These routes require group membership. A caller outside the group receives `404 group_not_found`.

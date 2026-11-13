@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useMatch } from 'react-router-dom';
 import { notifyDataChanged } from '../../api';
+import { watchTripPreferences } from '../../api/tripPreferenceUpdates';
 import Screen from '../../components/layout/Screen';
 import StatusBar from '../../components/layout/StatusBar';
 import LoadingState from '../../components/ui/LoadingState';
@@ -12,12 +13,14 @@ const REFRESH_MS = 5000;
 // to the sign-in screen, which remembers where they were going (for example an
 // invitation link) and returns them there afterwards.
 export default function RequireSession() {
-  const { status } = useSession();
+  const { status, userId } = useSession();
   const { pathname, search } = useLocation();
+  const groupId = useMatch('/groups/:groupId/*')?.params.groupId;
 
-  // With the shared backend other people change the data from their own phones. Every
-  // 5 seconds, ask each screen to quietly re-read what it shows (useAsync does this without
-  // a loading flash), so a new member appears without anyone reloading.
+  useEffect(() => watchTripPreferences(groupId, userId), [groupId, userId]);
+
+  // Polling covers a disconnected socket and shared changes other than a save,
+  // such as new members and flight picks. useAsync keeps the current view visible.
   useEffect(() => {
     if (status !== 'signedIn') return undefined;
     const timer = setInterval(() => {

@@ -54,7 +54,9 @@ The tests use local fixtures and run without provider credentials, a running ser
 
 ### Production deployment
 
-For production, apply the pending [migrations](supabase/migrations) in order through [`20261112030000_rebuild_itineraries.sql`](supabase/migrations/20261112030000_rebuild_itineraries.sql). It follows [`20261112020000_researched_itineraries.sql`](supabase/migrations/20261112020000_researched_itineraries.sql). In Vercel, keep the project root set to `cathay-app`, enable Fluid Compute for the planner’s 300-second limit, and redeploy after setting the variables below. The React app and `/api/planner` deploy together. Use `npm run dev` with the local planner to test the whole workflow locally.
+For production, apply the pending [migrations](supabase/migrations) in order through [`20261113000000_trip_preference_realtime.sql`](supabase/migrations/20261113000000_trip_preference_realtime.sql). That migration adds the notification table to the `supabase_realtime` publication. In Vercel, keep the project root set to `cathay-app`, enable Fluid Compute for the planner’s 300-second limit, and redeploy after setting the variables below. The React app and `/api/planner` deploy together. Use `npm run dev` with the local planner to test the whole workflow locally.
+
+To check readiness updates after applying the migration, sign in as two members of one trip in separate browser sessions. With both on the trip, save the last activity choice in one session and confirm the other session shows the member as ready before its next five-second poll. With a third signed-in account outside the trip, attempt the same subscription and confirm no change payload arrives. Block only the Realtime WebSocket in the receiving session, save again, and check that the visible screen refreshes by polling. Unblock the socket and confirm that rejoining refreshes readiness once.
 
 ### Environment variables
 

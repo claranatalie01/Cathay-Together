@@ -318,7 +318,7 @@ Keep provider secrets and administrative database keys server-side. The browser 
 - [ ] Store simulated booking transitions/expiry on the server, snapshot the chosen offers, and return an existing confirmation on a repeated successful pay request.
 - [ ] Reject expired holds and changed selections; reset the demo booking when flights change rather than showing a ticket for the old choices.
 - [ ] Label payment, holds, and confirmations as simulated; do not describe a countdown as a real airline inventory hold.
-- [ ] Add Realtime subscriptions only as P1 if polling is already reliable; retain polling as fallback.
+- [x] Add trip-scoped Realtime notifications after saving activity preferences, with five-second polling retained. Apply the migration and verify delivery on hosted Supabase before the demo.
 
 **Done when:** a remote selection or vote appears within 10 seconds on a healthy connection and two separately signed-in travellers can complete the journey.
 
