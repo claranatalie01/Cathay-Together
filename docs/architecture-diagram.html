@@ -13,6 +13,8 @@
       --ink: #262626;
       --muted: #4e5e5a;
       --teal: #336c6a;
+      --service-line: #6b6b6b;
+      --realtime-line: #854d0e;
       --teal-tint: #e9f3f2;
       --rule: #c3d5d1;
       --sans: system-ui, sans-serif;
@@ -36,9 +38,11 @@
     .tech, .label { fill: var(--muted); font: 12px var(--mono); }
     .label { text-anchor: middle; }
     .label.focal { fill: var(--teal); font-weight: 700; }
-    .connector { fill: none; stroke: var(--muted); stroke-width: 1.5; }
-    .connector.focal { stroke: var(--teal); stroke-width: 2; }
-    .connector.realtime { stroke: var(--teal); stroke-width: 1.5; }
+    .label.realtime, .legend.realtime { fill: var(--realtime-line); font-weight: 700; }
+    .legend.focal { fill: var(--teal); font-weight: 700; }
+    .connector { fill: none; stroke: var(--service-line); stroke-width: 1.6; }
+    .connector.focal { stroke: var(--teal); stroke-width: 3; }
+    .connector.realtime { stroke: var(--realtime-line); stroke-width: 2.4; stroke-dasharray: 7 4; }
     .box.realtime { stroke: var(--teal); }
     @media print {
       @page { size: landscape; margin: 0; }
@@ -57,10 +61,13 @@
         <desc id="architecture-diagram-2-desc">The React app signs in through Supabase Auth, reads and writes trip data through the Supabase Data API, and calls the FastAPI planner with its JWT. The planner checks identity and membership in Supabase, uses Poe, Tavily and Geoapify to build the itinerary, and saves the result to PostgreSQL. Flight search reads a bundled OAG schedule snapshot. Supabase Realtime sends a notification over WebSocket when a trip member saves their choices. The browser refreshes group data and keeps five-second polling as a fallback.</desc>
         <defs>
           <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto" markerUnits="userSpaceOnUse">
-            <path d="M0 0 L8 3 L0 6 Z" fill="#4e5e5a"/>
+            <path d="M0 0 L8 3 L0 6 Z" fill="var(--service-line)"/>
           </marker>
           <marker id="arrow-teal" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto" markerUnits="userSpaceOnUse">
             <path d="M0 0 L8 3 L0 6 Z" fill="#336c6a"/>
+          </marker>
+          <marker id="arrow-realtime" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+            <path d="M0 0 L8 3 L0 6 Z" fill="var(--realtime-line)"/>
           </marker>
         </defs>
 
@@ -92,14 +99,14 @@
         <path class="connector" d="M716,324 H872 Q880,324 880,332 V380 Q880,388 888,388 H1008" marker-end="url(#arrow)"/>
 
         <!-- Member-only WebSocket flow. -->
-        <path class="connector realtime" d="M720,520 V404 Q720,396 712,396 H672 a8,8 0 0,0 -16,0 H552 a8,8 0 0,0 -16,0 H440" marker-end="url(#arrow-teal)"/>
-        <path class="connector realtime" d="M352,376 V328 Q352,320 344,320 H272" marker-end="url(#arrow-teal)"/>
+        <path class="connector realtime" d="M720,520 V404 Q720,396 712,396 H672 a8,8 0 0,0 -16,0 H552 a8,8 0 0,0 -16,0 H440" marker-end="url(#arrow-realtime)"/>
+        <path class="connector realtime" d="M352,376 V328 Q352,320 344,320 H272" marker-end="url(#arrow-realtime)"/>
 
         <!-- Masks give each connector label its own clear space. -->
         <rect class="label-bg" x="444" y="370" width="88" height="18" rx="2"/>
-        <text class="label" x="488" y="383">SAVE EVENT</text>
+        <text class="label realtime" x="488" y="383">SAVE EVENT</text>
         <rect class="label-bg" x="276" y="328" width="76" height="18" rx="2"/>
-        <text class="label" x="314" y="341">WebSocket</text>
+        <text class="label realtime" x="314" y="341">WebSocket</text>
         <rect class="label-bg" x="328" y="274" width="104" height="18" rx="2"/>
         <text class="label focal" x="380" y="287">JSON + JWT</text>
         <rect class="label-bg" x="244" y="474" width="132" height="18" rx="2"/>
@@ -180,12 +187,12 @@
 
         <!-- Legend for the service connections. -->
         <line class="rule" x1="64" x2="1216" y1="660" y2="660"/>
-        <line class="connector focal" x1="64" x2="92" y1="685" y2="685" marker-end="url(#arrow-teal)"/>
-        <text class="legend" x="104" y="689">Start itinerary planning</text>
-        <line class="connector" x1="284" x2="312" y1="685" y2="685" marker-end="url(#arrow)"/>
-        <text class="legend" x="324" y="689">Service request</text>
-        <line class="connector realtime" x1="484" x2="512" y1="685" y2="685" marker-end="url(#arrow-teal)"/>
-        <text class="legend" x="524" y="689">Realtime update</text>
+        <line class="connector focal" x1="64" x2="112" y1="685" y2="685" marker-end="url(#arrow-teal)"/>
+        <text class="legend focal" x="124" y="689">Start itinerary planning</text>
+        <line class="connector" x1="308" x2="356" y1="685" y2="685" marker-end="url(#arrow)"/>
+        <text class="legend" x="368" y="689">Service request</text>
+        <line class="connector realtime" x1="508" x2="556" y1="685" y2="685" marker-end="url(#arrow-realtime)"/>
+        <text class="legend realtime" x="568" y="689">Realtime update</text>
       </svg>
     </div>
   </main>
