@@ -14,6 +14,7 @@ The [architecture](ARCHITECTURE.md), [data dictionary](DATA_DICTIONARY.md) and [
 
 - [x] Remove unused app bindings, legacy navigation flags, and the uncalled flight-selection wrapper. Keep the documented selection routes.
 - [x] Run only the Supabase-backed demo. Remove local routes, personas, reset and the browser plan generator. Keep the flight catalogue and legacy shared trip readers and edits.
+- [x] Document Python test setup in the README and align the API examples with shared invitations, membership and flight data.
 
 ## 0. Your to-do summary (start here)
 

@@ -25,10 +25,9 @@ Every non-2xx response has this body:
 | HTTP | `code` | When |
 |---|---|---|
 | 401 | `unauthenticated` | No signed-in person |
-| 403 | `invalid_invite_code` | `inviteCode` does not match the group and the user was not invited |
-| 403 | `not_a_member` | Action needs group membership |
+| 403 | `invalid_invite_code` | The invite code belongs to a different group or a new member supplied the wrong code |
 | 403 | `creator_required` | A member tried to delete a group they did not create |
-| 404 | `group_not_found` | Unknown group id |
+| 404 | `group_not_found` | The group ID is unknown or the route requires membership the caller lacks |
 | 404 | `invite_not_found` | Unknown invite code |
 | 409 | `already_member` | Declining while already a member |
 | 409 | `creator_cannot_leave` | A group creator tried to leave their own group |
@@ -43,7 +42,7 @@ as "This invitation isn't available".
 ### User
 
 ```json
-{ "id": "clara", "name": "Clara", "initial": "C", "airport": { "code": "SHA", "city": "Shanghai" } }
+{ "id": "33333333-3333-4333-8333-333333333333", "name": "Clara", "initial": "C", "airport": { "code": "PVG", "city": "Shanghai" } }
 ```
 
 ### Group (as seen by the signed-in person)
@@ -55,12 +54,11 @@ as "This invitation isn't available".
   "destination": "Tokyo, Japan",
   "datesLabel": "Nov 21–24, 2026",
   "code": "VFX37K",
-  "inviteUrl": "https://flights.cathaypacific.com/share/VFX37K",
-  "creatorId": "gaudi",
+  "inviteUrl": "https://cathay-together.vercel.app/invite/VFX37K",
+  "creatorId": "11111111-1111-4111-8111-111111111111",
   "inviteCopied": false,
   "members": [
-    { "userId": "gaudi", "name": "Gaudi", "initial": "G", "airport": { "code": "HKG", "city": "Hong Kong" }, "status": "booked" },
-    { "userId": "kabe", "name": "Kabe", "initial": "K", "airport": { "code": "SIN", "city": "Singapore" }, "status": "picked" }
+    { "userId": "11111111-1111-4111-8111-111111111111", "name": "Gaudi", "initial": "G", "airport": { "code": "HKG", "city": "Hong Kong" }, "status": "booked", "preferencesSaved": false }
   ],
   "viewerId": null,
   "viewerRole": "invitee",
@@ -72,10 +70,11 @@ as "This invitation isn't available".
 |---|---|
 | `members[].status` | `browsing`, `picked` or `booked` |
 | `viewerId` | The signed-in user's id if they are a member, otherwise `null` |
-| `viewerRole` | `creator`, `member`, `invitee` (invited or opened the link, not a member) or `null` |
-| `invitation` | For non-members: `pending`, `declined` or `null`. Always `null` for members |
+| `members[].preferencesSaved` | Whether the member has saved their swipe choices |
+| `viewerRole` | `creator`, `member` or `invitee` when a non-member previews the link |
+| `invitation` | `pending` or `declined` for an invite preview. Members receive `null`. |
 | `code` | Short invite code used in `/invite/:code` |
-| `inviteUrl` | The link shown and copied in the app |
+| `inviteUrl` | The current app origin followed by `/invite/:code` |
 
 The UI never assumes who the viewer is: it reads `viewerId`, `viewerRole` and `creatorId`.
 
@@ -87,7 +86,7 @@ Response `200`: a **User**.
 
 ### `GET /groups`
 
-Groups the person belongs to or has been invited to (members first, newest first).
+Groups the signed-in person has joined, newest first. Open an invitation link to preview a group before joining.
 
 Response `200`:
 
@@ -126,15 +125,11 @@ airport. Feeds the "Select travel dates" sheet on Create group. The demo offers 
 
 ### `GET /groups/:id`
 
-Response `200`: a **Group**. Errors: `404 group_not_found`.
-(A real server may return `403` unless the caller is a member or invitee; the UI treats
-`viewerId: null` as "go to the invitation".)
+Returns a **Group** with status `200` for joined members. An unknown group or a caller outside the group receives `404 group_not_found`.
 
 ### `GET /invitations/:code`
 
-Preview of the group behind an invite link. Response `200`: a **Group**.
-Errors: `404 invite_not_found`.
-Already-members always get `200`.
+A signed-in caller with a valid code receives a **Group** with status `200`, including when they have already joined. An unknown code returns `404 invite_not_found`.
 
 ### `POST /groups/:id/join`
 
@@ -144,14 +139,14 @@ Errors: `403 invalid_invite_code`.
 
 ### `POST /groups/:id/decline`
 
-Request: `{ "inviteCode": "VFX37K" }`. Records `invitation: "declined"` for the caller. The
-caller can still join afterwards. Response `200`: a **Group**.
-Errors: `403 invalid_invite_code`, `409 already_member`.
+Send `{ "inviteCode": "VFX37K" }`. The app remembers the decline in the current tab until reload or sign-out. The caller can still join. The response is a **Group** with status `200`.
+
+An unknown code returns `404 invite_not_found`. A valid code for a different group returns `403 invalid_invite_code`. A member who tries to decline receives `409 already_member`.
 
 ### `POST /groups/:id/invite-copied`
 
 No body. Marks that a member copied the invite link (`inviteCopied: true`). Response `200`: a **Group**.
-Errors: `403 not_a_member`.
+An unknown group or a caller outside the group receives `404 group_not_found`.
 
 ### `DELETE /groups/:id`
 
@@ -167,7 +162,7 @@ A non-member or missing group returns `404 group_not_found`. The creator receive
 
 ## Flight booking (Flow B)
 
-Every endpoint needs a signed-in **member** of the group (`403 not_a_member` otherwise). The caller's
+Every endpoint requires sign-in and group membership. A caller outside the group receives `404 group_not_found`. The caller's
 home airport comes from their profile; flights run between that airport and the group's destination,
 on the group's dates. `GET` endpoints accept query strings. Prices are whole HKD.
 
@@ -205,12 +200,15 @@ Response `200`:
   "tripLabel": "Return", "rangeLabel": "(Sat) 21 Nov - (Tue) 24 Nov",
   "date": "2026-11-21", "cabin": "economy",
   "cabins": [{ "id": "economy", "label": "Economy", "delta": 0 }, { "id": "premium", "label": "Premium Economy", "delta": 8931 }],
-  "dates": [{ "date": "2026-11-19", "label": "Thu, 19 Nov", "priceFrom": null }, { "date": "2026-11-21", "label": "Sat, 21 Nov", "priceFrom": 5531 }],
+  "dates": [{ "date": "2026-11-19", "label": "Thu, 19 Nov", "priceFrom": null }, { "date": "2026-11-21", "label": "Sat, 21 Nov", "priceFrom": 2482 }],
   "groupWindow": { "others": [{ "name": "Clara", "time": "16:15" }] },
   "flights": [{
-    "id": "outbound-2026-11-21-548", "flightNo": "CX548", "from": "HKG", "to": "HND", "date": "2026-11-21",
-    "departTime": "08:55", "arriveTime": "13:45", "duration": "3h 50m", "operatedBy": null,
-    "seatsLeft": 9, "lowest": false, "economyPrice": 6691, "priceFrom": 6691,
+    "id": "outbound-2026-11-21-CX548", "flightNo": "CX548", "from": "HKG", "to": "HND", "date": "2026-11-21",
+    "departTime": "08:55", "arriveTime": "13:45", "arriveDate": "2026-11-21",
+    "departAt": "2026-11-21T00:55:00Z", "arriveAt": "2026-11-21T04:45:00Z",
+    "duration": "3h 50m", "operatedBy": null, "seatsLeft": null, "lowest": false,
+    "economyPrice": 4845, "priceFrom": 4845, "carriers": ["CX"], "via": null,
+    "segments": [{ "flightNo": "CX548", "from": "HKG", "to": "HND", "departTime": "08:55", "arriveTime": "13:45", "arriveDate": "2026-11-21" }],
     "timing": {
       "spreadMinutes": 150, "closest": true, "deltaMinutes": -150
     }
@@ -251,17 +249,16 @@ The caller's chosen flights so far: `{ "outbound"?: Selection, "return"?: Select
 
 ### `PUT /groups/:id/flights/selection`
 
-Request: `{ "flightId": "outbound-2026-11-21-548", "cabin": "economy", "fare": "essential" }`.
-Saves the choice for that flight's direction and responds `200` with the full selection object. When both
+Send `{ "flightId": "outbound-2026-11-21-CX548", "cabin": "economy", "fare": "essential" }`.
+Saves the choice for that flight's direction and returns the caller's outbound and return selection map with status `200`. When both
 directions are chosen the caller's member status changes from `browsing` to `picked` (never from `booked`).
-A **Selection** is `{ flightId, cabin, cabinLabel, fare, fareName, price, from, to, date, departTime, arriveTime, flightNo }`.
-Errors: `404 flight_not_found`, `422 validation_failed` (`fields.fare`).
+A **Selection** is `{ flightId, cabin, cabinLabel, fare, fareName, price, from, to, date, departTime, arriveTime, arriveDate, departAt, arriveAt, flightNo }`.
+Errors include `404 flight_not_found`, `409 already_booked` and `422 validation_failed` (`fields.fare`).
 
 ## Group board and booking (Flow C)
 
-Every endpoint needs a signed-in member of the group (`403 not_a_member`). All values come from the flights
-each member has chosen (`PUT /groups/:id/flights/selection`), so the board, Members page, flight results and
-payment screens agree. Shared handlers rebuild each selection from its stored offer ID, cabin, fare and member airport.
+Every endpoint requires sign-in and group membership. A caller outside the group receives `404 group_not_found`.
+The handlers rebuild each selection from its stored offer ID, cabin, fare and member airport.
 
 Extra error codes: `409 no_flights`, `409 already_booked`, `410 hold_expired`.
 
@@ -271,24 +268,24 @@ Extra error codes: `409 no_flights`, `409 already_booked`, `410 hold_expired`.
 {
   "group": { "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "name": "Tokyo together", "destination": "Tokyo, Japan", "datesLabel": "Nov 21–24, 2026" },
   "destination": { "code": "HND", "city": "Tokyo" },
-  "summary": { "members": 3, "joined": 2, "picked": 1, "booked": 1 },
+  "summary": { "members": 1, "joined": 1, "picked": 0, "booked": 1 },
   "members": [{
-    "userId": "gaudi", "name": "Gaudi", "initial": "G", "airport": { "code": "HKG", "city": "Hong Kong" },
+    "userId": "11111111-1111-4111-8111-111111111111", "name": "Gaudi", "initial": "G", "airport": { "code": "HKG", "city": "Hong Kong" },
     "status": "booked", "isViewer": true, "hasFlights": true,
-    "arrive": { "dateLabel": "Sat 21 Nov", "time": "16:10", "airport": "HND", "flightNo": "CX500" },
-    "leave": { "dateLabel": "Tue 24 Nov", "time": "15:35", "airport": "HND", "flightNo": "CX6321" }
+    "arrive": { "dateLabel": "Sat 21 Nov", "time": "13:45", "airport": "HND", "flightNo": "CX548" },
+    "leave": { "dateLabel": "Tue 24 Nov", "time": "10:10", "airport": "HND", "flightNo": "CX543" }
   }],
   "timeline": {
-    "arrivals": { "dateLabel": "Sat 21 Nov", "points": [{ "time": "16:10", "minutes": 970, "names": ["You"], "includesViewer": true }], "spanMinutes": 40 },
-    "departures": { "dateLabel": "Tue 24 Nov", "points": [], "spanMinutes": 55 }
+    "arrivals": { "dateLabel": "Sat 21 Nov", "points": [{ "time": "13:45", "minutes": 29921145, "names": ["You"], "includesViewer": true }], "spanMinutes": 0 },
+    "departures": { "dateLabel": "Tue 24 Nov", "points": [{ "time": "10:10", "minutes": 29925250, "names": ["You"], "includesViewer": true }], "spanMinutes": 0 }
   },
-  "viewerAction": "book"
+  "viewerAction": "booked"
 }
 ```
 
-`members` lists the viewer first, then booked, picked, browsing. People invited but not yet joined are listed with
-`status: "invited"` and no flights, and count in `summary.members` (the group is everyone invited, not only those who joined).
-`spanMinutes` is the latest minus the earliest time (0 with one point). `viewerAction` is `pick` (no flights yet), `book`, or `booked`.
+The board lists joined members only. It puts the viewer first, then orders the remaining members by `booked`, `picked` and `browsing`. Both `summary.members` and `summary.joined` count joined members.
+
+Timeline points group equal instants. Point `minutes` is the epoch minute shifted to Tokyo time. `spanMinutes` is the latest point minus the earliest, or zero with fewer than two points. `viewerAction` is `pick` until both directions are selected, then `book` until payment, then `booked`.
 
 ### `GET /groups/:id/booking`
 
@@ -312,11 +309,13 @@ and returns the booking with a `ticket`.
 
 ## Itinerary preferences (Flow D)
 
-Members only (`403 not_a_member`). Only Tokyo groups have suggestions (`404 no_suggestions` otherwise).
+These routes require group membership. A caller outside the group receives `404 group_not_found`.
 
 ### `GET /groups/:id/preferences`
 
 Response `200` contains the suggestions, the caller's choices and everyone's readiness. The app uses the trip's saved research deck. Trips already in progress at migration time keep the original deck. `?prepare=0` reads status and available cards without waiting for research, so booking screens stay accessible.
+
+This legacy example shows one of the 11 place cards.
 
 ```json
 {
@@ -324,14 +323,14 @@ Response `200` contains the suggestions, the caller's choices and everyone's rea
   "places": [{ "id": "food", "category": "Food", "name": "Tsukiji Outer Market", "area": "Tsukiji · Chuo City", "description": "…", "budget": "¥2,000–3,500", "savedNote": "¥2,000–3,500 est.", "duration": "1–1.5 hrs", "bestTime": "Morning", "tip": "…", "photo": "/assets/ab624.png", "thumb": "/assets/2c161.png", "alt": "…" }],
   "choices": { "food": "like", "scenery": "pass" },
   "saved": false,
-  "counts": { "total": 4, "chosen": 2, "liked": 1, "passed": 1 },
-  "readiness": [{ "userId": "gaudi", "name": "Gaudi", "initial": "G", "airport": { "code": "HKG", "city": "Hong Kong" }, "isViewer": true, "isCreator": true, "ready": true }],
-  "readyCount": 1,
+  "counts": { "total": 11, "chosen": 2, "liked": 1, "passed": 1 },
+  "readiness": [{ "userId": "11111111-1111-4111-8111-111111111111", "name": "Gaudi", "initial": "G", "airport": { "code": "HKG", "city": "Hong Kong" }, "isViewer": true, "isCreator": true, "ready": false }],
+  "readyCount": 0,
   "itineraryBuilt": false
 }
 ```
 
-The local and legacy decks keep their existing IDs, including `food`, `scenery`, `culture` and `shopping`. Researched decks use stable `card_…` IDs for the life of the trip. A member is `ready` once they have saved. `itineraryBuilt` is `true` once the group's itinerary exists (Group details then shows "View itinerary").
+Legacy decks keep their existing IDs, including `food`, `scenery`, `culture` and `shopping`. Researched decks use stable `card_…` IDs for the life of the trip. A member is `ready` once they have saved. `itineraryBuilt` is `true` once the group's itinerary exists (Group details then shows "View itinerary").
 
 Researched cards use a Tavily image when its description matches the place. `photoSource` and `photoSourceUrl` record the source when available. Bundled category photos cover unmatched or broken links. Older researched decks can refresh their photo fields in place, preserving their IDs and saved choices.
 
@@ -347,7 +346,7 @@ No body. Needs every suggestion chosen, then marks the caller ready. Responds wi
 
 ## Itinerary (Flow E)
 
-Members only (`403 not_a_member`). Tokyo groups only (`404 no_suggestions` otherwise).
+These routes require group membership. A caller outside the group receives `404 group_not_found`.
 
 ### `POST /groups/:id/itinerary/build`
 

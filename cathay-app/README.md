@@ -41,6 +41,19 @@ npm run dev:api
 
 Or start both in one terminal with `npm run dev:all` (after the one-time setup above). Ctrl+C stops both.
 
+### Python tests
+
+After installing the planner dependencies above, install pytest in the same virtual environment and run the planner tests from `cathay-app/`.
+
+```bash
+.venv/bin/python -m pip install pytest
+.venv/bin/python -m pytest server/tests
+```
+
+The tests use local fixtures and run without provider credentials, a running server, or a Supabase connection.
+
+### Production deployment
+
 For production, apply the pending [migrations](supabase/migrations) in order through [`20261112030000_rebuild_itineraries.sql`](supabase/migrations/20261112030000_rebuild_itineraries.sql). It follows [`20261112020000_researched_itineraries.sql`](supabase/migrations/20261112020000_researched_itineraries.sql). In Vercel, keep the project root set to `cathay-app`, enable Fluid Compute for the planner’s 300-second limit, and redeploy after setting the variables below. The React app and `/api/planner` deploy together. Use `npm run dev` with the local planner to test the whole workflow locally.
 
 ### Environment variables
