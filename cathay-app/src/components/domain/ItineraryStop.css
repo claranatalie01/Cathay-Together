@@ -192,6 +192,11 @@ a.stop:active,
   font-weight: var(--weight-semibold);
 }
 
+.stop__edit img {
+  width: var(--space-lg);
+  height: var(--space-lg);
+}
+
 .stop__tag.stop__personal {
   color: var(--color-text-chip);
   background: var(--color-surface-chip);

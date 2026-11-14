@@ -14,7 +14,7 @@ export const PREFERENCE_CATEGORIES = [
 const knownKeys = new Set(PREFERENCE_CATEGORIES.map(({ id }) => id));
 const legacyKeys = { relax: 'relaxation', nightlife: 'entertainment', adventure: 'entertainment' };
 
-function categoryFor(place) {
+export function categoryFor(place) {
   const key = (place.category_key ?? place.category ?? '').toLowerCase();
   // Older decks used broad categories for museum, landmark and entertainment cards.
   const detail = [place.name, ...(place.tags ?? [])].join(' ');

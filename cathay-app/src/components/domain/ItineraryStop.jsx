@@ -11,7 +11,7 @@ const minutesLabel = (m) => (m >= 60 ? `${Math.floor(m / 60)}${m % 60 ? ` hr ${m
 
 // One stop in a day: a booked flight (arrival teal, departure steel blue), a place with photo, or a
 // prompt to choose flights. In edit mode a place shows move and remove buttons instead of linking.
-export default function ItineraryStop({ stop, to, editing = false, canUp = false, canDown = false, onUp, onDown, onRemove, onReplace, onRestore, pickFlightsTo }) {
+export default function ItineraryStop({ stop, to, editing = false, canUp = false, canDown = false, onUp, onDown, onRemove, onEditDuration, onRestore, dragHandlers, pickFlightsTo }) {
   const copy = COPY.itin;
   if (stop.kind === 'flight-missing') {
     const arrival = stop.id === 'flight-arrival';
@@ -50,7 +50,7 @@ export default function ItineraryStop({ stop, to, editing = false, canUp = false
 
   const body = (
     <>
-      <img className="stop__photo" src={stop.thumb} alt={stop.alt} referrerPolicy="no-referrer" onError={fallbackTo(stop.category_key)} />
+      <img className="stop__photo" src={stop.thumb} alt={stop.alt} draggable={!editing} referrerPolicy="no-referrer" onError={fallbackTo(stop.category_key)} />
       <div className="stop__body">
         <p className="stop__name">{stop.name}</p>
         <p className="stop__meta">
@@ -79,15 +79,15 @@ export default function ItineraryStop({ stop, to, editing = false, canUp = false
     return (
       <div className="stop stop--place stop--read">
         <Link className="stop__detail" to={to}>{body}</Link>
-        {onReplace && <button className="stop__edit" type="button" onClick={onReplace} aria-label={copy.editStop(stop.name)}>{copy.edit}</button>}
+        {onEditDuration && <button className="stop__edit" type="button" onClick={onEditDuration} aria-label={`Edit duration for ${stop.name}`}><img src="/assets/ui-edit-teal.svg" alt="" /></button>}
       </div>
     );
   }
   return (
-    <div className="stop stop--place stop--editing">
+    <div className="stop stop--place stop--editing" {...dragHandlers}>
       {body}
       <div className="stop__tools">
-        {onReplace && <button type="button" onClick={onReplace} aria-label={copy.replaceStop(stop.name)}><img src="/assets/ui-edit-teal.svg" alt="" /></button>}
+        {onEditDuration && <button type="button" onClick={onEditDuration} aria-label={`Edit duration for ${stop.name}`}><img src="/assets/ui-edit-teal.svg" alt="" /></button>}
         {onRestore && <button type="button" onClick={onRestore} aria-label={copy.restoreShared}><img src="/assets/ui-swap.svg" alt="" /></button>}
         <button type="button" onClick={onUp} disabled={!canUp} aria-label={copy.moveUp(stop.name)}>
           <img src="/assets/ui-arrow-up.svg" alt="" />
@@ -95,7 +95,7 @@ export default function ItineraryStop({ stop, to, editing = false, canUp = false
         <button type="button" onClick={onDown} disabled={!canDown} aria-label={copy.moveDown(stop.name)}>
           <img src="/assets/ui-arrow-down.svg" alt="" />
         </button>
-        <button type="button" className="is-remove" onClick={onRemove} aria-label={copy.remove(stop.name)}>
+        <button type="button" className="is-remove" onClick={onRemove} disabled={!onRemove} aria-label={copy.remove(stop.name)}>
           <img src="/assets/ui-trash.svg" alt="" />
         </button>
       </div>

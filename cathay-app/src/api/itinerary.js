@@ -17,6 +17,14 @@ export function getItinerary(groupId) {
   return request('GET', `/groups/${enc(groupId)}/itinerary`);
 }
 
+export function getItineraryCatalogue(groupId) {
+  return request('GET', `/groups/${enc(groupId)}/itinerary/catalogue`);
+}
+
+export function reviewItinerary(groupId, draft) {
+  return request('POST', `/groups/${enc(groupId)}/itinerary/review`, draft);
+}
+
 // Saves removed and reordered stops: days = [{ date, stopIds }]. Flights cannot be moved.
 export async function saveItinerary(groupId, edit) {
   const path = `/groups/${enc(groupId)}/itinerary`;

@@ -4,19 +4,22 @@ import { assemble, retimePlan } from './itineraryData.js';
 import { itineraryTimeline, personalRemovals, withPersonalChanges } from './personalItinerary.js';
 
 // What the itinerary screens read. `ctx` is { group, user, dates, votes }.
-export function bodyFor(ctx) {
+export function bodyFor(ctx, draftPlan) {
   const { group, user, dates, votes } = ctx;
   if (!group.itinerary) throw new ApiError(404, 'itinerary_not_built', 'The itinerary has not been built yet.');
   const personalRows = ctx.personalRows ?? [];
   const own = personalRows.find((row) => row.user_id === user.id);
-  const plan = own ? withPersonalChanges(group.itinerary, own.changes) : group.itinerary;
+  const plan = draftPlan ?? (own ? withPersonalChanges(group.itinerary, own.changes) : group.itinerary);
   const result = assemble({ plan, selection: group.selections?.[user.id], votes, dates, places: ctx.places });
+  if (draftPlan) return result;
   return {
     group: { id: group.id, name: group.name, destination: group.destination, datesLabel: group.datesLabel },
     members: group.members.length,
     ...result,
     groupRevision: ctx.itineraryRevision,
     personalRevision: own?.updated_at ?? null,
+    personalRevisions: Object.fromEntries(personalRows.map(({ user_id, updated_at }) => [user_id, updated_at])),
+    sharedActivityDays: own ? assemble({ plan: group.itinerary, selection: group.selections?.[user.id], votes, dates, places: ctx.places }).days : undefined,
     sharedDays: group.itinerary.days.map(({ date, stopIds }) => ({
       date, stops: stopIds.map((id) => ({ id, name: group.itinerary.stops[id]?.name })),
     })),
@@ -55,7 +58,10 @@ export function stopBody(ctx, stopId, initials) {
     return {
       group: full.group,
       day: { index: day.index, label: day.label },
-      stop: { ...stop, budget: place?.budget ?? stop.costLabel, durationBest: place ? `${place.duration} · ${place.bestTime}` : (stop.minutes === 60 ? '1 hr' : `${Math.round(stop.minutes / 6) / 10} hrs`), tip: place?.tip ?? null },
+      stop: { ...stop, budget: place?.budget ?? stop.costLabel, durationBest: [
+        stop.minutes >= 60 ? `${Math.floor(stop.minutes / 60)} hr${stop.minutes % 60 ? ` ${stop.minutes % 60} min` : ''}` : `${stop.minutes} min`,
+        place?.bestTime,
+      ].filter(Boolean).join(' · '), tip: place?.tip ?? null },
       votes: votes?.map((v) => ({ ...v, initial: initials[v.userId], isViewer: v.userId === ctx.user.id })) ?? null,
     };
   }

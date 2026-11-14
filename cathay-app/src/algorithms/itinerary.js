@@ -42,6 +42,12 @@ export const clockOf = (tripMinute) => {
 };
 export const minutesOf = (clock) => Number(clock.slice(0, 2)) * 60 + Number(clock.slice(3));
 
+export function localClockLabel(minutes) {
+  const clock = clockOf(minutes);
+  const hour = Number(clock.slice(0, 2));
+  return `${hour % 12 || 12}${clock.slice(2)} ${hour < 12 ? 'AM' : 'PM'}`;
+}
+
 const clockPattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
 // Convert saved activity clocks to minutes within the activity's local day.

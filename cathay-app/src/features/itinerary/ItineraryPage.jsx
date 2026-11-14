@@ -1,6 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ApiError, getItinerary, saveItinerary } from '../../api';
+import { ApiError, getItinerary } from '../../api';
 import ItineraryStop from '../../components/domain/ItineraryStop';
 import TravelConnector from '../../components/domain/TravelConnector';
 import BottomNav from '../../components/layout/BottomNav';
@@ -21,30 +20,33 @@ import { useAsync } from '../../hooks/useAsync';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import CalendarExport from './CalendarExport';
 import ItineraryEditSheet from './ItineraryEditSheet';
+import { useItineraryDraft } from './useItineraryDraft';
+import { useStopReorder } from './useStopReorder';
 import ItineraryTimeline from './ItineraryTimeline';
 import './ItineraryPage.css';
 
 const hours = (minutes) => `${Math.floor(minutes / 60)} hrs${minutes % 60 ? ` ${minutes % 60} min` : ''}`;
 
 // The plan: summary tiles, a tab per day, the viewer's own flights, voted and suggested stops with
-// travel between them, and the Maybe list. Edit lets you replace, move and remove activities.
+// travel between them, and the Maybe list. Edit lets you retime, move and remove activities.
 export default function ItineraryPage() {
   const { groupId } = useParams();
+  return <TripItinerary key={groupId} groupId={groupId} />;
+}
+
+function TripItinerary({ groupId }) {
   const navigate = useNavigate();
   const toast = useToast();
   const [params, setParams] = useSearchParams();
   const copy = COPY.itin;
   const { status, data, error, reload } = useAsync(() => getItinerary(groupId), [groupId]);
-  const [editing, setEditing] = useState(false);
-  const [edit, setEdit] = useState(null);
-  const [editError, setEditError] = useState('');
-  const [saving, setSaving] = useState(false);
-  const savePending = useRef(false);
-  const closeEdit = useCallback(() => {
-    if (savePending.current) return;
-    setEdit(null);
-    setEditError('');
-  }, []);
+  const draft = useItineraryDraft(groupId, data, toast);
+  const { session, panel, busy, error: draftError, openPanel, apply } = draft;
+  const editing = Boolean(session);
+  const dragHandlers = useStopReorder(params.toString(), (id, target) => {
+    const date = days[dayIndex - 1].date;
+    apply({ type: 'move', id, target, date, reviewTime: true });
+  });
   useDocumentTitle(copy.title);
 
   const frame = (body, sheet) => (
@@ -64,14 +66,15 @@ export default function ItineraryPage() {
     return frame(<ErrorState error={error} onRetry={reload} />);
   }
 
-  const { days, summary, maybe } = data;
+  const { summary, maybe } = data;
+  const days = session?.preview?.days ?? (session?.scope === 'group' ? data.sharedActivityDays ?? data.days : data.days);
   const dayIndex = Math.min(Math.max(Math.trunc(Number(params.get('day'))) || 1, 1), days.length);
   const day = days[dayIndex - 1];
   const view = params.get('view') === 'timeline' ? 'timeline' : 'list';
   const list = view === 'list';
-  const sharedStops = data.sharedDays.find(({ date }) => date === day.date)?.stops ?? [];
   const ids = day.items.filter((item) => item.kind === 'place').map(({ id }) => id);
-  const removed = data.removedByDay[day.date] ?? [];
+  const removed = session?.scope === 'group' ? [] : (data.removedByDay[day.date] ?? [])
+    .filter((item) => !ids.includes(item.id));
   const patchParams = (key, value) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -79,42 +82,24 @@ export default function ItineraryPage() {
     setParams(next, { replace: true });
   };
 
-  const openEdit = (stop, change = null) => {
-    const elsewhere = new Set(day.items.filter((item) => item.id !== stop.id).map((item) => item.placeId));
-    const places = data.editPlaces.filter(({ id }) => id !== stop.placeId && !elsewhere.has(id));
-    setEditError('');
-    const shared = change?.type !== 'restore' && sharedStops.find(({ id }) => id === stop.id);
-    setEdit({
-      stage: change ? 'scope' : 'activity', change, stop, day, places, shared,
-      scope: change?.type === 'restore' ? 'personal' : null,
-      groupRevision: data.groupRevision, personalRevision: data.personalRevision,
-    });
-  };
+  function editStop(type, item, extra) {
+    apply({ type, id: item.id, name: item.name, date: day.date, ...extra });
+  }
 
-  const save = async () => {
-    if (savePending.current) return;
-    savePending.current = true;
-    setSaving(true);
-    setEditError('');
-    try {
-      await saveItinerary(groupId, {
-        scope: edit.scope, groupRevision: edit.groupRevision, personalRevision: edit.personalRevision,
-        change: { ...edit.change, date: edit.day.date, stopId: edit.stop.id },
-      });
-      setEdit(null);
-      toast(edit.scope === 'personal' ? copy.savedPersonal : copy.savedGroup);
-    } catch (error) {
-      setEditError(error instanceof ApiError ? error.message : copy.saveFailed);
-      if (error instanceof ApiError && error.code === 'itinerary_changed') {
-        setEdit(null);
-        toast(error.message);
-        reload();
-      }
-    } finally {
-      savePending.current = false;
-      setSaving(false);
+  function fixTime(issue, fromReview = false) {
+    const stop = days.find(({ date }) => date === issue.date)?.items.find(({ id }) => id === issue.id);
+    openPanel({ type: 'time', issue, stop, fromReview });
+  }
+
+  function addOperation(op, scope, date) {
+    if (date) {
+      const next = new URLSearchParams(params);
+      next.set('day', String(days.find((entry) => entry.date === date).index));
+      next.delete('view');
+      setParams(next, { replace: true });
     }
-  };
+    apply(op, scope, panel?.type === 'time' ? panel : null);
+  }
 
   const stopLink = (stop) => `/groups/${groupId}/itinerary/places/${stop.id}?day=${dayIndex}`;
 
@@ -128,14 +113,16 @@ export default function ItineraryPage() {
           <StatTile icon="/assets/ui-arrows-steel.svg" tone="steel" value={`${summary.avgTravelMinutes} min`} label={copy.travel} />
         </section>
         <p className="itinerary__from">{copy.builtFrom(data.members)}</p>
+        {editing && <p className="itinerary__scope">{session.scope === 'personal' ? copy.scopePersonal : copy.scopeGroup} · Draft</p>}
+        <Button className="itinerary__add-place" variant="secondary" disabled={busy} onClick={() => openPanel({ type: 'search' })}>
+          <img src="/assets/ui-pin-teal.svg" alt="" />
+          {copy.addPlace}
+        </Button>
         <SegmentedControl
           name="itinerary-view"
           label={copy.viewLabel}
           value={view}
-          onChange={(value) => {
-            setEditing(false);
-            patchParams('view', value === 'list' ? null : value);
-          }}
+          onChange={(value) => patchParams('view', value === 'list' ? null : value)}
           options={[
             { id: 'list', label: COPY.board.list, icon: '/assets/ui-list.svg', iconSelected: '/assets/ui-list-light.svg' },
             { id: 'timeline', label: COPY.board.timeline, icon: '/assets/ui-timeline.svg', iconSelected: '/assets/ui-timeline-light.svg' },
@@ -154,27 +141,34 @@ export default function ItineraryPage() {
           </IconHeading>
           {list ? (
             <>
-              {editing && <p className="itinerary__note">{copy.editNote}</p>}
+              {editing && <p className="itinerary__note">Press and hold a card to reorder it, or use Move up and Move down.</p>}
               <ol className="itinerary__list">
                 {day.items.map((item) => {
                   const placeIndex = ids.indexOf(item.id);
+                  const editable = placeIndex >= 0 && !item.fixed && !item.booked;
+                  const issue = session?.preview?.issues.find((entry) => entry.date === day.date && entry.id === item.id);
                   return (
-                    <li key={item.id}>
-                      {!editing && item.travelBefore && <TravelConnector minutes={item.travelBefore.minutes} text={item.travelBefore.text} />}
+                    <li key={item.id} data-edit-stop={editing && editable ? item.id : undefined}>
+                      {item.travelBefore && <TravelConnector minutes={item.travelBefore.minutes} text={item.travelBefore.text} />}
                       <p className="itinerary__slot">{item.kind.startsWith('flight') && item.title ? `${item.slot} · ${item.title === 'Arrival' ? 'Arrive in Tokyo' : 'Flight home'}` : item.slot}</p>
                       <ItineraryStop
                         stop={item}
                         to={stopLink(item)}
                         editing={editing}
-                        canUp={placeIndex > 0}
-                        canDown={placeIndex !== -1 && placeIndex < ids.length - 1}
-                        onUp={() => openEdit(item, { type: 'move', direction: -1 })}
-                        onDown={() => openEdit(item, { type: 'move', direction: 1 })}
-                        onRemove={() => openEdit(item, { type: 'remove' })}
-                        onReplace={Number.isFinite(item.start) && data.editPlaces.some(({ id }) => id !== item.placeId) ? () => openEdit(item) : undefined}
-                        onRestore={item.myChange ? () => openEdit(item, { type: 'restore' }) : undefined}
+                        canUp={editable && !busy && placeIndex > 0}
+                        canDown={editable && !busy && placeIndex < ids.length - 1}
+                        onUp={() => editStop('move', item, { target: ids[placeIndex - 1], reviewTime: true })}
+                        onDown={() => editStop('move', item, { target: ids[placeIndex + 1], reviewTime: true })}
+                        onRemove={editable && !busy ? () => editStop('remove', item) : undefined}
+                        onEditDuration={editable && !busy ? () => openPanel({ type: editing ? 'duration' : 'scope', stop: item }) : undefined}
+                        dragHandlers={editing && editable && !busy ? dragHandlers : undefined}
+                        onRestore={editing && !busy && session.scope === 'personal' && item.myChange ? () => editStop('restore', item) : undefined}
                         pickFlightsTo={`/groups/${groupId}/flights/search`}
                       />
+                      {issue && <div className="itinerary-edit__warning">
+                        <p>{issue.reason}</p>
+                        <Button size="sm" variant="secondary" disabled={busy} onClick={() => fixTime(issue)}>Fix time</Button>
+                      </div>}
                     </li>
                   );
                 })}
@@ -182,7 +176,7 @@ export default function ItineraryPage() {
               {removed.map((item) => (
                 <div className="itinerary__removed" key={item.id}>
                   <span>{copy.removedStop(item.name)} <strong>{copy.myChange}</strong></span>
-                  <Button size="sm" variant="secondary" onClick={() => openEdit(item, { type: 'restore' })}>{copy.restoreShared}</Button>
+                  {editing && <Button size="sm" variant="secondary" disabled={busy} onClick={() => editStop('restore', item)}>{copy.restoreShared}</Button>}
                 </div>
               ))}
               {day.items.length === 0 && <p className="itinerary__note">{copy.emptyDay}</p>}
@@ -200,8 +194,18 @@ export default function ItineraryPage() {
                 </div>
               )}
             </>
-          ) : <ItineraryTimeline data={data.timeline[dayIndex - 1]} filter={params.get('traveller')} onFilter={(id) => patchParams('traveller', id)} />}
+          ) : <>
+            {editing && <p className="itinerary__note">Timeline shows your saved itinerary. Draft changes are shown in List.</p>}
+            <ItineraryTimeline data={data.timeline[dayIndex - 1]} filter={params.get('traveller')} onFilter={(id) => patchParams('traveller', id)} />
+          </>}
         </section>
+
+        {editing && session.preview?.issues.filter(({ date, id }) => date === day.date && (!list || !day.items.some((item) => item.id === id))).map((issue) => (
+          <div className="itinerary-edit__warning" key={issue.id}><p><strong>{issue.name}</strong> · {issue.reason}</p>
+            <Button size="sm" variant="secondary" disabled={busy} onClick={() => fixTime(issue)}>Fix time</Button>
+          </div>
+        ))}
+        {editing && draftError && !panel && <p role="alert">{draftError}</p>}
 
         {list && !editing && maybe.length > 0 && (
           <section className="itinerary__maybe" aria-labelledby="maybe-heading">
@@ -219,18 +223,28 @@ export default function ItineraryPage() {
             </ul>
           </section>
         )}
-        {list && <p className="itinerary__footnote">{copy.footnote}</p>}
       </main>
       <div className="itinerary__bar">
-        {list && (
-          <Button variant="secondary" onClick={() => setEditing((current) => !current)}>
-            {!editing && <img src="/assets/ui-edit-teal.svg" alt="" />}
-            {editing ? copy.done : copy.edit}
-          </Button>
-        )}
-        {!editing && <Button to={`/groups/${groupId}/details`}>{copy.done}</Button>}
+        {editing ? <>
+          <Button variant="secondary" disabled={busy} onClick={() => session.operations.length ? openPanel({ type: 'discard' }) : draft.discard()}>Cancel editing</Button>
+          <Button disabled={busy || !session.operations.length} onClick={() => draft.recheck()}>{busy ? 'Updating…' : 'Finished editing'}</Button>
+        </> : <>
+          <Button variant="secondary" onClick={() => openPanel({ type: 'scope' })}>{copy.edit}</Button>
+          <Button to={`/groups/${groupId}/details`}>{copy.done}</Button>
+        </>}
       </div>
     </>,
-    <ItineraryEditSheet edit={edit} setEdit={setEdit} onClose={closeEdit} onSave={save} busy={saving} error={editError} />,
+    panel && <ItineraryEditSheet key={panel.type + (panel.issue?.id ?? '')} panel={panel} session={session} data={data} day={day}
+      busy={busy} error={draftError} onClose={draft.closePanel} onPanel={openPanel}
+      onStart={(scope) => {
+        patchParams('view', null);
+        draft.start(scope);
+        const startDay = scope === 'group' ? (data.sharedActivityDays ?? data.days).find(({ date }) => date === day.date) : day;
+        const stop = startDay?.items.find(({ id }) => id === panel.stop?.id);
+        if (stop) openPanel({ type: 'duration', stop });
+      }}
+      onOperation={addOperation} onSave={draft.save} onRecheck={() => draft.recheck()}
+      onRebase={draft.rebase} onDiscard={draft.discard} onFix={(issue) => fixTime(issue, true)}
+      onUndo={draft.undo} />,
   );
 }

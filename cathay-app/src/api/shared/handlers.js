@@ -27,11 +27,13 @@ import { applyItineraryEdit, bodyFor as itineraryBody, stopBody } from './itiner
 import { datesBetween, groupFreeTime, votesFor } from './itineraryData';
 import { RULES } from '../../algorithms/itinerary';
 import { LEGACY_PLACES } from '../../data/legacyPlaces';
-import { withCategoryIdeas } from '../../data/preferenceCategories';
+import { PREFERENCE_CATEGORIES, withCategoryIdeas } from '../../data/preferenceCategories';
 import { responseFor as preferencesBody } from './preferenceData';
 import { planSharedTrip, warmTripSuggestions } from './planner';
 import { retimeResearchedPlan } from './itineraryEdits';
 import { personalChangesFor, replaceItineraryStop, restoreGroupStop, withPersonalChanges } from './personalItinerary';
+import { catalogueResponse, itineraryCatalogue } from './itineraryCatalogue';
+import { makeItineraryDraft } from './itineraryDraft';
 
 const UNREACHABLE = () => new ApiError(503, 'service_unavailable', 'The service is temporarily unavailable.');
 
@@ -526,6 +528,22 @@ const saveItinerary = async (ctx, plan = ctx.group.itinerary) => {
   if (!data) throw changedItinerary();
 };
 
+function draftResponse(ctx, draft) {
+  const { days } = itineraryBody(ctx, draft.plan);
+  const byDate = new Map(days.map((day) => [day.date, new Map(day.items.map((item) => [item.id, item]))]));
+  return {
+    days, updates: draft.updates.map((update) => ({
+      ...update, travelBefore: byDate.get(update.date)?.get(update.id)?.travelBefore,
+    })), revisions: draft.revisions, conflicts: draft.conflicts,
+    issues: draft.issues,
+  };
+}
+
+function checkDraft(ctx, body) {
+  if (!ctx.group.itinerary) throw new ApiError(404, 'itinerary_not_built', REFUSALS.itinerary_not_built[1]);
+  return makeItineraryDraft(ctx, body, itineraryCatalogue(ctx.places, ctx.group.destination));
+}
+
 async function preferenceContext(params, prepare) {
   const options = { votes: true, itinerary: true };
   const ctx = await tripContext(params, options);
@@ -585,9 +603,18 @@ const tripRoutes = [
   }],
 
   // POST /groups/:id/preferences/save – the caller explicitly finishes picking
-  ['POST', '/groups/:id/preferences/save', async ({ params }) => {
+  ['POST', '/groups/:id/preferences/save', async ({ params, body }) => {
     const ctx = await tripContext(params, { votes: true, itinerary: true });
-    await call(ctx.supabase, 'finish_picking', { target_group: ctx.id });
+    const args = { target_group: ctx.id };
+    if (body?.categories) {
+      const categories = body.categories;
+      const known = new Set(PREFERENCE_CATEGORIES.map(({ id }) => id));
+      if (!Array.isArray(categories) || categories.length > known.size || categories.some((id) => !known.has(id))) {
+        throw new ApiError(422, 'validation_failed', 'Choose valid categories.');
+      }
+      args.selected_categories = [...new Set(categories)];
+    }
+    await call(ctx.supabase, 'finish_picking', args);
     ctx.group.preferences[ctx.userId].saved = true;
     return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people, ctx.places) };
   }],
@@ -604,9 +631,43 @@ const tripRoutes = [
     return { status: 200, body: itineraryBody(ctx) };
   }],
 
+  ['GET', '/groups/:id/itinerary/catalogue', async ({ params }) => {
+    const ctx = await tripContext(params, itineraryOptions);
+    const { days } = itineraryBody(ctx);
+    const [member] = await rows(ctx.supabase.from('group_members').select('preference_categories')
+      .eq('group_id', ctx.id).eq('user_id', ctx.userId));
+    return { status: 200, body: catalogueResponse(ctx, days, member?.preference_categories) };
+  }],
+
+  ['POST', '/groups/:id/itinerary/review', async ({ params, body }) => {
+    const ctx = await tripContext(params, itineraryOptions);
+    return { status: 200, body: draftResponse(ctx, checkDraft(ctx, body)) };
+  }],
+
   ['PUT', '/groups/:id/itinerary', async ({ params, body }) => {
     const ctx = await tripContext(params, itineraryOptions);
     if (!ctx.group.itinerary) throw new ApiError(404, 'itinerary_not_built', REFUSALS.itinerary_not_built[1]);
+    if (body?.operations) {
+      const draft = checkDraft(ctx, body);
+      const personal = body.scope === 'personal';
+      const { group, personal: own, people } = draft.revisions;
+      const reviewed = body.revisions;
+      if (reviewed?.group !== group || (personal ? reviewed.personal !== own
+        : Object.keys({ ...reviewed.people, ...people }).some((id) => reviewed.people?.[id] !== people[id]))) {
+        throw changedItinerary();
+      }
+      if (draft.issues.length) throw new ApiError(422, 'invalid_edit', 'Some stops still need attention.', draft.issues);
+      if (body.operations.length && personal) {
+        await call(ctx.supabase, 'save_personal_itinerary', {
+          target_group: ctx.id, expected_group_revision: group, expected_personal_revision: own, new_changes: draft.overrides,
+        });
+      } else if (body.operations.length) {
+        await call(ctx.supabase, 'save_group_itinerary_batch', {
+          target_group: ctx.id, expected_group_revision: group, expected_personal_revisions: people, new_plan: draft.plan,
+        });
+      }
+      return { status: 200, body: itineraryBody(await tripContext(params, itineraryOptions)) };
+    }
     const own = ctx.personalRows.find((row) => row.user_id === ctx.userId);
     const personal = body?.scope === 'personal';
     // Keep the older days/stopIds endpoint working for existing callers.

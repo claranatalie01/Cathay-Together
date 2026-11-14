@@ -29,7 +29,7 @@ function overridesFor(changes, date) {
 
 export function withPersonalChanges(plan, changes) {
   const stops = { ...plan.stops };
-  const transfers = plan.transfers ? structuredClone(plan.transfers) : undefined;
+  let transfers = plan.transfers ? structuredClone(plan.transfers) : undefined;
   const days = plan.days.map((day) => {
     const entries = overridesFor(changes, day.date);
     if (!entries.length) return day;
@@ -39,13 +39,15 @@ export function withPersonalChanges(plan, changes) {
     for (const [id, { stop, order }] of entries) {
       if (!stop) continue;
       stops[id] = { ...stop, myChange: !day.stopIds.includes(id) || !sameStop(stop, plan.stops[id]) || (Number.isInteger(order) && day.stopIds.indexOf(id) !== order) };
-      if (transfers && stop.transfer) {
+      if (stop.transfer) {
+        transfers ??= { between: {}, fallbackMinutes: RULES.travelGap };
+        const key = stop.placeId ?? stop.id;
         const { between, usesOpenStreetMap, usesGeoapify } = stop.transfer;
         if (isRecord(between)) {
           for (const [other, minutes] of Object.entries(between)) {
             if (!safeStopId(other) || !Number.isFinite(minutes) || minutes < 0) continue;
-            transfers.between[stop.placeId] = { ...transfers.between[stop.placeId], [other]: minutes };
-            transfers.between[other] = { ...transfers.between[other], [stop.placeId]: minutes };
+            transfers.between[key] = { ...transfers.between[key], [other]: minutes };
+            transfers.between[other] = { ...transfers.between[other], [key]: minutes };
           }
         }
         transfers.usesOpenStreetMap ||= usesOpenStreetMap === true;
@@ -130,8 +132,10 @@ export function personalChangesFor(changes, before, after, date) {
   const overrides = Object.fromEntries(overridesFor(changes, date));
   for (const id of oldDay.stopIds) {
     const oldStop = before.stops[id];
-    if (!newDay.stopIds.includes(id)) overrides[id] = { name: oldStop.name, stop: null };
-    else {
+    if (!newDay.stopIds.includes(id)) {
+      if (oldStop.personalAddition) delete overrides[id];
+      else overrides[id] = { name: oldStop.name, stop: null };
+    } else {
       const current = after.stops[id];
       const index = newDay.stopIds.indexOf(id);
       const movedWithoutTime = !validTime(current) && index !== oldDay.stopIds.indexOf(id);
@@ -139,6 +143,12 @@ export function personalChangesFor(changes, before, after, date) {
         const { myChange, ...snapshot } = current;
         overrides[id] = { name: oldStop.name, stop: snapshot, ...(movedWithoutTime ? { order: index } : {}) };
       }
+    }
+  }
+  for (const id of newDay.stopIds) {
+    if (!oldDay.stopIds.includes(id)) {
+      const { myChange, ...snapshot } = after.stops[id];
+      overrides[id] = { name: snapshot.name, stop: snapshot };
     }
   }
   return { ...changes, [date]: overrides };
@@ -151,7 +161,7 @@ export function restoreGroupStop(changes, date, stopId) {
   return { ...changes, [date]: overrides };
 }
 
-function addTransfers(plan, place, places) {
+export function addTransfers(plan, place, places) {
   if (!plan.transfers) return;
   const byId = new Map(places.map((item) => [item.id, item.coordinates ?? PLACE_GEO[item.id]]));
   const coordinates = byId.get(place.id);

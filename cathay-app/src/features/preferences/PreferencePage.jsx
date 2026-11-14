@@ -80,7 +80,7 @@ function selectionQuery(selected, reviewing) {
 
 function CategoryPicker({ groups, selected, reviewing, data, groupId, root }) {
   const [selection, setSelection] = useState(selected);
-  const { finishing, finish, mainRef } = useFinishPicking(groupId);
+  const { finishing, finish, mainRef } = useFinishPicking(groupId, selection);
   const navigate = useNavigate();
   const search = selectionQuery(selection, reviewing);
   const ideas = deckFor(groups, selection, data.choices, reviewing).length;
@@ -137,7 +137,7 @@ function ActivityDeck({ groups, selected, reviewing, choices, groupId, savedPath
   const [announcement, setAnnouncement] = useState('');
   const swipePending = useRef(false);
   const toast = useToast();
-  const { finishing, finish, mainRef } = useFinishPicking(groupId);
+  const { finishing, finish, mainRef } = useFinishPicking(groupId, selected);
   const place = deck[index];
   const busy = swiping || finishing;
 
@@ -194,7 +194,7 @@ function ActivityDeck({ groups, selected, reviewing, choices, groupId, savedPath
   );
 }
 
-function useFinishPicking(groupId) {
+function useFinishPicking(groupId, categories) {
   const navigate = useNavigate();
   const toast = useToast();
   const mainRef = useRef(null);
@@ -206,7 +206,7 @@ function useFinishPicking(groupId) {
     pending.current = true;
     setFinishing(true);
     try {
-      await savePreferences(groupId);
+      await savePreferences(groupId, categories);
       if (mainRef.current?.isConnected) navigate(path, { replace: true });
     } catch {
       if (mainRef.current?.isConnected) toast(copy.finishFailed);

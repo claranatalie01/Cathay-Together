@@ -30,7 +30,7 @@ export const COPY = {
     maybeTitle: 'Maybe · Split votes',
     maybeNote: 'Alternatives only. Not scheduled or included in totals.',
     maybeLine: (liked, passed, duration, note) => `${liked} liked · ${passed} passed · ${duration} · ${note}`,
-    footnote: 'Rough plan. Costs are estimates and travel times are approximate. Flights, hotel, Maybe options, meals not listed and extras are not in the totals. Suggested stops only fill the days and were not voted on.',
+    addPlace: 'Add a place',
     edit: 'Edit',
     viewLabel: 'Itinerary view',
     myChange: 'My change',

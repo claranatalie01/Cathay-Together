@@ -24,8 +24,8 @@ export async function chooseSuggestion(groupId, placeId, choice) {
 }
 
 // Marks the caller ready. Unswiped suggestions retain no preference.
-export async function savePreferences(groupId) {
-  const result = await request('POST', `/groups/${enc(groupId)}/preferences/save`);
+export async function savePreferences(groupId, categories) {
+  const result = await request('POST', `/groups/${enc(groupId)}/preferences/save`, { categories });
   refreshPreferences(groupId);
   return result;
 }
