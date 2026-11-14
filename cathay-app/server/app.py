@@ -1,6 +1,7 @@
 """Authenticated shared-trip entry point for Stacia's itinerary pipeline."""
 import hashlib
 import logging
+import re
 from datetime import datetime
 from json import dumps, loads
 from pathlib import Path
@@ -21,6 +22,7 @@ from .itinerary.schemas import TripContext
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 log = logging.getLogger(__name__)
+TOKYO_IDEAS = loads((config.APP_DIR / "src/data/tokyoCategoryIdeas.json").read_text(encoding="utf-8"))
 
 
 class PlannerRequest(BaseModel):
@@ -126,16 +128,37 @@ def context_for(inputs):
         raise PlannerError(422, "validation_failed", "The planner could not use this trip’s dates or traveller details.") from exc
 
 
+def category_for(place):
+    key = (place.get("category_key") or place.get("category") or "").lower()
+    if key in ("culture", "scenery", "nature", "adventure"):
+        detail = " ".join([place["name"], *(place.get("tags") or [])])
+        if re.search(r"\bmuseums?\b|\bgaller(?:y|ies)\b|teamlab", detail, re.I):
+            return "art"
+        if re.search(r"\b(?:tower|crossing|observator\w*|viewpoint|city view|skyline|shibuya sky)\b", detail, re.I):
+            return "views"
+    return {"scenery": "nature", "relax": "relaxation", "nightlife": "entertainment",
+            "adventure": "entertainment"}.get(key, key if key in config.PREFERENCE_CATEGORIES else "culture")
+
+
+def require_ready(inputs):
+    if not inputs["members"] or any(not member["preferences_saved_at"] for member in inputs["members"]):
+        raise PlannerError(422, "not_ready", "Everyone needs to tap Finished picking before you can build the itinerary.")
+
+
 def cards_for_plan(deck, inputs):
     places = (loads(Path(__file__).with_name("legacy_places.json").read_text(encoding="utf-8"))
               if deck["legacy"] else deck["places"])
+    require_ready(inputs)
+    if re.match(r"^tokyo\b", inputs["destination"], re.I):
+        present = {category_for(place) for place in places}
+        places = [*places, *(idea for idea in TOKYO_IDEAS["ideas"] if idea["category_key"] not in present)]
     members = inputs["members"]
     choices = {(vote["user_id"], vote["place_id"]): vote["choice"] for vote in inputs["votes"]}
-    if any(not member["preferences_saved_at"] or any((member["user_id"], p["id"]) not in choices for p in places)
-           for member in members):
-        raise PlannerError(422, "not_ready", "Everyone needs to save their choices before you can build the itinerary.")
-    return [{**place, "total_members": len(members),
-             "like_count": sum(choices[(m["user_id"], place["id"])] == "like" for m in members)} for place in places]
+    cards = []
+    for place in places:
+        votes = [choices.get((member["user_id"], place["id"])) for member in members]
+        cards.append({**place, "total_members": len(members), "like_count": votes.count("like"), "pass_count": votes.count("pass")})
+    return cards
 
 
 def plan_fingerprint(inputs) -> str:
@@ -162,7 +185,10 @@ def finished(store, action, deck, inputs=None):
         return deck and (deck["legacy"] or (
             deck["places"] and all("photoSourceUrl" in place and "coordinates" in place for place in deck["places"])
         ))
-    return inputs is not None and plan_is_current(store, inputs)
+    if inputs is None:
+        return False
+    require_ready(inputs)
+    return plan_is_current(store, inputs)
 
 
 def run_job(store, action):
@@ -188,18 +214,29 @@ def run_job(store, action):
                 enrich_coordinates(places, inputs["destination"])
                 store.save_deck_places(token, places)
                 return {"ready": True}
-            result = pipeline.run_discover(context_for(inputs))
+            context = context_for(inputs)
+            try:
+                result = pipeline.run_discover(context)
+            except AgentError:
+                if not re.match(r"^tokyo\b", inputs["destination"], re.I):
+                    raise
+                log.info("Trip research unavailable. Using the bundled Tokyo ideas.")
+                result = {"places": [{"coordinates": None, **idea, "photoSourceUrl": None} for idea in TOKYO_IDEAS["ideas"]],
+                          "sources": TOKYO_IDEAS["sources"]}
         else:
             if not (deck and (deck["legacy"] or deck["places"])):
                 raise PlannerError(422, "not_ready", "Prepare the suggestions and save everyone's choices first.")
             cards = cards_for_plan(deck, inputs)
-            if not deck["legacy"] and any("coordinates" not in card for card in cards):
+            if not deck["legacy"] and any("coordinates" not in place for place in deck["places"]):
                 places = deck["places"]
                 enrich_coordinates(places, inputs["destination"])
                 if all("coordinates" in place for place in places):
                     store.save_deck_places(token, places)
                     cards = cards_for_plan(deck, inputs)
-            result = pipeline.run_plan(context_for(inputs), cards, deck["sources"])["plan"]
+            sources = deck["sources"]
+            if any(card["id"].startswith("tokyo-idea-") for card in cards):
+                sources = list({source["id"]: source for source in [*sources, *TOKYO_IDEAS["sources"]]}.values())
+            result = pipeline.run_plan(context_for(inputs), cards, sources)["plan"]
             result["builtAt"] = int(datetime.now().timestamp() * 1000)
             result["fingerprint"] = plan_fingerprint(inputs)
         if not store.rpc("finish_trip_planner_job", viewer=store.viewer, token=token, operation=action, result=result,

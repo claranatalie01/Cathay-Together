@@ -68,7 +68,7 @@ export default function App() {
           <Route path="invite/:code" element={<InvitePage />} />
           <Route path="groups/:groupId/details" element={<MembersPage key="details" details />} />
           <Route path="groups/:groupId/preferences/saved" element={<SavedPage />} />
-          <Route path="groups/:groupId/preferences/:category" element={<PreferencePage />} />
+          <Route path="groups/:groupId/preferences/:step?" element={<PreferencePage />} />
           <Route path="groups/:groupId/itinerary/building" element={<BuildingPage />} />
           <Route path="groups/:groupId/itinerary/places/:stopId" element={<PlaceDetailPage />} />
           <Route path="groups/:groupId/itinerary" element={<ItineraryPage />} />

@@ -1,6 +1,7 @@
 """Agent 2: Curator. Turns web evidence into swipe cards the group votes on."""
 import json
 import uuid
+from collections import Counter
 
 from . import config
 from .llm import AgentError, ask_json
@@ -12,6 +13,9 @@ CATEGORY_LABELS = {
     "culture": "Culture",
     "nature": "Nature",
     "shopping": "Shopping",
+    "views": "Views & Landmarks",
+    "art": "Art & Museums",
+    "entertainment": "Entertainment",
     "nightlife": "Nightlife",
     "adventure": "Adventure",
     "relaxation": "Relax",
@@ -54,6 +58,7 @@ def normalize_cards(raw_cards, known_source_ids: set[str]) -> list[dict]:
     """Keep only well-formed cards that cite real sources. Never trust the model's IDs or numbers."""
     cards: list[dict] = []
     seen: set[str] = set()
+    per_category = Counter()
     for raw in raw_cards if isinstance(raw_cards, list) else []:
         if not isinstance(raw, dict):
             continue
@@ -63,12 +68,17 @@ def normalize_cards(raw_cards, known_source_ids: set[str]) -> list[dict]:
         if not name or not source_ids or name.casefold() in seen:
             continue  # no evidence, no card
         category = clean_text(raw.get("category"), 20).lower()
-        if category not in config.CATEGORIES:
+        if category in ("nightlife", "adventure"):
+            category = "entertainment"
+        if category not in config.PREFERENCE_CATEGORIES:
             category = "culture"
         venue_name = clean_text(raw.get("venue_name", name), 80)
         if category == "food" and not venue_name:
             continue
+        if per_category[category] >= config.MAX_CARDS_PER_CATEGORY:
+            continue
         seen.add(name.casefold())
+        per_category[category] += 1
         best_time = clean_text(raw.get("best_time_of_day"), 12).lower()
         if best_time not in config.TIMES_OF_DAY:
             best_time = "any"
@@ -130,7 +140,7 @@ CARD_FORMAT = """{
     {
       "name": "Activity Name",
       "venue_name": "Exact name of a single venue as stated in the evidence, or empty if none",
-      "category": "food|culture|nature|shopping|nightlife|adventure|relaxation",
+      "category": "food|culture|nature|shopping|views|art|entertainment|relaxation",
       "headline": "Short punchy tagline (under 60 chars)",
       "description": "1-2 sentence description from the evidence",
       "estimated_cost_jpy": 2000,
@@ -172,7 +182,7 @@ WEB SEARCH EVIDENCE:
 {json.dumps(evidence, ensure_ascii=False)}
 
 TASK:
-Extract {config.MIN_CARDS}-{config.MAX_CARDS} specific activities, restaurants, and attractions from the
+Aim for {config.TARGET_CARDS} specific activities, restaurants, and attractions from the
 evidence above. Create a balanced swipe deck for the group.
 
 Return ONLY valid JSON in this exact format:
@@ -181,17 +191,19 @@ Return ONLY valid JSON in this exact format:
 RULES:
 - Only include activities with evidence from the search results
 - Give the exact venue name for coordinate lookup when the activity has one specific venue.
-- Balance categories: at least 2 food, 2 culture, and spread across others
+- Cover all eight categories when evidence allows. Aim for two per category and include at most five per category.
+- Classify viewpoints and major landmarks as views, museums and exhibitions as art, and nightlife and shows as entertainment.
 - Remove duplicates (same place, different names)
 - Filter out anything likely closed during {dates['start']} to {dates['end']}
 - Prioritise group-friendly activities for {context['group_size']} people
 - Include a mix of free and paid options
-- Include at least 4 food places at different price points. Each must be one specific, named venue (a real restaurant, café or food market) with its exact venue_name. Never a cuisine or a meal type such as "Japanese cuisine" or "sushi dinner"
+- Include food places at different price points when the evidence supports them. Each must be one specific, named venue (a real restaurant, café or food market) with its exact venue_name. Never a cuisine or a meal type such as "Japanese cuisine" or "sushi dinner"
 - Set realistic estimated costs in JPY (or local currency); use 0 only for free places
 - Use "Unknown" for opening hours that the evidence does not state
 - Source IDs must reference the evidence provided
 """,
         temperature=0.5,
+        max_tokens=config.PLANNER_MAX_TOKENS,
     )
     raw_cards = result.get("swipe_cards") if isinstance(result, dict) else None
     cards = normalize_cards(raw_cards, {s["id"] for s in sources})

@@ -28,7 +28,7 @@ def _activity(stop: dict, place: dict) -> dict:
     return {
         **_base(stop),
         "id": f"place-{place['id']}",
-        "source": "voted",
+        "source": "voted" if place["like_count"] else "suggested",
         "placeId": place["id"],
         "name": place["name"],
         "area": place["area"],

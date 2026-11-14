@@ -27,6 +27,7 @@ import { applyItineraryEdit, bodyFor as itineraryBody, stopBody } from './itiner
 import { datesBetween, groupFreeTime, votesFor } from './itineraryData';
 import { RULES } from '../../algorithms/itinerary';
 import { LEGACY_PLACES } from '../../data/legacyPlaces';
+import { withCategoryIdeas } from '../../data/preferenceCategories';
 import { responseFor as preferencesBody } from './preferenceData';
 import { planSharedTrip, warmTripSuggestions } from './planner';
 import { retimeResearchedPlan } from './itineraryEdits';
@@ -454,18 +455,14 @@ async function tripContext(params, want = {}) {
     itinerary: null,
   };
   const [deck] = want.votes ? await rows(supabase.from('group_place_decks').select('legacy, places').eq('group_id', id)) : [];
-  const places = deck?.legacy ? LEGACY_PLACES : deck?.places ?? [];
+  const storedPlaces = deck?.legacy ? LEGACY_PLACES : deck?.places ?? [];
+  const places = withCategoryIdeas(storedPlaces, shown.destination);
   if (want.votes) {
     const votes = await rows(supabase.from('votes').select('user_id, place_id, choice').eq('group_id', id));
     const ids = new Set(places.map((place) => place.id));
     votes.forEach((v) => {
       if (group.preferences[v.user_id] && ids.has(v.place_id)) group.preferences[v.user_id].choices[v.place_id] = v.choice;
     });
-    if (deck?.places) {
-      Object.values(group.preferences).forEach((pref) => {
-        pref.saved = pref.saved && places.every((place) => pref.choices[place.id]);
-      });
-    }
   }
   if (want.itinerary) {
     const [saved] = await rows(supabase.from('itineraries').select('plan').eq('group_id', id));
@@ -518,7 +515,7 @@ const saveItinerary = async (ctx) => {
 async function preferenceContext(params, prepare) {
   const options = { votes: true, itinerary: true };
   const ctx = await tripContext(params, options);
-  if (!prepare || ctx.deck?.legacy || (ctx.places.length && ctx.places.every((place) => 'photoSourceUrl' in place))) {
+  if (!prepare || ctx.deck?.legacy || (ctx.deck?.places?.length && ctx.deck.places.every((place) => 'photoSourceUrl' in place))) {
     return ctx;
   }
   try {
@@ -573,10 +570,10 @@ const tripRoutes = [
     return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people, ctx.places) };
   }],
 
-  // POST /groups/:id/preferences/save – the database checks every place has an answer
+  // POST /groups/:id/preferences/save – the caller explicitly finishes picking
   ['POST', '/groups/:id/preferences/save', async ({ params }) => {
     const ctx = await tripContext(params, { votes: true, itinerary: true });
-    await call(ctx.supabase, 'save_preferences', { target_group: ctx.id, place_ids: ctx.places.map((place) => place.id) });
+    await call(ctx.supabase, 'finish_picking', { target_group: ctx.id });
     ctx.group.preferences[ctx.userId].saved = true;
     return { status: 200, body: preferencesBody(ctx.group, ctx.user, ctx.people, ctx.places) };
   }],

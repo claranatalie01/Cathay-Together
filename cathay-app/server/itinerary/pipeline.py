@@ -7,7 +7,7 @@ from .checks import day_window, flight_limits
 from .curator import clean_text, curator_agent
 from .explorer import explorer_agent
 from .geocoding import enrich_coordinates, locate_areas
-from .llm import AgentError, NothingToPlan, PlanConstraints
+from .llm import AgentError, PlanConstraints
 from .photos import attach_photos, find_place_images
 from .plan import prepare_places, to_app_plan
 from .places import photo_fields
@@ -81,9 +81,8 @@ def run_plan(context: dict, raw_cards, raw_sources, model: str | None = None, ll
     sources = clean_sources(raw_sources)
     liked, maybe = split_cards(cards)
     if not liked:
-        liked, maybe = maybe, []  # nobody reached half the group: plan from whatever got a like
-    if not liked:
-        raise NothingToPlan("Nobody liked any of the places yet, so there is nothing to schedule.")
+        liked, maybe = maybe, []  # use the places with likes when no place reached consensus
+    neutral = None if liked else [card for card in cards if not card["pass_count"]]
 
     dates, known = trip_dates(context), {s["id"] for s in sources}
     arrival, departure = flight_limits(context.get("flights", []))
@@ -91,14 +90,14 @@ def run_plan(context: dict, raw_cards, raw_sources, model: str | None = None, ll
         raise PlanConstraints("The group’s flights leave no shared time after the airport buffers.")
 
     llm = llm or llm_module.make_llm_client()
-    eligible = liked + maybe  # only places somebody liked can be scheduled
+    eligible = liked + maybe if neutral is None else neutral
     transfers = transfer_estimates(eligible)
     attempts, feedback, last_problem = [], "", ""
     area_points = {}
     for attempt in range(1, config.MAX_REVIEW_ATTEMPTS + 2):
         try:
-            raw = scheduler_agent(llm, model, context, liked, maybe, sources, transfers, feedback)
-            schedule = adopt_liked_food(normalize_schedule(raw, dates, eligible, known), eligible, known)
+            raw = scheduler_agent(llm, model, context, liked, maybe, sources, transfers, feedback, neutral)
+            schedule = adopt_liked_food(normalize_schedule(raw, dates, eligible, known, require_activity=bool(liked)), eligible, known)
             for day in schedule["days"]:
                 taken = set()
                 for stop in day["stops"]:

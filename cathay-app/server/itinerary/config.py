@@ -13,8 +13,8 @@ RESULTS_PER_SEARCH = 5
 MAX_SOURCE_CHARACTERS = 2500
 MIN_SOURCES = 8  # fewer than this triggers the broader retry searches
 MAX_SOURCES = 15  # the broader retry stops once this many are collected
-MIN_CARDS = 8
-MAX_CARDS = 12  # one phone screen per card, so the deck is shorter than the 15-25 of the desktop prototype
+TARGET_CARDS = 16
+MAX_CARDS_PER_CATEGORY = 5
 MAX_TRIP_DAYS = 7
 PACE_LIMIT = {"relaxed": 2, "moderate": 3, "packed": 4}  # activities per day
 ARRIVAL_BUFFER_MIN = 90  # retain the shared demo's airport allowance
@@ -26,7 +26,9 @@ DEFAULT_BUDGET_PER_PERSON = 15000  # JPY for activities + meals
 MAX_REVIEW_ATTEMPTS = 1  # one redraft after a failed check; the best draft is kept either way
 LLM_TIMEOUT_SECONDS = 60  # one model call. Raise LLM_TIMEOUT_SECONDS in .env if drafts time out
 
-CATEGORIES = ("food", "culture", "nature", "shopping", "nightlife", "adventure", "relaxation")
+PREFERENCE_CATEGORIES = ("food", "culture", "nature", "shopping", "views", "art", "entertainment", "relaxation")
+CATEGORIES = (*PREFERENCE_CATEGORIES, "nightlife", "adventure")
+MAX_CARDS = len(PREFERENCE_CATEGORIES) * MAX_CARDS_PER_CATEGORY
 TIMES_OF_DAY = ("morning", "afternoon", "evening", "any")
 
 EVIDENCE_RULES = """

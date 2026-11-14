@@ -73,6 +73,7 @@ def sanitize_plan_cards(raw_cards) -> list[dict]:
                 "coordinates": coordinates if coordinate_pair(coordinates) is not None else None,
                 "coordinateSource": clean_url(raw.get("coordinateSource")) or None,
                 "like_count": clean_int(raw.get("like_count"), 0, 0, total),
+                "pass_count": clean_int(raw.get("pass_count"), 0, 0, total),
                 "total_members": total,
             }
         )
@@ -141,7 +142,7 @@ def _day_stops(raw_day, cards_by_id: dict, used: set, known_sources: set) -> lis
     return sorted(stops, key=lambda s: s["start"])
 
 
-def normalize_schedule(raw, dates: list[str], cards: list[dict], known_sources: set) -> dict:
+def normalize_schedule(raw, dates: list[str], cards: list[dict], known_sources: set, *, require_activity: bool = True) -> dict:
     raw_days = raw.get("days") if isinstance(raw, dict) else None
     if not isinstance(raw_days, list) or not raw_days:
         raise InvalidDraft("The draft was missing a readable days array.")
@@ -153,7 +154,7 @@ def normalize_schedule(raw, dates: list[str], cards: list[dict], known_sources: 
         raw_day = by_date.get(day_date)
         title = clean_text(raw_day.get("title"), 40) if isinstance(raw_day, dict) else ""
         days.append({"date": day_date, "title": title, "stops": _day_stops(raw_day, cards_by_id, used, known_sources)})
-    if not any(stop["type"] == "activity" for day in days for stop in day["stops"]):
+    if require_activity and not any(stop.get("card_id") for day in days for stop in day["stops"]):
         raise InvalidDraft("The draft did not schedule any of the liked activities.")
     return {"days": days}
 

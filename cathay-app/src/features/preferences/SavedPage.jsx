@@ -1,5 +1,5 @@
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { ApiError, getCurrentUser, getPreferences } from '../../api';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { getPreferences } from '../../api';
 import MemberRow from '../../components/domain/MemberRow';
 import BottomNav from '../../components/layout/BottomNav';
 import PageHeader from '../../components/layout/PageHeader';
@@ -9,7 +9,6 @@ import Button from '../../components/ui/Button';
 import Chip from '../../components/ui/Chip';
 import ErrorState from '../../components/ui/ErrorState';
 import LoadingState from '../../components/ui/LoadingState';
-import StateMessage from '../../components/ui/StateMessage';
 import { COPY } from '../../data/copy';
 import { fallbackTo } from '../../data/photos';
 import { useAsync } from '../../hooks/useAsync';
@@ -20,54 +19,61 @@ import './SavedPage.css';
 export default function SavedPage() {
   const { groupId } = useParams();
   const navigate = useNavigate();
+  const { search } = useLocation();
   const copy = COPY.prefs;
-  const { status, data, error, reload } = useAsync(() => getPreferences(groupId), [groupId]);
-  const { data: user } = useAsync(getCurrentUser, []);
+  const { status, data, error, reload } = useAsync(() => getPreferences(groupId, { prepare: false }), [groupId]);
+  const root = `/groups/${groupId}/preferences`;
   useDocumentTitle(copy.savedTitle);
 
   const frame = (body) => (
     <Screen>
       <StatusBar />
-      <PageHeader title={copy.savedTitle} onBack={() => navigate(`/groups/${groupId}/preferences/${data?.places?.[data.places.length - 1]?.id ?? ''}`)} />
+      <PageHeader title={copy.savedTitle} onBack={() => navigate(`/groups/${groupId}/details`)} />
       {body}
       <BottomNav variant="groups" />
     </Screen>
   );
 
   if (status === 'loading') return frame(<LoadingState variant="detail" />);
-  if (status === 'error') {
-    if (error instanceof ApiError && error.code === 'no_suggestions') {
-      return frame(
-        <StateMessage mark="!" tone="sand" title={copy.noSuggestionsTitle} text={error.message}>
-          <Button to={`/groups/${groupId}/details`}>Back to group</Button>
-        </StateMessage>,
-      );
-    }
-    return frame(<ErrorState error={error} onRetry={reload} />);
-  }
-  if (!data.saved) return <Navigate to={`/groups/${groupId}/preferences/${data.places[0].id}`} replace />;
+  if (status === 'error') return frame(<ErrorState error={error} onRetry={reload} />);
 
   const liked = data.places.filter((place) => data.choices[place.id] === 'like');
   const waiting = data.readiness.filter((member) => !member.ready).map((member) => member.name);
+  const params = new URLSearchParams(search);
+  if (data.saved) params.set('edit', '1');
+  const pickerPath = params.size ? `${root}?${params}` : root;
 
   return frame(
     <main className="saved">
-      <div className="saved__hero">
-        <span className="saved__tick">
-          <img src="/assets/c07aa.svg" alt="" />
-        </span>
-        <h2 className="saved__title">{copy.savedHeading}</h2>
-        <p className="saved__text">
-          {user ? copy.savedLead(user.name) : ''}
-          <br />
-          {copy.savedCounts(data.counts.total, data.counts.liked, data.counts.passed)}
-        </p>
-      </div>
+      <section className="saved__section saved__readiness" aria-labelledby="ready-heading">
+        <div className="saved__head">
+          <h2 className="saved__heading" id="ready-heading">
+            {COPY.members.heading}
+          </h2>
+          <Chip tone="tint">{copy.readyCount(data.readyCount, data.readiness.length)}</Chip>
+        </div>
+        <ul className="member-list">
+          {data.readiness.map((member) => (
+            <MemberRow key={member.userId} member={{ ...member, status: member.ready ? 'ready' : 'choosing' }} />
+          ))}
+        </ul>
+      </section>
+
+      <p className="saved__text" role="status">
+        {waiting.length === 0 ? copy.allReady : data.saved ? copy.waiting(waiting.join(', ')) : copy.readinessUnlock}
+      </p>
+      {waiting.length === 0 ? (
+        <Button size="lg" to={`/groups/${groupId}/itinerary/building`}>{copy.generate}</Button>
+      ) : (
+        <Button size="lg" disabled>{copy.generate}</Button>
+      )}
+      <Button variant="secondary" to={pickerPath}>{data.saved ? copy.edit : copy.continuePicking}</Button>
 
       <section className="saved__section" aria-labelledby="liked-heading">
         <h3 className="saved__heading" id="liked-heading">
           {copy.likedHeading}
         </h3>
+        <p className="saved__text">{copy.deckCounts(data.counts.liked, data.counts.passed, data.counts.neutral)}</p>
         {liked.length === 0 ? (
           <p className="saved__text">{copy.noLikes}</p>
         ) : (
@@ -78,7 +84,7 @@ export default function SavedPage() {
                 <div className="saved__info">
                   <p className="saved__name">{place.name}</p>
                   <p className="saved__meta">
-                    {place.category} · {place.savedNote}
+                    {place.category}{place.savedNote && ` · ${place.savedNote}`}
                   </p>
                 </div>
                 <img className="saved__heart" src="/assets/4714d.svg" alt="Liked" />
@@ -88,24 +94,6 @@ export default function SavedPage() {
         )}
       </section>
 
-      <section className="saved__section" aria-labelledby="ready-heading">
-        <div className="saved__head">
-          <h3 className="saved__heading" id="ready-heading">
-            {copy.readiness}
-          </h3>
-          <Chip tone="tint">{copy.readyCount(data.readyCount, data.readiness.length)}</Chip>
-        </div>
-        <ul className="member-list">
-          {data.readiness.map((member) => (
-            <MemberRow key={member.userId} member={{ ...member, status: member.ready ? 'ready' : 'choosing' }} />
-          ))}
-        </ul>
-        {waiting.length > 0 && <p className="saved__text">{copy.waiting(waiting.join(', '))}</p>}
-      </section>
-
-      <Button size="lg" to={`/groups/${groupId}/itinerary/building`}>
-        {copy.generate}
-      </Button>
     </main>,
   );
 }

@@ -121,12 +121,12 @@ Return exactly this JSON structure:
 
 Generate 5-7 queries that collectively cover:
 1. Specific, named restaurants, cafés and food markets in {destination}, from street food to mid-range. Search for venue names (for example "best named ramen shops in {destination}"), never for a cuisine in general
-2. Cultural attractions, temples, museums in {destination}
-3. Group-friendly activities for {group_size} people in {destination}
-4. {destination} hidden gems locals recommend
+2. Cultural and historic attractions in {destination}
+3. Landmark viewpoints and observation decks in {destination}
+4. Art galleries and museums in {destination}
 5. {destination} shopping districts and markets
 6. Outdoor/nature activities near {destination}
-7. Any specific interests: {interests}
+7. Entertainment venues and relaxing experiences for {group_size} people in {destination}, with these interests: {interests}
 
 Keep each query under 300 characters. Make them specific and searchable.
 """,

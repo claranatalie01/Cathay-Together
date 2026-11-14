@@ -37,11 +37,12 @@ export function stopBody(ctx, stopId, initials) {
     const stop = day.items.find((item) => item.id === stopId && item.kind === 'place');
     if (!stop) continue;
     const place = stop.placeId ? (ctx.places ?? LEGACY_PLACES).find((p) => p.id === stop.placeId) : null;
+    const votes = stop.source === 'voted' ? ctx.votes[stop.placeId]?.votes : null;
     return {
       group: full.group,
       day: { index: day.index, label: day.label },
       stop: { ...stop, budget: place?.budget ?? stop.costLabel, durationBest: place ? `${place.duration} · ${place.bestTime}` : (stop.minutes === 60 ? '1 hr' : `${Math.round(stop.minutes / 6) / 10} hrs`), tip: place?.tip ?? null },
-      votes: ctx.votes[stop.placeId]?.votes.map((v) => ({ ...v, initial: initials[v.userId], isViewer: v.userId === ctx.user.id })) ?? null,
+      votes: votes?.map((v) => ({ ...v, initial: initials[v.userId], isViewer: v.userId === ctx.user.id })) ?? null,
     };
   }
   throw new ApiError(404, 'stop_not_found', 'That stop is not in the itinerary.');

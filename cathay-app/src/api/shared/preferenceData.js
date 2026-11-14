@@ -19,7 +19,7 @@ export function responseFor(group, user, people, places) {
     places,
     choices: mine.choices,
     saved: mine.saved,
-    counts: { total: places.length, chosen: liked + passed, liked, passed },
+    counts: { total: places.length, chosen: liked + passed, liked, passed, neutral: places.length - liked - passed },
     readiness,
     readyCount: readiness.filter((m) => m.ready).length,
     itineraryBuilt: Boolean(group.itinerary),

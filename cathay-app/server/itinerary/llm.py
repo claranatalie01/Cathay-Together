@@ -22,13 +22,6 @@ class MissingConfig(AgentError):
     code = "not_configured"
 
 
-class NothingToPlan(AgentError):
-    """The group's votes leave nothing to schedule."""
-
-    status = 422
-    code = "nothing_to_plan"
-
-
 class PlanConstraints(AgentError):
     """No draft passed the trip's validation checks."""
 

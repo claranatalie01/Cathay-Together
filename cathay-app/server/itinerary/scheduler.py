@@ -24,6 +24,7 @@ SCHEDULE_FIELDS = (
     "opening_hours",
     "closed_days",
     "like_count",
+    "pass_count",
     "total_members",
     "source_ids",
 )
@@ -36,13 +37,13 @@ def trip_dates(context: dict) -> list[str]:
 
 
 def split_cards(cards: list[dict]) -> tuple[list[dict], list[dict]]:
-    """Liked by at least half the group goes first, sorted by consensus. Other liked cards are 'maybe'."""
+    """Rank by expressed preferences. A missing vote does not count as a Pass."""
     liked, maybe = [], []
     for card in cards:
         if card["like_count"] < 1:
             continue
-        (liked if card["like_count"] * 2 >= card["total_members"] else maybe).append(card)
-    liked.sort(key=lambda c: c["like_count"] / max(c["total_members"], 1), reverse=True)
+        (liked if card["like_count"] >= card["pass_count"] else maybe).append(card)
+    liked.sort(key=lambda c: (c["like_count"] / (c["like_count"] + c["pass_count"]), c["like_count"]), reverse=True)
     return liked, maybe
 
 
@@ -69,6 +70,7 @@ def scheduler_agent(
     sources: list[dict],
     transfers: dict,
     feedback: str = "",
+    neutral: list[dict] | None = None,
 ) -> dict:
     dates = trip_dates(context)
     arrival, departure = flight_limits(context.get("flights", []))
@@ -93,6 +95,12 @@ def scheduler_agent(
         "Build a simpler draft. Keep at least one liked activity if it fits, and leave out "
         "optional stops that would make the schedule fail a rule.\n" if feedback else ""
     )
+    neutral_block = (
+        "Nobody liked an activity. You may schedule these neutral suggestions where they fit. "
+        "Use meals and free time if the list is empty.\n"
+        + json.dumps([_compact(card) for card in neutral], ensure_ascii=False)
+        if neutral is not None else ""
+    )
     return ask_json(
         llm,
         model,
@@ -114,6 +122,8 @@ LIKED ACTIVITIES (include these, ordered by group consensus; leave one out only 
 
 MAYBE ACTIVITIES (only if time permits):
 {json.dumps([_compact(c) for c in maybe], ensure_ascii=False)}
+
+{neutral_block}
 
 MINIMUM TRANSFER MINUTES BETWEEN ACTIVITY IDS (matrix is symmetric):
 {json.dumps(transfers["between"], separators=(",", ":"))}

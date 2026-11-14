@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { ApiError, chooseSuggestion, getPreferences, savePreferences } from '../../api';
+import { useRef, useState } from 'react';
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { chooseSuggestion, getPreferences, savePreferences } from '../../api';
 import SuggestionCard from '../../components/domain/SuggestionCard';
 import BottomNav from '../../components/layout/BottomNav';
 import PageHeader from '../../components/layout/PageHeader';
@@ -9,131 +9,212 @@ import StatusBar from '../../components/layout/StatusBar';
 import Button from '../../components/ui/Button';
 import ErrorState from '../../components/ui/ErrorState';
 import LoadingState from '../../components/ui/LoadingState';
-import StateMessage from '../../components/ui/StateMessage';
 import StepProgress from '../../components/ui/StepProgress';
 import { useToast } from '../../components/ui/Toast';
 import { COPY } from '../../data/copy';
+import { fallbackTo } from '../../data/photos';
+import { groupPreferencePlaces } from '../../data/preferenceCategories';
 import { useAsync } from '../../hooks/useAsync';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import './PreferencePage.css';
 
-// Reset the local draft when opening another trip, but keep it between cards.
-export default function PreferencePage() {
-  const { groupId } = useParams();
-  return <PreferenceDeck key={groupId} />;
-}
+const copy = COPY.prefs;
 
-function PreferenceDeck() {
-  const { groupId, category } = useParams();
+export default function PreferencePage() {
+  const { groupId, step } = useParams();
   const navigate = useNavigate();
-  const toast = useToast();
-  const copy = COPY.prefs;
+  const { key, search } = useLocation();
   const { status, data, error, reload } = useAsync(() => getPreferences(groupId), [groupId]);
-  const [latest, setLatest] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [announcement, setAnnouncement] = useState('');
-  const version = useRef(0);
-  const focusNext = useRef(false);
-  const mainRef = useRef(null);
-  useEffect(() => () => { version.current += 1; }, [category]);
-  useEffect(() => {
-    if (!focusNext.current) return;
-    focusNext.current = false;
-    // AppShell focuses the heading after navigation. Continue keyboard swiping
-    // from the next card once that route focus has run.
-    const frame = requestAnimationFrame(() => mainRef.current?.querySelector('.suggestion, button')?.focus());
-    return () => cancelAnimationFrame(frame);
-  }, [category]);
-  const view = latest ?? data;
+  const root = `/groups/${groupId}/preferences`;
+  const isDeck = step === 'swipe';
   useDocumentTitle(copy.title);
 
-  const frame = (body, backTo) => (
+  const frame = (body) => (
     <Screen>
       <StatusBar />
-      <PageHeader title={copy.title} onBack={() => navigate(backTo ?? `/groups/${groupId}/details`)} />
+      <PageHeader title={copy.title} onBack={() => navigate(isDeck ? root + search : `/groups/${groupId}/details`)} />
       {body}
       <BottomNav variant="groups" />
     </Screen>
   );
 
-  if (status === 'error' && !view) {
-    if (error instanceof ApiError && error.code === 'no_suggestions') {
-      return frame(
-        <StateMessage mark="!" tone="sand" title={copy.noSuggestionsTitle} text={error.message}>
-          <Button to={`/groups/${groupId}/details`}>Back to group</Button>
-        </StateMessage>,
-      );
-    }
-    return frame(<ErrorState error={error} onRetry={reload} />);
-  }
-  if (!view) return frame(<LoadingState variant="detail" />);
+  if (step && !isDeck) return <Navigate to={root} replace />;
+  if (status === 'error') return frame(<ErrorState error={error} onRetry={reload} />);
+  if (!data || data.group.id !== groupId) return frame(<LoadingState variant="detail" />);
 
-  const { places, choices, counts } = view;
-  const path = (id) => `/groups/${groupId}/preferences/${id}`;
-  const unreviewed = places.find((place) => !choices[place.id]);
-  if (category === 'review' && unreviewed) return <Navigate to={path(unreviewed.id)} replace />;
+  const params = new URLSearchParams(search);
+  const groups = groupPreferencePlaces(data.places);
+  const reviewing = params.get('edit') === '1';
+  const savedSelection = params.get('categories')?.split(',');
+  const selected = groups.filter(({ id, places }) => places.length && (
+    savedSelection?.includes(id) ?? (reviewing && !isDeck && places.some((place) => data.choices[place.id]))
+  )).map(({ id }) => id);
+  const savedPath = `${root}/saved${search}`;
 
-  const save = async () => {
-    if (busy) return;
-    const currentVersion = version.current;
-    setBusy(true);
-    try {
-      await savePreferences(groupId);
-      if (version.current === currentVersion) navigate(path('saved'), { replace: true });
-    } catch (saveError) {
-      toast(saveError instanceof ApiError ? saveError.message : copy.saveFailed);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  if (category === 'review') {
+  if (isDeck) {
+    if (!selected.length) return <Navigate to={root} replace />;
     return frame(
-      <main className="prefs" ref={mainRef}>
-        <StepProgress label={copy.eyebrow} current={places.length} total={places.length} stepText={copy.reviewed(places.length)} />
-        <div className="prefs__review">
-          <h2>{copy.reviewTitle}</h2>
-          <p>{copy.savedCounts(counts.chosen, counts.liked, counts.passed)}</p>
-        </div>
-        <Button size="lg" onClick={save} disabled={busy} aria-busy={busy || undefined}>
-          {busy ? copy.saving : copy.save}
-        </Button>
-      </main>,
-      path(places.at(-1).id),
+      <ActivityDeck key={key} groups={groups} selected={selected} reviewing={reviewing} choices={data.choices} groupId={groupId} savedPath={savedPath} />,
     );
   }
 
-  const index = places.findIndex((place) => place.id === category);
-  if (index === -1) return <Navigate to={path((unreviewed ?? places[0]).id)} replace />;
-  const place = places[index];
-  const back = index === 0 ? `/groups/${groupId}/details` : path(places[index - 1].id);
+  return frame(
+    <CategoryPicker key={key} groups={groups} selected={selected} reviewing={reviewing} data={data} groupId={groupId} root={root} />,
+  );
+}
 
-  const choose = async (choice, animation, byKeyboard) => {
-    const currentVersion = version.current;
-    try {
-      const updated = await chooseSuggestion(groupId, place.id, choice);
-      await animation;
-      setLatest(updated);
-      if (version.current !== currentVersion) return;
-      setAnnouncement(copy.swipeResult(place.name, choice));
-      const next = updated.places[index + 1] ?? updated.places.find(({ id }) => !updated.choices[id]);
-      focusNext.current = byKeyboard;
-      navigate(path(next?.id ?? 'review'));
-    } catch {
-      toast(copy.saveFailed);
+function deckFor(groups, selected, choices, reviewing) {
+  return groups
+    .filter(({ id }) => selected.includes(id))
+    .flatMap(({ label, places }) => places
+      .filter(({ id }) => reviewing || !choices[id])
+      .map((place) => ({ ...place, category: label })));
+}
+
+function selectionQuery(selected, reviewing) {
+  const params = new URLSearchParams();
+  if (selected.length) params.set('categories', selected.join(','));
+  if (reviewing) params.set('edit', '1');
+  return params.size ? `?${params}` : '';
+}
+
+function CategoryPicker({ groups, selected, reviewing, data, groupId, root }) {
+  const [selection, setSelection] = useState(selected);
+  const { finishing, finish, mainRef } = useFinishPicking(groupId);
+  const navigate = useNavigate();
+  const search = selectionQuery(selection, reviewing);
+  const ideas = deckFor(groups, selection, data.choices, reviewing).length;
+  const skip = () => finish(`${root}/saved${search}`);
+
+  return (
+    <main className="prefs" ref={mainRef}>
+      <div className="prefs__intro">
+        <p className="prefs__eyebrow">{copy.eyebrow(data.group.destination)}</p>
+        <h2>{copy.explore}</h2>
+        <p>{copy.selectCategories}</p>
+      </div>
+      <ul className="prefs__categories" aria-label={copy.categories}>
+        {groups.map(({ id, label, places: [first] }) => {
+          const checked = selection.includes(id);
+          return (
+            <li key={id}>
+              <button
+                className="prefs__category"
+                type="button"
+                aria-pressed={checked}
+                disabled={!first || finishing}
+                onClick={() => setSelection((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id])}
+              >
+                {first && <img className="prefs__category-photo" src={first.thumb || first.photo} alt="" referrerPolicy="no-referrer" onError={fallbackTo(id)} />}
+                <span className="prefs__category-check" aria-hidden="true">{checked && '✓'}</span>
+                <strong>{label}</strong>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="prefs__finish">
+        <Button
+          size="lg"
+          onClick={() => ideas ? navigate(`${root}/swipe${search}`) : void skip()}
+          disabled={!selection.length || finishing}
+          aria-busy={finishing || undefined}
+        >
+          {finishing ? copy.saving : copy.finish}
+        </Button>
+        <p role="status">{selection.length ? copy.categorySelection(selection.length, ideas) : copy.selectToSwipe}</p>
+        <button className="prefs__skip" type="button" disabled={finishing} onClick={skip}>{copy.skipPreferences}</button>
+      </div>
+    </main>
+  );
+}
+
+function ActivityDeck({ groups, selected, reviewing, choices, groupId, savedPath }) {
+  // Freeze the queue for this visit so a swipe or background refresh can't shift card positions.
+  const [deck] = useState(() => deckFor(groups, selected, choices, reviewing));
+  const [index, setIndex] = useState(0);
+  const [swiping, setSwiping] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
+  const swipePending = useRef(false);
+  const toast = useToast();
+  const { finishing, finish, mainRef } = useFinishPicking(groupId);
+  const place = deck[index];
+  const busy = swiping || finishing;
+
+  const advance = async (byKeyboard) => {
+    if (!mainRef.current?.isConnected) return;
+    setIndex(index + 1);
+    if (index + 1 >= deck.length) {
+      await finish(savedPath);
+    } else if (byKeyboard) {
+      requestAnimationFrame(() => mainRef.current?.querySelector('.suggestion')?.focus());
     }
   };
 
-  return frame(
-    <main className="prefs" ref={mainRef}>
-      <StepProgress label={copy.eyebrow} current={index + 1} total={places.length} stepText={copy.step(index + 1, places.length)} />
-      <div className="prefs__stage">
-        <SuggestionCard key={place.id} place={place} choice={choices[place.id]} onChoose={choose} describedBy="prefs-swipe-hint prefs-swipe-keys" />
-      </div>
-      <p id="prefs-swipe-hint" className="prefs__hint"><span>{copy.swipeLeft}</span><span>{copy.swipeRight}</span></p>
-      <p id="prefs-swipe-keys" className="sr-only">{copy.swipeKeys}</p>
+  const choose = async (choice, animation, byKeyboard) => {
+    if (busy || swipePending.current) return;
+    swipePending.current = true;
+    setSwiping(true);
+    try {
+      await chooseSuggestion(groupId, place.id, choice);
+      await animation;
+      if (!mainRef.current?.isConnected) return;
+      setAnnouncement(copy.swipeResult(place.name, choice));
+      await advance(byKeyboard);
+    } catch {
+      toast(copy.saveFailed);
+    } finally {
+      swipePending.current = false;
+      setSwiping(false);
+    }
+  };
+
+  return (
+    <main className="prefs prefs--deck" ref={mainRef}>
+      {place ? (
+        <>
+          <StepProgress label={copy.activityPicks} current={index + 1} total={deck.length} stepText={copy.step(index + 1, deck.length)} />
+          <div className="prefs__stage">
+            <SuggestionCard key={place.id} place={place} choice={choices[place.id]} onChoose={choose} disabled={busy} describedBy="prefs-swipe-hint prefs-swipe-keys" />
+          </div>
+          <p id="prefs-swipe-hint" className="prefs__hint"><span>{copy.swipeLeft}</span><span>{copy.swipeRight}</span></p>
+          <p id="prefs-swipe-keys" className="sr-only">{copy.swipeKeys}</p>
+          <button className="prefs__skip" type="button" disabled={busy} onClick={() => advance(true)}>
+            {choices[place.id] ? copy.nextIdea : copy.skip}
+          </button>
+        </>
+      ) : (
+        <h2 className="prefs__deck-end">{copy.deckEnd}</h2>
+      )}
+      <Button variant="secondary" size="lg" disabled={busy} aria-busy={finishing || undefined} onClick={() => finish(savedPath)}>
+        {finishing ? copy.saving : copy.doneSwiping}
+      </Button>
       <p className="sr-only" role="status">{announcement}</p>
-    </main>,
-    back,
+    </main>
   );
+}
+
+function useFinishPicking(groupId) {
+  const navigate = useNavigate();
+  const toast = useToast();
+  const mainRef = useRef(null);
+  const pending = useRef(false);
+  const [finishing, setFinishing] = useState(false);
+
+  const finish = async (path) => {
+    if (pending.current) return;
+    pending.current = true;
+    setFinishing(true);
+    try {
+      await savePreferences(groupId);
+      if (mainRef.current?.isConnected) navigate(path, { replace: true });
+    } catch {
+      if (mainRef.current?.isConnected) toast(copy.finishFailed);
+    } finally {
+      pending.current = false;
+      setFinishing(false);
+    }
+  };
+
+  return { finishing, finish, mainRef };
 }

@@ -6,7 +6,7 @@ import './SuggestionCard.css';
 const SWIPE_DISTANCE = 80; // px of horizontal drag that counts as a choice
 
 // Swipe horizontally to choose. Vertical scrolling cancels the gesture.
-export default function SuggestionCard({ place, choice, onChoose, describedBy }) {
+export default function SuggestionCard({ place, choice, onChoose, describedBy, disabled = false }) {
   const copy = COPY.prefs;
   const gesture = useRef(null);
   const submitting = useRef(false);
@@ -15,7 +15,7 @@ export default function SuggestionCard({ place, choice, onChoose, describedBy })
   const [leaving, setLeaving] = useState(null);
 
   const down = (event) => {
-    if (!event.isPrimary || event.button !== 0 || submitting.current) return;
+    if (disabled || !event.isPrimary || event.button !== 0 || submitting.current) return;
     gesture.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
     setDragging(true);
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -28,7 +28,7 @@ export default function SuggestionCard({ place, choice, onChoose, describedBy })
     setDrag(Math.abs(dx) > Math.abs(dy) ? dx : 0);
   };
   const choose = async (next, card, byKeyboard = false) => {
-    if (submitting.current) return;
+    if (disabled || submitting.current) return;
     submitting.current = true;
     setLeaving(next);
     const exit = matchMedia('(prefers-reduced-motion: reduce)').matches ? null : card.animate(
@@ -73,7 +73,7 @@ export default function SuggestionCard({ place, choice, onChoose, describedBy })
       tabIndex={0}
       aria-label={place.name}
       aria-describedby={describedBy}
-      aria-busy={Boolean(leaving)}
+      aria-busy={disabled || Boolean(leaving)}
       style={{ transform: drag ? `translateX(${drag}px) rotate(${Math.max(-12, Math.min(12, drag / 18))}deg)` : undefined }}
       onPointerDown={down}
       onPointerMove={move}

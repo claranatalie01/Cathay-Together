@@ -1,0 +1,250 @@
+{
+  "ideas": [
+    {
+      "id": "tokyo-idea-food",
+      "category_key": "food",
+      "category": "Food & Drink",
+      "name": "Tsukiji Outer Market",
+      "location": "Tsukiji",
+      "area": "Tsukiji",
+      "description": "Browse seafood, snacks and tea at the market.",
+      "estimated_duration_min": 90,
+      "estimated_cost_jpy": 2750,
+      "budget": "¥2,750 est.",
+      "best_time_of_day": "any",
+      "opening_hours": "Unknown",
+      "closed_days": [],
+      "duration": "90 min",
+      "bestTime": "Any time",
+      "tip": "Check hours and prices before visiting.",
+      "source_ids": [
+        "S901"
+      ],
+      "photo": "/assets/ab624.png",
+      "thumb": "/assets/ab624.png",
+      "alt": "",
+      "savedNote": "Check hours and prices",
+      "coordinates": {
+        "lat": 35.66536,
+        "lon": 139.77053
+      },
+      "coordinateSource": "https://www.openstreetmap.org/way/606978548"
+    },
+    {
+      "id": "tokyo-idea-culture",
+      "category_key": "culture",
+      "category": "Culture & History",
+      "name": "Sensō-ji & Asakusa",
+      "location": "Asakusa",
+      "area": "Asakusa",
+      "description": "Explore the temple grounds and nearby shopping streets.",
+      "estimated_duration_min": 90,
+      "estimated_cost_jpy": 0,
+      "budget": "Check locally",
+      "best_time_of_day": "any",
+      "opening_hours": "Unknown",
+      "closed_days": [],
+      "duration": "90 min",
+      "bestTime": "Any time",
+      "tip": "Check hours and prices before visiting.",
+      "source_ids": [
+        "S902"
+      ],
+      "photo": "/assets/culture-photo.jpg",
+      "thumb": "/assets/culture-photo.jpg",
+      "alt": "",
+      "savedNote": "Check hours and prices",
+      "coordinates": {
+        "lat": 35.71345,
+        "lon": 139.79595
+      },
+      "coordinateSource": "https://www.openstreetmap.org/way/173154847"
+    },
+    {
+      "id": "tokyo-idea-nature",
+      "category_key": "nature",
+      "category": "Nature & Parks",
+      "name": "Ueno Park",
+      "location": "Ueno",
+      "area": "Ueno",
+      "description": "Walk the park paths around Shinobazu Pond.",
+      "estimated_duration_min": 60,
+      "estimated_cost_jpy": 0,
+      "budget": "Check locally",
+      "best_time_of_day": "any",
+      "opening_hours": "Unknown",
+      "closed_days": [],
+      "duration": "1 hr",
+      "bestTime": "Any time",
+      "tip": "Check hours and prices before visiting.",
+      "source_ids": [
+        "S902"
+      ],
+      "photo": "/assets/e1c39.png",
+      "thumb": "/assets/e1c39.png",
+      "alt": "",
+      "savedNote": "Check hours and prices"
+    },
+    {
+      "id": "tokyo-idea-shopping",
+      "category_key": "shopping",
+      "category": "Shopping",
+      "name": "Omotesando stroll",
+      "location": "Omotesando",
+      "area": "Omotesando",
+      "description": "Explore design shops and flagship stores.",
+      "estimated_duration_min": 60,
+      "estimated_cost_jpy": 0,
+      "budget": "Check locally",
+      "best_time_of_day": "any",
+      "opening_hours": "Unknown",
+      "closed_days": [],
+      "duration": "1 hr",
+      "bestTime": "Any time",
+      "tip": "Check hours and prices before visiting.",
+      "source_ids": [
+        "S902"
+      ],
+      "photo": "/assets/shopping-photo.jpg",
+      "thumb": "/assets/shopping-photo.jpg",
+      "alt": "",
+      "savedNote": "Check hours and prices",
+      "coordinates": {
+        "lat": 35.66518,
+        "lon": 139.71256
+      },
+      "coordinateSource": "https://www.openstreetmap.org/way/375809333"
+    },
+    {
+      "id": "tokyo-idea-views",
+      "category_key": "views",
+      "category": "Views & Landmarks",
+      "name": "Tokyo Tower",
+      "location": "Minato",
+      "area": "Minato",
+      "description": "See the Tokyo skyline from the observation deck.",
+      "estimated_duration_min": 60,
+      "estimated_cost_jpy": 1500,
+      "budget": "¥1,500 est.",
+      "best_time_of_day": "any",
+      "opening_hours": "Unknown",
+      "closed_days": [],
+      "duration": "1 hr",
+      "bestTime": "Any time",
+      "tip": "Check hours and prices before visiting.",
+      "source_ids": [
+        "S903"
+      ],
+      "photo": "/assets/photos/tokyo-tower-blue-hour-cover.jpg",
+      "thumb": "/assets/photos/tokyo-tower-blue-hour-cover.jpg",
+      "alt": "",
+      "savedNote": "Check hours and prices",
+      "coordinates": {
+        "lat": 35.65856,
+        "lon": 139.74544
+      },
+      "coordinateSource": "https://www.openstreetmap.org/relation/4247312"
+    },
+    {
+      "id": "tokyo-idea-art",
+      "category_key": "art",
+      "category": "Art & Museums",
+      "name": "Tokyo National Museum",
+      "location": "Ueno",
+      "area": "Ueno",
+      "description": "Explore collections of Japanese and Asian art at the museum in Ueno Park.",
+      "estimated_duration_min": 120,
+      "estimated_cost_jpy": 1000,
+      "budget": "¥1,000 est.",
+      "best_time_of_day": "any",
+      "opening_hours": "Unknown",
+      "closed_days": [],
+      "duration": "2 hr",
+      "bestTime": "Any time",
+      "tip": "Check hours and prices before visiting.",
+      "source_ids": [
+        "S902"
+      ],
+      "photo": "/assets/culture-photo.jpg",
+      "thumb": "/assets/culture-photo.jpg",
+      "alt": "",
+      "savedNote": "Check hours and prices"
+    },
+    {
+      "id": "tokyo-idea-entertainment",
+      "category_key": "entertainment",
+      "category": "Entertainment",
+      "name": "Tokyo Dome City",
+      "location": "Suidobashi",
+      "area": "Suidobashi",
+      "description": "Explore the entertainment complex and pick an attraction together.",
+      "estimated_duration_min": 90,
+      "estimated_cost_jpy": 2000,
+      "budget": "¥2,000 est.",
+      "best_time_of_day": "any",
+      "opening_hours": "Unknown",
+      "closed_days": [],
+      "duration": "90 min",
+      "bestTime": "Any time",
+      "tip": "Check hours and prices before visiting.",
+      "source_ids": [
+        "S904"
+      ],
+      "photo": "/assets/photos/tokyo-skyline-night-cover.jpg",
+      "thumb": "/assets/photos/tokyo-skyline-night-cover.jpg",
+      "alt": "",
+      "savedNote": "Check hours and prices"
+    },
+    {
+      "id": "tokyo-idea-relaxation",
+      "category_key": "relaxation",
+      "category": "Relaxation",
+      "name": "Tea at Hama-rikyū Gardens",
+      "location": "Shiodome",
+      "area": "Shiodome",
+      "description": "Take a break for tea at the garden teahouse.",
+      "estimated_duration_min": 60,
+      "estimated_cost_jpy": 1200,
+      "budget": "¥1,200 est.",
+      "best_time_of_day": "any",
+      "opening_hours": "Unknown",
+      "closed_days": [],
+      "duration": "1 hr",
+      "bestTime": "Any time",
+      "tip": "Check hours and prices before visiting.",
+      "source_ids": [
+        "S903"
+      ],
+      "photo": "/assets/e1c39.png",
+      "thumb": "/assets/e1c39.png",
+      "alt": "",
+      "savedNote": "Check hours and prices"
+    }
+  ],
+  "sources": [
+    {
+      "id": "S901",
+      "title": "The Official Tokyo Travel Guide — Tsukiji Outer Market",
+      "url": "https://www.gotokyo.org/en/spot/65/",
+      "excerpt": "Tsukiji Outer Market in Tsukiji has independent seafood shops and food stalls. Hours and prices vary by shop."
+    },
+    {
+      "id": "S902",
+      "title": "The Official Tokyo Travel Guide — Tokyo itinerary",
+      "url": "https://www.gotokyo.org/en/story/walks-and-tours/tokyo-itinerary/index.html",
+      "excerpt": "The Tokyo itinerary includes Sensō-ji in Asakusa, Ueno Park, Tokyo National Museum and Omotesando near Harajuku."
+    },
+    {
+      "id": "S903",
+      "title": "The Official Tokyo Travel Guide — Explore around Tokyo Tower",
+      "url": "https://www.gotokyo.org/en/story/walks-and-tours/tokyo-tower/",
+      "excerpt": "Visit Tokyo Tower in Minato for skyline views or stop for tea at the teahouse in Hama-rikyū Gardens in Shiodome."
+    },
+    {
+      "id": "S904",
+      "title": "Tokyo Dome City — Facility list",
+      "url": "https://www.tokyo-dome.co.jp/en/facilities/?lang=en",
+      "excerpt": "The complex includes an amusement park, bowling, an indoor sports facility and several theatres."
+    }
+  ]
+}

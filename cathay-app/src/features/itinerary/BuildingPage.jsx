@@ -20,12 +20,12 @@ const BUILD_MS = 3000; // a visible build, like the prototype
 
 // Builds the itinerary from everyone's saved preferences, then opens it. A plan that already
 // exists opens straight away, so edits are never overwritten. If someone has not finished
-// swiping, it says who we are waiting for.
+// picking, it says who we are waiting for.
 export default function BuildingPage() {
   const { groupId } = useParams();
   const navigate = useNavigate();
   const copy = COPY.itin;
-  const prefs = useAsync(() => getPreferences(groupId), [groupId]);
+  const prefs = useAsync(() => getPreferences(groupId, { prepare: false }), [groupId]);
   const [failure, setFailure] = useState(null);
   const [attempt, setAttempt] = useState(0);
   useDocumentTitle(copy.title);
@@ -115,7 +115,7 @@ export default function BuildingPage() {
               <span className={`building__avatar avatar-tone--${avatarTone(member.userId)}`} aria-hidden="true">
                 {member.initial}
               </span>
-              <span className="building__who">{member.ready ? copy.finishedSwiping(member.name) : `${member.name} is still swiping`}</span>
+              <span className="building__who">{member.ready ? copy.finishedPicking(member.name) : `${member.name} is still picking`}</span>
               <img src={member.ready ? '/assets/ui-check-teal.svg' : '/assets/ui-clock.svg'} alt="" />
             </li>
           ))}

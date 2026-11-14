@@ -5,7 +5,7 @@ from server.app import app
 from server.itinerary import pipeline
 from server.itinerary.checks import deterministic_checks, opening_window
 from server.itinerary.curator import normalize_cards
-from server.itinerary.llm import AgentError, NothingToPlan, PlanConstraints, parse_json_response
+from server.itinerary.llm import AgentError, PlanConstraints, parse_json_response
 from server.itinerary.schedule import normalize_schedule, sanitize_plan_cards
 
 from .conftest import CONTEXT, DATES, REVIEW_OK, SOURCES, FakeLLM, FakeSearch, good_plan, raw_card, voted_cards
@@ -201,12 +201,46 @@ def test_scheduler_prompt_tells_the_model_to_include_liked_places_and_the_defaul
     assert pipeline.config.llm_timeout() == 60.0
 
 
-def test_plan_with_nothing_liked_is_rejected():
+def test_plan_without_likes_can_schedule_neutral_ideas_but_not_passed_ideas():
     cards = voted_cards()
-    for c in cards:
-        c["like_count"] = 0
-    with pytest.raises(NothingToPlan):
-        pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([]))
+    for card in cards:
+        card["like_count"] = 0
+    cards[1]["pass_count"] = 1
+    draft = good_plan()
+    draft["days"][1]["stops"].insert(0, {
+        "type": "activity", "card_id": cards[1]["id"], "start": "08:00", "minutes": 60,
+    })
+    plan = pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([draft, REVIEW_OK]))["plan"]
+    assert f"place-{cards[1]['id']}" not in plan["stops"]
+    assert plan["stops"][f"place-{cards[0]['id']}"]["source"] == "suggested"
+
+
+def test_plan_with_every_idea_passed_can_use_meals_and_free_time():
+    cards = [{**card, "like_count": 0, "pass_count": 1} for card in voted_cards()]
+    draft = good_plan()
+    for day in draft["days"]:
+        day["stops"] = [stop for stop in day["stops"] if stop["type"] != "activity"]
+    plan = pipeline.run_plan(CONTEXT, cards, SOURCES, "m", llm=FakeLLM([draft, REVIEW_OK]))["plan"]
+    assert plan["stops"] and all("placeId" not in stop for stop in plan["stops"].values())
+
+
+def test_optional_choices_still_require_every_traveller_to_finish():
+    from server.app import PlannerError, cards_for_plan
+
+    inputs = {
+        "destination": "Tokyo",
+        "members": [{"user_id": "a", "preferences_saved_at": "t"}, {"user_id": "b", "preferences_saved_at": None}],
+        "votes": [{"user_id": "b", "place_id": "tokyo-idea-art", "choice": "pass"}],
+    }
+    deck = {"legacy": False, "places": [{"id": "food_1", "name": "Sushi shop", "category_key": "food"}]}
+    with pytest.raises(PlannerError) as error:
+        cards_for_plan(deck, inputs)
+    assert error.value.code == "not_ready"
+    inputs["members"][1]["preferences_saved_at"] = "t"
+    cards = {card["id"]: card for card in cards_for_plan(deck, inputs)}
+    assert len(cards) == 8 and "tokyo-idea-food" not in cards
+    assert cards["food_1"]["pass_count"] == 0
+    assert cards["tokyo-idea-art"]["pass_count"] == 1 and cards["tokyo-idea-art"]["like_count"] == 0
 
 
 def test_rules_catch_closed_day_and_early_start():
@@ -315,6 +349,22 @@ class FakeStore:
 
     def release(self, token):
         pass
+
+
+def test_plan_endpoint_rejects_the_group_until_everyone_finishes(monkeypatch):
+    from fastapi.testclient import TestClient
+    from server import app as app_module
+
+    group = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    store = FakeStore(None)
+    store.inputs["members"].append({"user_id": "b", "preferences_saved_at": None})
+    monkeypatch.setattr(app_module, "TripStore", lambda *_: store)
+    monkeypatch.setenv("VITE_SUPABASE_URL", "http://example.test")
+    client = TestClient(app_module.app)
+    response = client.post("/api/planner", json={"groupId": group, "action": "plan"},
+                           headers={"Authorization": "Bearer test"})
+    assert response.status_code == 422 and response.json()["code"] == "not_ready"
+    assert not store.finished
 
 
 def test_a_saved_plan_is_reused_only_while_its_inputs_are_unchanged(monkeypatch):

@@ -16,6 +16,7 @@ import StateMessage from '../../components/ui/StateMessage';
 import { useToast } from '../../components/ui/Toast';
 import { COPY } from '../../data/copy';
 import { fallbackTo } from '../../data/photos';
+import { groupPreferencePlaces } from '../../data/preferenceCategories';
 import { TRIP_PHOTO } from '../../data/trip';
 import { copyText } from '../../hooks/copyText';
 import { useAsync } from '../../hooks/useAsync';
@@ -25,7 +26,7 @@ import { memberSummary, orderedMembers } from './groupSelectors';
 import './MembersPage.css';
 
 // `details` is the Group details page of Flow D: the same page, with each member's status shown as
-// Ready (saved itinerary picks) or Choosing, and the call to pick itinerary preferences at the end.
+// Ready or Still picking, and the call to pick itinerary preferences at the end.
 export default function MembersPage({ details = false }) {
   const { groupId } = useParams();
   const navigate = useNavigate();
@@ -117,8 +118,9 @@ export default function MembersPage({ details = false }) {
     await onCopy();
   };
 
-  const places = details ? prefs.data.places : [];
-  const swipePath = `/groups/${group.id}/preferences/${places[0]?.id ?? 'start'}`;
+  const categories = details ? groupPreferencePlaces(prefs.data.places) : [];
+  const preferencesPath = `/groups/${group.id}/preferences`;
+  const preferencesEntry = prefs.data?.saved ? `${preferencesPath}/saved` : preferencesPath;
   // Where the viewer is in the journey (their own flight status, before it is relabelled Ready/Choosing).
   const flightStatus = group.members.find((m) => m.userId === group.viewerId)?.status;
   const viewer = members.find((m) => m.isViewer);
@@ -226,9 +228,9 @@ export default function MembersPage({ details = false }) {
             <Button size="lg" to={`/groups/${group.id}/itinerary`}>
               {COPY.prefs.viewItinerary}
             </Button>
-            <Button size="lg" variant="secondary" to={swipePath}>
+            <Button size="lg" variant="secondary" to={preferencesEntry}>
               <img className="gd__button-icon" src="/assets/ui-heart-teal.svg" alt="" />
-              {COPY.prefs.start}
+              {prefs.data.saved ? COPY.prefs.viewReadiness : COPY.prefs.start}
             </Button>
           </NextStep>
         ) : (
@@ -240,20 +242,20 @@ export default function MembersPage({ details = false }) {
                 </span>
                 <h3 className="gd__callout-title">{COPY.prefs.calloutTitle}</h3>
               </div>
-              <p className="gd__callout-text">{places.length ? COPY.prefs.calloutShort(places.length) : COPY.prefs.researchLead}</p>
+              <p className="gd__callout-text">{COPY.prefs.calloutShort}</p>
               <ul className="gd__photos">
-                {places.map((place) => (
-                  <li key={place.id}>
+                {categories.filter(({ places }) => places.length).map(({ id, places: [place] }) => (
+                  <li key={id}>
                     <img src={place.thumb} alt="" referrerPolicy="no-referrer" onError={fallbackTo(place.category_key)} />
-                    <span>{place.category}</span>
+                    <span>{place.category.split(' & ')[0]}</span>
                   </li>
                 ))}
               </ul>
               <p className="gd__callout-meta">{COPY.prefs.calloutMeta}</p>
             </NextStep>
-            <Button size="lg" to={swipePath}>
+            <Button size="lg" to={preferencesEntry}>
               <img className="gd__button-icon" src="/assets/ui-heart-light.svg" alt="" />
-              {COPY.prefs.start}
+              {prefs.data.saved ? COPY.prefs.viewReadiness : COPY.prefs.start}
             </Button>
           </>
         )
