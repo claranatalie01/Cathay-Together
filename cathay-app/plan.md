@@ -277,6 +277,7 @@ Keep provider secrets and administrative database keys server-side. The browser 
 **Done when:** two devices show the same saved/readiness state and changing a saved vote changes the next generated result.
 
 - [x] Show all flight numbers and connection details in Group combinations. Advance through activity preferences on swipe, then review and explicitly save the choices.
+- [x] Summarise the balanced flight combination in one Recommended card with the traveller's fare and group timing gap. Keep the comparison sheet under View more.
 
 ### DEV-05 · Conflict-aware itinerary scheduling · P0 · After DEV-03/DEV-04
 

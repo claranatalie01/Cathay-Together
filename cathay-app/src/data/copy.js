@@ -186,17 +186,14 @@ export const COPY = {
     },
     suggest: {
       title: 'Group combinations',
-      barNobody: (names) => `For you, ${names}`,
-      barPicked: (names, count) => `${names} ${count === 1 ? 'has' : 'have'} picked · see what lines up`,
+      recommended: 'Recommended',
+      yourFare: 'Your fare from',
+      yourSelectedFare: 'Your selected fare',
+      viewMore: 'View more',
       help: (cabinLabel) => `Everyone still picks their own flight. Anyone who has picked stays as they picked; the rest are shown in ${cabinLabel}.`,
       sections: {
         outbound: { cheapest: 'Cheapest', closest: 'Closest landing', balanced: 'Best of both' },
         return: { cheapest: 'Cheapest', closest: 'Closest take-off', balanced: 'Best of both' },
-      },
-      // The same labels as a tag on the viewer's own flight card.
-      tags: {
-        outbound: { cheapest: 'Cheapest for group', closest: 'Closest landing', balanced: 'Best of both' },
-        return: { cheapest: 'Cheapest for group', closest: 'Closest take-off', balanced: 'Best of both' },
       },
       others: 'Other combinations',
       othersHelp: 'Best balance of price and time first.',
@@ -240,7 +237,8 @@ export const COPY = {
       pickedHint: 'Search for your own flights. Other members search from their airports.',
     },
     results: {
-      count: (n) => `${n} ${n === 1 ? 'Result' : 'Results'}`,
+      loadingRecommendation: 'Finding a recommended flight…',
+      flightOptions: 'Flight options',
       datesLabel: 'Departure date',
       cabinLabel: 'Cabin class',
       unavailable: 'Not available',

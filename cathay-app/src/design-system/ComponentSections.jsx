@@ -153,6 +153,7 @@ function FlightBookingBlock() {
         <Spec label="Slider"><Slider id="ds-slider" label="Group timing window" valueText={`Within ${hours} ${hours === 1 ? 'hour' : 'hours'}`} help="Show flights that land in Tokyo, and leave Tokyo, within this time of your friends." min={1} max={6} value={hours} onChange={setHours} /></Spec>
         <Spec label="Price"><Price amount={6691} /></Spec>
         <Spec label="Flight card"><FlightCard flight={SAMPLE_FLIGHT} to="/design-system" /></Spec>
+        <Spec label="Recommended group flight"><FlightCard flight={SAMPLE_FLIGHT} match={{ tone: 'within', text: 'Recommended' }} gap="Land together" fareLabel="Your fare from" to="/design-system" /></Spec>
         <Spec label="Flight card, within the window"><FlightCard flight={SAMPLE_FLIGHT} match={{ tone: 'within', text: 'Within 1h of everyone' }} to="/design-system" /></Spec>
         <Spec label="Flight card, outside the window"><FlightCard flight={SAMPLE_FLIGHT} match={{ tone: 'outside', text: 'Outside your window +2h' }} to="/design-system" /></Spec>
         <Spec label="Flight card, hover"><FlightCard className="is-hover" flight={{ ...SAMPLE_FLIGHT, lowest: true, seatsLeft: null }} to="/design-system" /></Spec>

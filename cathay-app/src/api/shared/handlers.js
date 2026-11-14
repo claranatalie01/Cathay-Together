@@ -350,7 +350,7 @@ const flightRoutes = [
     };
   }],
 
-  // GET /groups/:id/flights/suggestions?direction=&cabin=
+  // GET /groups/:id/flights/suggestions?direction=&date=&cabin=
   ['GET', '/groups/:id/flights/suggestions', async ({ params, query }) => {
     const { userId, home, window, group } = await flightContext(params);
     const direction = query.direction === 'return' ? 'return' : 'outbound';
@@ -361,7 +361,12 @@ const flightRoutes = [
       home: m.airport,
       chosen: group.selections[m.userId]?.[direction],
     }));
-    const body = suggestionsFor({ members, direction, date: direction === 'outbound' ? window.start : window.end, cabin });
+    const date = query.date || (direction === 'outbound' ? window.start : window.end);
+    const dates = direction === 'outbound' ? OUTBOUND_DATES : RETURN_DATES;
+    if (!dates.includes(date) || !isAvailable(date)) {
+      throw new ApiError(422, 'date_unavailable', 'No flights on that date. Choose another day.');
+    }
+    const body = suggestionsFor({ members, direction, date, cabin });
     return { status: 200, body: { ...body, viewerId: userId } };
   }],
 

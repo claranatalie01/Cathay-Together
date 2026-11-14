@@ -216,13 +216,13 @@ export function suggestionsFor({ members, direction, date, cabin = 'economy', ot
   const catalogue = members.map((member) => {
     if (member.chosen) {
       const c = member.chosen;
-      const flight = { id: c.flightId, flightNo: c.flightNo, time: direction === 'outbound' ? c.arriveTime : c.departTime, price: c.price, cabinLabel: c.cabinLabel, ...extrasOf(c, direction) };
+      const flight = { ...c, id: c.flightId };
       return { member, flights: [flight], instants: { [c.flightId]: meetingInstant(c, direction) }, fixed: true };
     }
     const list = flightsFor({ home: member.home, direction, date, cabin });
     return {
       member,
-      flights: list.map((f) => ({ id: f.id, flightNo: f.flightNo, time: direction === 'outbound' ? f.arriveTime : f.departTime, price: f.priceFrom, ...extrasOf(f, direction) })),
+      flights: list.map((flight) => ({ ...flight, price: flight.priceFrom })),
       instants: Object.fromEntries(list.map((f) => [f.id, meetingInstant(f, direction)])),
       fixed: false,
     };
@@ -247,10 +247,14 @@ export function suggestionsFor({ members, direction, date, cabin = 'economy', ot
         airport: member.home,
         flightId: f.id,
         flightNo: f.flightNo,
-        time: f.time,
-        nextDay: f.nextDay,
-        stops: f.stops,
-        via: f.via,
+        time: direction === 'outbound' ? f.arriveTime : f.departTime,
+        from: f.from,
+        to: f.to,
+        date: f.date,
+        departTime: f.departTime,
+        arriveTime: f.arriveTime,
+        duration: f.duration,
+        ...extrasOf(f, direction),
         price: p.price,
         extra: p.extra,
         fixed,
@@ -288,6 +292,7 @@ export function makeSelection({ home, flightId, cabin, fare }) {
     date: flight.date,
     departTime: flight.departTime,
     arriveTime: flight.arriveTime,
+    duration: flight.duration,
     arriveDate: flight.arriveDate,
     departAt: flight.departAt,
     arriveAt: flight.arriveAt,

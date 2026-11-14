@@ -26,8 +26,9 @@ export function getFlights(groupId, { direction = 'outbound', date, cabin } = {}
 // balance first. Members who have already chosen are kept as chosen; `cabin` applies to the rest.
 // params: { direction: 'outbound' | 'return', cabin?: 'economy' | 'premium' | 'business' }.
 // Resolves with { featured: [{ labels, total, spreadMinutes, picks }], others: [...same without labels] }.
-export function getSuggestions(groupId, { direction = 'outbound', cabin } = {}) {
+export function getSuggestions(groupId, { direction = 'outbound', date, cabin } = {}) {
   const query = new URLSearchParams({ direction });
+  if (date) query.set('date', date);
   if (cabin) query.set('cabin', cabin);
   return request('GET', `/groups/${enc(groupId)}/flights/suggestions?${query}`);
 }

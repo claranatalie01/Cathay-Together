@@ -221,6 +221,10 @@ Response `200`:
 `dates[].priceFrom` is the lowest Economy fare that day, or `null` when the day is not available.
 `priceFrom` on a flight already includes the cabin's `delta`. Errors: `422 date_unavailable`.
 
+### `GET /groups/:id/flights/suggestions?direction=&date=&cabin=`
+
+Combinations retain each member's saved selection. Unselected members use flights on the requested date, which defaults to the trip's outbound or return date. Each option includes the group `total`, timing gap in `spreadMinutes`, and each member's flight details and personal `price`. The results screen uses the option labelled `balanced` and shows the viewer's price. The comparison sheet keeps the group totals.
+
 ### `GET /groups/:id/flights/:flightId/fares?cabin=`
 
 Fare types for one flight. Response `200`:

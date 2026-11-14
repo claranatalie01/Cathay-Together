@@ -6,6 +6,7 @@ import PhotoHeader from '../../components/domain/PhotoHeader';
 import BottomNav from '../../components/layout/BottomNav';
 import Screen from '../../components/layout/Screen';
 import StatusBar from '../../components/layout/StatusBar';
+import Button from '../../components/ui/Button';
 import ErrorState from '../../components/ui/ErrorState';
 import LoadingState from '../../components/ui/LoadingState';
 import SegmentedControl from '../../components/ui/SegmentedControl';
@@ -15,9 +16,9 @@ import { WING_PHOTO } from '../../data/photos';
 import { useAsync } from '../../hooks/useAsync';
 import { useLastData } from '../../hooks/useLastData';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
-import { cabinSub, hkd, routeTitle, spanLabel } from './flightFormat';
+import { cabinSub, hkd, routeTitle } from './flightFormat';
 import Sheet from '../../components/ui/Sheet';
-import GroupCombinations, { GroupBar, hasGroup, labelsByFlight } from './SuggestionPanel';
+import GroupCombinations, { RecommendedGroupFlight, hasGroup } from './SuggestionPanel';
 import './FlightResultsPage.css';
 
 // Flights for one direction. The chosen day and cabin live in the URL (?date=&cabin=), so Back,
@@ -35,9 +36,8 @@ export default function FlightResultsPage({ direction = 'outbound' }) {
     [groupId, direction, date, cabin],
   );
 
-  // The group's possible combinations. They feed the bar, the sheet and the tags on the cards.
-  // If this fails the page simply shows the plain flight list.
-  const suggestions = useAsync(() => getSuggestions(groupId, { direction, cabin }), [groupId, direction, cabin]);
+  // The group's possible combinations feed the recommended card and comparison sheet.
+  const suggestions = useAsync(() => getSuggestions(groupId, { direction, date, cabin }), [groupId, direction, date, cabin]);
   const group = useLastData(suggestions.status, suggestions.data);
   const [sheetOpen, setSheetOpen] = useState(false);
   const closeSheet = useCallback(() => setSheetOpen(false), []);
@@ -77,33 +77,14 @@ export default function FlightResultsPage({ direction = 'outbound' }) {
       editLabel={copy.editSearch}
     />
   );
-  const loading = status === 'loading';
-
-  // Group timing: once someone else has chosen, flights are listed closest to the group first,
-  // and each says how far apart the group would land (or take off).
-  const timing = COPY.flights.timing;
-  const hasTiming = shown.groupWindow.others.length > 0;
-  const intro = hasTiming ? timing.intro[direction] : null;
-  const flights = hasTiming ? [...shown.flights].sort((a, b) => a.timing.spreadMinutes - b.timing.spreadMinutes) : shown.flights;
-  const sections = [{ id: 'all', flights, heading: null }];
-  // A tag on the flights that are part of a suggestion, and a line saying how the flight sits
-  // against the people who have already picked.
-  const showGroup = hasGroup(group) && group.direction === direction;
-  const tags = showGroup ? labelsByFlight(group) : {};
-  const matchFor = (flight) =>
-    tags[flight.id] ? { tone: 'within', text: tags[flight.id].map((id) => COPY.flights.suggest.tags[direction][id]).join(' · ') } : null;
-  const gapFor = (flight) => {
-    if (!flight.timing) return null;
-    const { deltaMinutes, spreadMinutes } = flight.timing;
-    if (deltaMinutes === null) {
-      const text = timing.withGroup[direction];
-      return spreadMinutes === 0 ? text.same : text.apart(spanLabel(spreadMinutes));
-    }
-    const text = timing.withOne[direction];
-    const name = shown.groupWindow.others[0].name;
-    if (deltaMinutes === 0) return text.same(name);
-    return deltaMinutes > 0 ? text.after(spanLabel(deltaMinutes), name) : text.before(spanLabel(-deltaMinutes), name);
-  };
+  const showGroup = hasGroup(group) && group.direction === direction && group.date === shown.date && group.cabin === shown.cabin;
+  const waitingForRecommendation = !showGroup && (status === 'loading' || suggestions.status === 'loading');
+  // Solo travellers (or trips with no valid combination) can still choose a flight.
+  const personalRecommendation = !showGroup && !waitingForRecommendation
+    ? shown.flights.reduce((best, flight) => !best || flight.priceFrom < best.priceFrom ? flight : best, null)
+    : null;
+  const suggest = COPY.flights.suggest;
+  const openSheet = () => setSheetOpen(true);
   const flightLink = (flight) => `/groups/${groupId}/flights/${direction}/${flight.id}/fares?cabin=${shown.cabin}`;
 
   return frame(
@@ -121,7 +102,7 @@ export default function FlightResultsPage({ direction = 'outbound' }) {
           disabled: d.priceFrom === null,
         }))}
       />
-      <main className="results" id="flight-results" aria-busy={loading || undefined}>
+      <main className="results" id="flight-results" aria-busy={waitingForRecommendation || undefined}>
         <SegmentedControl
           name="cabin"
           label={copy.cabinLabel}
@@ -129,36 +110,29 @@ export default function FlightResultsPage({ direction = 'outbound' }) {
           onChange={(id) => update({ cabin: id })}
           options={shown.cabins.map((c) => ({ id: c.id, label: c.label, sub: cabinSub(c) }))}
         />
-        {showGroup && <GroupBar data={group} onOpen={() => setSheetOpen(true)} />}
-        <p className="results__count" role="status">
-          {copy.count(shown.flights.length)}
-        </p>
-        {intro && <p className="results__intro">{intro}</p>}
-        {shown.flights.length === 0 ? (
-          <p className="results__empty">{copy.empty}</p>
-        ) : (
-          <div className={`results__groups${loading ? ' is-loading' : ''}`}>
-            {sections.map((section) => (
-              <section className="results__group" key={section.id} aria-labelledby={`group-${section.id}`}>
-                {section.heading && (
-                  <h2 className={`results__heading results__heading--${section.id === 'within' ? 'within' : 'outside'}`} id={`group-${section.id}`}>
-                    {section.heading}
-                  </h2>
-                )}
-                <ul className="results__list">
-                  {section.flights.map((flight) => (
-                    <li key={flight.id}>
-                      <FlightCard flight={flight} match={matchFor(flight)} gap={gapFor(flight)} to={flightLink(flight)} />
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </div>
+        {showGroup && <RecommendedGroupFlight data={group} groupId={groupId} onOpen={openSheet} />}
+        {waitingForRecommendation && <p className="results__message" role="status">{copy.loadingRecommendation}</p>}
+        {personalRecommendation && (
+          <section className="group-recommendation" aria-label={copy.flightOptions}>
+            <FlightCard flight={personalRecommendation} to={flightLink(personalRecommendation)}
+              match={{ tone: 'within', text: suggest.recommended }} fareLabel={suggest.yourFare} />
+            <Button className="group-recommendation__more" variant="secondary" onClick={openSheet} aria-haspopup="dialog">
+              {suggest.viewMore}
+              <img src="/assets/ui-chevron-right.svg" alt="" />
+            </Button>
+          </section>
         )}
+        {!showGroup && !waitingForRecommendation && !personalRecommendation && <p className="results__message">{copy.empty}</p>}
       </main>
-      <Sheet open={sheetOpen && showGroup} onClose={closeSheet} title={COPY.flights.suggest.title} titleId="group-combinations-title">
-        {showGroup && <GroupCombinations data={group} groupId={groupId} direction={direction} cabinLabel={shown.cabins.find((c) => c.id === shown.cabin)?.label ?? ''} />}
+      <Sheet open={sheetOpen && Boolean(showGroup || personalRecommendation)} onClose={closeSheet}
+        title={showGroup ? suggest.title : copy.flightOptions} titleId="flight-options-title">
+        {showGroup ? (
+          <GroupCombinations data={group} groupId={groupId} direction={direction} cabinLabel={shown.cabins.find((c) => c.id === shown.cabin)?.label ?? ''} />
+        ) : (
+          <ul className="results__option-list">
+            {shown.flights.map((flight) => <li key={flight.id}><FlightCard flight={flight} to={flightLink(flight)} /></li>)}
+          </ul>
+        )}
       </Sheet>
     </>,
     header,

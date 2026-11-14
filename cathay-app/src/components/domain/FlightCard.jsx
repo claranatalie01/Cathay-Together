@@ -6,11 +6,13 @@ import './FlightCard.css';
 // price on the right. The whole card is one link to that flight's fares.
 // `match` is a badge above the times: { tone: 'within' | 'outside', text: 'Best of both' }.
 // `gap` is a plain line under the flight number: 'Lands 1h 30m after Clara'.
-export default function FlightCard({ flight, to, match = null, gap = null, className = '' }) {
-  const label = `${flight.departTime} ${flight.from} to ${flight.arriveTime} ${flight.to}, ${flight.duration}, ${flight.flightNo}${flight.via ? `, via Hong Kong, ${flight.via.layoverLabel} wait` : ''}, from HKD ${flight.priceFrom.toLocaleString('en-US')} per adult${match ? `, ${match.text}` : ''}${gap ? `, ${gap}` : ''}`;
-  const note = flight.lowest ? 'Lowest Fare' : flight.seatsLeft ? `${flight.seatsLeft} Seats Left` : null;
+export default function FlightCard({ flight, to, match = null, gap = null, fareLabel, className = '' }) {
+  const priceLabel = fareLabel ?? 'Per Adult From';
+  const label = `${flight.departTime} ${flight.from} to ${flight.arriveTime} ${flight.to}, ${flight.duration}, ${flight.flightNo}${flight.via ? `, via Hong Kong, ${flight.via.layoverLabel} wait` : ''}, ${priceLabel}: HKD ${flight.priceFrom.toLocaleString('en-US')}${match ? `, ${match.text}` : ''}${gap ? `, ${gap}` : ''}`;
+  const note = fareLabel ? null : flight.lowest ? 'Lowest Fare' : flight.seatsLeft ? `${flight.seatsLeft} Seats Left` : null;
+  const Card = to ? Link : 'article';
   return (
-    <Link className={`flight-card ${className}`.trim()} to={to} aria-label={label}>
+    <Card className={`flight-card ${className}`.trim()} {...(to ? { to, 'aria-label': label } : {})}>
       <span className="flight-card__trip">
         {match && (
           <span className={`flight-card__match flight-card__match--${match.tone}`}>
@@ -46,9 +48,9 @@ export default function FlightCard({ flight, to, match = null, gap = null, class
       <span className="flight-card__fare">
         {note && <span className="flight-card__note">{note}</span>}
         <Price amount={flight.priceFrom} className="flight-card__price" />
-        <span className="flight-card__per">Per Adult From</span>
-        <img className="flight-card__more" src="/assets/ui-dots-dark.svg" alt="" />
+        <span className="flight-card__per">{priceLabel}</span>
+        {to && <img className="flight-card__more" src="/assets/ui-dots-dark.svg" alt="" />}
       </span>
-    </Link>
+    </Card>
   );
 }

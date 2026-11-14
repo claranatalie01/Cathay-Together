@@ -1,43 +1,37 @@
 import { useState } from 'react';
 import Button from '../../components/ui/Button';
+import FlightCard from '../../components/domain/FlightCard';
 import { COPY } from '../../data/copy';
 import { hkd, spanLabel } from './flightFormat';
 import './SuggestionPanel.css';
 
 const STEP = 5;
 
-// "Gaudi", "Gaudi and Kabe", "Gaudi, Kabe and Dana".
-const nameList = (names) => (names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
-
 // True when the suggestions hold something worth showing: a group of two or more.
 export const hasGroup = (data) => Boolean(data && data.featured.length > 0 && data.featured[0].picks.length >= 2);
 
-// Which labels the viewer's own flights carry: { [flightId]: ['cheapest', 'balanced'] }.
-export function labelsByFlight(data) {
-  const out = {};
-  if (!hasGroup(data)) return out;
-  data.featured.forEach((option) => {
-    const mine = option.picks.find((p) => p.userId === data.viewerId);
-    if (!mine) return;
-    out[mine.flightId] = [...new Set([...(out[mine.flightId] ?? []), ...option.labels])];
-  });
-  return out;
-}
-
-// The one-line bar above the flight list. Opens the sheet with the group's combinations.
-export function GroupBar({ data, onOpen }) {
+export function RecommendedGroupFlight({ data, groupId, onOpen }) {
   const copy = COPY.flights.suggest;
-  const others = data.featured[0].picks.filter((p) => p.userId !== data.viewerId);
-  const picked = others.filter((p) => p.fixed).map((p) => p.name);
+  const recommendation = data.featured.find((option) => option.labels.includes('balanced'));
+  const mine = recommendation?.picks.find((pick) => pick.userId === data.viewerId);
+  const gap = recommendation ? spreadText(recommendation, data.direction) : null;
   return (
-    <button className="group-bar" type="button" onClick={onOpen} aria-haspopup="dialog">
-      <img className="group-bar__icon" src="/assets/447b4.svg" alt="" />
-      <span className="group-bar__text">
-        <span className="group-bar__title">{copy.title}</span>
-        <span className="group-bar__sub">{picked.length ? copy.barPicked(nameList(picked), picked.length) : copy.barNobody(nameList(others.map((p) => p.name)))}</span>
-      </span>
-      <img className="group-bar__chevron" src="/assets/ui-chevron-right.svg" alt="" />
-    </button>
+    <section className="group-recommendation" aria-label={copy.title}>
+      {mine && (
+        <FlightCard
+          flight={{ ...mine, priceFrom: mine.price }}
+          to={mine.fixed ? undefined : `/groups/${groupId}/flights/${data.direction}/${mine.flightId}/fares?cabin=${data.cabin}`}
+          match={{ tone: 'within', text: copy.recommended }}
+          gap={gap[0].toUpperCase() + gap.slice(1)}
+          fareLabel={mine.fixed ? copy.yourSelectedFare : copy.yourFare}
+        />
+      )}
+      <Button className="group-recommendation__more" variant="secondary" onClick={onOpen}
+        aria-haspopup="dialog">
+        {copy.viewMore}
+        <img src="/assets/ui-chevron-right.svg" alt="" />
+      </Button>
+    </section>
   );
 }
 
