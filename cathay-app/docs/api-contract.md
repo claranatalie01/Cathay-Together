@@ -54,7 +54,7 @@ as "This invitation isn't available".
   "destination": "Tokyo, Japan",
   "datesLabel": "Nov 21–24, 2026",
   "code": "VFX37K",
-  "inviteUrl": "https://cathay-together.vercel.app/invite/VFX37K",
+  "inviteUrl": "https://cathay-hackathon-2026.vercel.app/invite/VFX37K",
   "creatorId": "11111111-1111-4111-8111-111111111111",
   "inviteCopied": false,
   "members": [
