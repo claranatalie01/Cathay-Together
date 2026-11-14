@@ -31,6 +31,7 @@ import { withCategoryIdeas } from '../../data/preferenceCategories';
 import { responseFor as preferencesBody } from './preferenceData';
 import { planSharedTrip, warmTripSuggestions } from './planner';
 import { retimeResearchedPlan } from './itineraryEdits';
+import { personalChangesFor, replaceItineraryStop, restoreGroupStop, withPersonalChanges } from './personalItinerary';
 
 const UNREACHABLE = () => new ApiError(503, 'service_unavailable', 'The service is temporarily unavailable.');
 
@@ -62,6 +63,8 @@ const REFUSALS = {
   no_flights: [409, 'Choose your outbound and return flights first.'],
   already_booked: [409, 'You have already booked this trip.'],
   hold_expired: [410, 'Your payment time ran out. Start again to hold your fare.'],
+  itinerary_changed: [409, 'The itinerary changed. Reopen the edit and try again.'],
+  itinerary_not_built: [404, 'The itinerary has not been built yet.'],
   choices_incomplete: [422, 'Choose Pass or Like for every suggestion first.'],
 };
 
@@ -464,9 +467,15 @@ async function tripContext(params, want = {}) {
       if (group.preferences[v.user_id] && ids.has(v.place_id)) group.preferences[v.user_id].choices[v.place_id] = v.choice;
     });
   }
+  let itineraryRevision;
+  let personalRows = [];
   if (want.itinerary) {
-    const [saved] = await rows(supabase.from('itineraries').select('plan').eq('group_id', id));
+    const [saved] = await rows(supabase.from('itineraries').select('plan, updated_at').eq('group_id', id));
     group.itinerary = saved?.plan ?? null;
+    itineraryRevision = saved?.updated_at;
+    if (saved && want.personal) {
+      personalRows = await rows(supabase.from('itinerary_personal_changes').select('user_id, changes, updated_at').eq('group_id', id));
+    }
   }
   const names = Object.fromEntries(Object.values(people).map((p) => [p.id, p.name]));
   return {
@@ -478,6 +487,8 @@ async function tripContext(params, want = {}) {
     names,
     places,
     deck,
+    itineraryRevision,
+    personalRows,
     user: { id: userId },
     dates: datesBetween(raw.startDate, raw.endDate),
     votes: want.votes ? votesFor(group, names, places) : null,
@@ -503,13 +514,16 @@ const bookingAction = (name) => async ({ params }) => {
   return { status: 200, body: bookingBody(await tripContext(params), record) };
 };
 
-const saveItinerary = async (ctx) => {
+const itineraryOptions = { votes: true, itinerary: true, personal: true };
+const changedItinerary = () => new ApiError(409, 'itinerary_changed', REFUSALS.itinerary_changed[1]);
+
+const saveItinerary = async (ctx, plan = ctx.group.itinerary) => {
   const { data, error } = await ctx.supabase
     .from('itineraries')
-    .update({ plan: ctx.group.itinerary, updated_by: ctx.userId, updated_at: new Date().toISOString() })
-    .eq('group_id', ctx.id).select('group_id').maybeSingle();
+    .update({ plan, updated_by: ctx.userId, updated_at: new Date(Math.max(Date.now(), Date.parse(ctx.itineraryRevision) + 1)).toISOString() })
+    .eq('group_id', ctx.id).eq('updated_at', ctx.itineraryRevision).select('group_id').maybeSingle();
   if (error) throw UNREACHABLE();
-  if (!data) throw new ApiError(404, 'itinerary_not_built', 'The itinerary is unavailable.');
+  if (!data) throw changedItinerary();
 };
 
 async function preferenceContext(params, prepare) {
@@ -581,31 +595,85 @@ const tripRoutes = [
   // POST /groups/:id/itinerary/build – the server plans from verified shared votes.
   ['POST', '/groups/:id/itinerary/build', async ({ params }) => {
     await planSharedTrip('plan', groupId(params));
-    const ctx = await tripContext(params, { votes: true, itinerary: true });
+    const ctx = await tripContext(params, itineraryOptions);
     return { status: 200, body: itineraryBody(ctx) };
   }],
 
-  // GET /groups/:id/itinerary
   ['GET', '/groups/:id/itinerary', async ({ params }) => {
-    const ctx = await tripContext(params, { votes: true, itinerary: true });
+    const ctx = await tripContext(params, itineraryOptions);
     return { status: 200, body: itineraryBody(ctx) };
   }],
 
-  // PUT /groups/:id/itinerary  { days: [{ date, stopIds }] } – remove and reorder stops
   ['PUT', '/groups/:id/itinerary', async ({ params, body }) => {
-    const ctx = await tripContext(params, { votes: true, itinerary: true });
-    const retime = ctx.group.itinerary?.builtBy === 'ai' ? (plan, days) => {
-      const free = groupFreeTime({ selections: ctx.group.selections, dates: ctx.dates, rules: RULES });
-      retimeResearchedPlan(plan, days, ctx.places, free);
-    } : undefined;
-    applyItineraryEdit(ctx.group.itinerary, body, { retime });
-    await saveItinerary(ctx);
-    return { status: 200, body: itineraryBody(ctx) };
+    const ctx = await tripContext(params, itineraryOptions);
+    if (!ctx.group.itinerary) throw new ApiError(404, 'itinerary_not_built', REFUSALS.itinerary_not_built[1]);
+    const own = ctx.personalRows.find((row) => row.user_id === ctx.userId);
+    const personal = body?.scope === 'personal';
+    // Keep the older days/stopIds endpoint working for existing callers.
+    if (body?.scope && body.scope !== 'group' && !personal) {
+      throw new ApiError(422, 'validation_failed', 'Choose who the change applies to.');
+    }
+    if (body?.scope && (body.groupRevision !== ctx.itineraryRevision ||
+      (personal && body.personalRevision !== (own?.updated_at ?? null)))) throw changedItinerary();
+
+    const shared = ctx.group.itinerary;
+    const before = personal ? withPersonalChanges(shared, own?.changes) : shared;
+    const plan = structuredClone(before);
+    const free = groupFreeTime({ selections: ctx.group.selections, dates: ctx.dates, rules: RULES });
+    const retime = plan.builtBy === 'ai' ? (edited, days) => retimeResearchedPlan(edited, days, ctx.places, free) : undefined;
+    const change = body?.change;
+    let changes;
+    if (change) {
+      const day = plan.days.find(({ date }) => date === change.date);
+      if (!day) throw new ApiError(422, 'invalid_edit', 'That day is unavailable.');
+      if (change.type === 'restore' && personal) {
+        changes = restoreGroupStop(own?.changes, day.date, change.stopId);
+      } else {
+        if (!day.stopIds.includes(change.stopId)) throw changedItinerary();
+        switch (change.type) {
+          case 'replace': {
+            const place = ctx.places.find(({ id }) => id === change.placeId);
+            if (!place) throw new ApiError(422, 'invalid_edit', 'That activity is unavailable.');
+            replaceItineraryStop(plan, day, change.stopId, place, ctx.places, free);
+            break;
+          }
+          case 'remove':
+          case 'move': {
+            const stopIds = day.stopIds.filter((id) => id !== change.stopId);
+            if (change.type === 'move') {
+              const index = day.stopIds.indexOf(change.stopId) + change.direction;
+              if (![1, -1].includes(change.direction) || index < 0 || index >= day.stopIds.length) {
+                throw new ApiError(422, 'invalid_edit', 'Move stops within the same day.');
+              }
+              stopIds.splice(index, 0, change.stopId);
+            }
+            applyItineraryEdit(plan, { days: plan.days.map((entry) => entry === day ? { ...entry, stopIds } : entry) }, { retime });
+            break;
+          }
+          default:
+            throw new ApiError(422, 'validation_failed', 'That edit is unavailable.');
+        }
+        if (personal) changes = personalChangesFor(own?.changes, before, plan, day.date);
+      }
+    } else if (!personal) {
+      applyItineraryEdit(plan, body, { retime });
+    } else {
+      throw new ApiError(422, 'validation_failed', 'Choose a stop to change.');
+    }
+
+    if (personal) {
+      await call(ctx.supabase, 'save_personal_itinerary', {
+        target_group: ctx.id, expected_group_revision: ctx.itineraryRevision,
+        expected_personal_revision: own?.updated_at ?? null, new_changes: changes,
+      });
+    } else {
+      await saveItinerary(ctx, plan);
+    }
+    return { status: 200, body: itineraryBody(await tripContext(params, itineraryOptions)) };
   }],
 
-  // GET /groups/:id/itinerary/stops/:stopId
   ['GET', '/groups/:id/itinerary/stops/:stopId', async ({ params }) => {
-    const ctx = await tripContext(params, { votes: true, itinerary: true });
+    const ctx = await tripContext(params, itineraryOptions);
     const initials = Object.fromEntries(Object.values(ctx.people).map((p) => [p.id, p.initial]));
     return { status: 200, body: stopBody(ctx, params.stopId, initials) };
   }],

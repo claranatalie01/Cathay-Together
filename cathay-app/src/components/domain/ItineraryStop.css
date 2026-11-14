@@ -170,3 +170,29 @@ a.stop:active,
 .stop__tools button:not(:disabled):active {
   opacity: var(--opacity-pressed);
 }
+
+.stop--read {
+  align-items: flex-start;
+  gap: var(--space-xs);
+}
+
+.stop__detail {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: var(--space-md);
+}
+
+.stop__edit {
+  min-width: var(--size-touch-target);
+  min-height: var(--size-touch-target);
+  padding: var(--space-xs);
+  color: var(--color-text-brand);
+  font-size: var(--text-caption-size);
+  font-weight: var(--weight-semibold);
+}
+
+.stop__tag.stop__personal {
+  color: var(--color-text-chip);
+  background: var(--color-surface-chip);
+}

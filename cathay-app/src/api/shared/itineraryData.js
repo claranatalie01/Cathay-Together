@@ -64,10 +64,13 @@ export function retimePlan(plan, days = plan.days) {
       const stop = plan.stops[id];
       const place = LEGACY_PLACES.find((p) => p.id === stop.placeId);
       return place
-        ? { id: `place-${place.id}`, kind: 'voted', minutes: place.visitMinutes, open: minutesOf(place.open) }
-        : { id: `suggested-${stop.suggestedId}`, kind: 'filler', minutes: stop.minutes, open: RULES.dayStart };
+        ? { id, kind: 'voted', minutes: place.visitMinutes, open: minutesOf(place.open) }
+        : { id, kind: 'filler', minutes: stop.minutes, open: RULES.dayStart };
     });
-    retimeDay({ day: d, items, ...plan.free, travel: travelBetweenStops }).forEach((timed) => Object.assign(plan.stops[timed.id], timesOf(timed)));
+    retimeDay({
+      day: d, items, ...plan.free,
+      travel: (from, to) => TRAVEL[plan.stops[from]?.placeId ?? placeIdOf(from)]?.[plan.stops[to]?.placeId ?? placeIdOf(to)],
+    }).forEach((timed) => Object.assign(plan.stops[timed.id], timesOf(timed)));
   });
 }
 
@@ -140,7 +143,9 @@ export function assemble({ plan, selection, votes, dates, places = LEGACY_PLACES
   const placeCount = days.reduce((n, d) => n + d.items.filter((i) => i.kind === 'place').length, 0);
   const totalCost = days.reduce((n, d) => n + d.totals.cost, 0);
   const totalTravel = days.reduce((n, d) => n + d.totals.travelMinutes, 0);
-  const maybe = plan.maybe.flatMap((id) => {
+  const scheduled = new Set(days.flatMap((day) => day.items.map((item) => item.placeId)));
+  const maybe = (plan.maybe ?? []).flatMap((id) => {
+    if (scheduled.has(id)) return [];
     const place = places.find((p) => p.id === id);
     return place ? [{ placeId: id, name: place.name, liked: votes[id]?.liked ?? 0, passed: votes[id]?.passed ?? 0, duration: place.duration, savedNote: place.savedNote }] : [];
   });

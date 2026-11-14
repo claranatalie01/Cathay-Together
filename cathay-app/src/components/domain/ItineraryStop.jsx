@@ -11,7 +11,7 @@ const minutesLabel = (m) => (m >= 60 ? `${Math.floor(m / 60)}${m % 60 ? ` hr ${m
 
 // One stop in a day: a booked flight (arrival teal, departure steel blue), a place with photo, or a
 // prompt to choose flights. In edit mode a place shows move and remove buttons instead of linking.
-export default function ItineraryStop({ stop, to, editing = false, canUp = false, canDown = false, onUp, onDown, onRemove, pickFlightsTo }) {
+export default function ItineraryStop({ stop, to, editing = false, canUp = false, canDown = false, onUp, onDown, onRemove, onReplace, onRestore, pickFlightsTo }) {
   const copy = COPY.itin;
   if (stop.kind === 'flight-missing') {
     const arrival = stop.id === 'flight-arrival';
@@ -57,6 +57,7 @@ export default function ItineraryStop({ stop, to, editing = false, canUp = false
           {stop.durationLabel ?? minutesLabel(stop.minutes)} · {stop.costLabel}
         </p>
         <p className="stop__text">{stop.description}</p>
+        {stop.myChange && <span className="stop__tag stop__personal">{copy.myChange}</span>}
         <span className={`stop__tag${stop.source === 'voted' ? ' is-voted' : ''}`}>
           {stop.source === 'voted' ? (
             <>
@@ -76,15 +77,18 @@ export default function ItineraryStop({ stop, to, editing = false, canUp = false
 
   if (!editing) {
     return (
-      <Link className="stop stop--place" to={to}>
-        {body}
-      </Link>
+      <div className="stop stop--place stop--read">
+        <Link className="stop__detail" to={to}>{body}</Link>
+        {onReplace && <button className="stop__edit" type="button" onClick={onReplace} aria-label={copy.editStop(stop.name)}>{copy.edit}</button>}
+      </div>
     );
   }
   return (
     <div className="stop stop--place stop--editing">
       {body}
       <div className="stop__tools">
+        {onReplace && <button type="button" onClick={onReplace} aria-label={copy.replaceStop(stop.name)}><img src="/assets/ui-edit-teal.svg" alt="" /></button>}
+        {onRestore && <button type="button" onClick={onRestore} aria-label={copy.restoreShared}><img src="/assets/ui-swap.svg" alt="" /></button>}
         <button type="button" onClick={onUp} disabled={!canUp} aria-label={copy.moveUp(stop.name)}>
           <img src="/assets/ui-arrow-up.svg" alt="" />
         </button>

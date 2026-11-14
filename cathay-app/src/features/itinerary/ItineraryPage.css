@@ -15,6 +15,90 @@
   gap: var(--space-md);
 }
 
+.itinerary-calendar {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-sm) var(--space-xl);
+  background: var(--color-surface-default);
+  border-bottom: var(--border-width-default) solid var(--color-divider);
+}
+
+.itinerary-calendar .itinerary-calendar__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: auto;
+  height: var(--size-touch-target);
+  padding-inline: var(--space-md);
+  border-color: var(--color-border-brand);
+  font-size: var(--text-body-size);
+  font-weight: var(--weight-semibold);
+  line-height: var(--text-body-leading);
+}
+
+.itinerary-calendar__button img {
+  width: var(--space-lg);
+  height: var(--space-lg);
+}
+
+.itinerary-calendar__dialog {
+  width: min(calc(100% - 2 * var(--space-md)), 348px);
+  max-width: none;
+  max-height: 90dvh;
+  margin: auto;
+  padding: var(--space-xl);
+  border: var(--border-width-default) solid var(--color-divider);
+  border-radius: var(--radius-card-lg);
+  background: var(--color-surface-default);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-card);
+  font-size: var(--text-body-size);
+  line-height: var(--leading-body);
+}
+
+.itinerary-calendar__dialog[open] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.itinerary-calendar__dialog::backdrop {
+  background: var(--color-overlay-scrim);
+}
+
+.itinerary-calendar__dialog h2 {
+  font-size: var(--text-title-md-size);
+  line-height: var(--text-title-md-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.itinerary-calendar__details {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-brand-subtle);
+}
+
+.itinerary-calendar__note {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+}
+
+.itinerary-calendar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+}
+
+.itinerary-calendar__actions .button {
+  min-width: var(--size-touch-target);
+  min-height: var(--size-touch-target);
+  padding-inline: var(--space-md);
+  font-size: var(--text-body-size);
+}
+
 .itinerary__from {
   color: var(--color-text-secondary);
   font-size: var(--text-caption-size);
@@ -134,4 +218,253 @@
   height: 20px;
   margin-right: var(--space-sm);
   vertical-align: middle;
+}
+
+.itinerary__removed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-chip);
+  color: var(--color-text-chip);
+}
+
+.itinerary-edit,
+.itinerary-edit__select,
+.itinerary-edit__scopes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.itinerary-edit__scopes {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.itinerary-edit__scopes label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: var(--size-touch-target);
+  padding: var(--space-sm);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-control);
+}
+
+.itinerary-edit__scopes label:has(:checked) {
+  border-color: var(--color-border-brand);
+  background: var(--color-surface-brand-subtle);
+}
+
+.itinerary-edit__scopes input {
+  accent-color: var(--color-text-brand);
+}
+
+.itinerary-edit__scopes small {
+  display: block;
+  color: var(--color-text-secondary);
+}
+
+.itinerary-edit__select select {
+  max-width: 100%;
+  min-height: var(--size-touch-target);
+  padding: var(--space-sm);
+  border: var(--border-width-default) solid var(--color-border-brand);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-default);
+  color: var(--color-text-primary);
+  font: inherit;
+}
+
+.itinerary-edit__actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.itinerary-edit__actions .button:first-child {
+  flex: 1;
+}
+
+.itinerary-edit__actions .button:last-child {
+  flex: 2;
+}
+
+.itinerary-timeline {
+  padding: var(--space-md) var(--space-sm);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-default);
+  box-shadow: var(--shadow-card);
+}
+
+.itinerary-timeline__scroll {
+  overflow-x: auto;
+}
+
+.itinerary-timeline__canvas {
+  min-width: 100%;
+  padding-block: var(--space-2xl) var(--space-sm);
+}
+
+.itinerary-timeline__tracks {
+  --timeline-clock-width: 37px;
+  position: relative;
+  display: grid;
+}
+
+.itinerary-timeline__clock,
+.itinerary-timeline__track {
+  grid-area: 1 / 1 / -1;
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.itinerary-timeline__track {
+  --lane-color: var(--color-text-brand);
+  --lane-tint: color-mix(in srgb, var(--lane-color) 13%, var(--color-surface-default));
+  position: relative;
+}
+
+.itinerary-timeline__track[data-filtered-out] {
+  visibility: hidden;
+}
+
+.itinerary-timeline [data-tone='peach'] { --lane-color: var(--color-text-chip); }
+.itinerary-timeline [data-tone='steel'] { --lane-color: var(--color-text-class-premium); }
+.itinerary-timeline [data-tone='violet'] { --lane-color: var(--color-itinerary-violet); }
+.itinerary-timeline [data-tone='sand'] { --lane-color: var(--color-text-warning); }
+.itinerary-timeline [data-tone='blue'] { --lane-color: var(--color-text-class-business); }
+.itinerary-timeline [data-tone='green'] { --lane-color: var(--color-surface-brand); }
+.itinerary-timeline [data-tone='rose'] { --lane-color: var(--color-surface-destructive); }
+
+.itinerary-timeline__heading {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(100% + var(--space-sm));
+  color: var(--color-text-primary);
+  font-size: var(--text-caption-sm-size);
+  line-height: var(--text-caption-sm-leading);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.itinerary-timeline__heading--empty {
+  position: static;
+  margin-bottom: var(--space-sm);
+}
+
+.itinerary-timeline__track:not([data-tone]) .itinerary-timeline__heading {
+  color: var(--color-text-brand);
+}
+
+.itinerary-timeline__clock > div {
+  position: relative;
+  grid-column: 1;
+  height: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-sm-size);
+  line-height: var(--text-caption-sm-leading);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.itinerary-timeline__clock time {
+  position: absolute;
+  transform: translateY(-50%);
+}
+
+.itinerary-timeline__clock > div::after {
+  position: absolute;
+  inset-inline: var(--timeline-clock-width) 0;
+  height: var(--border-width-default);
+  background: var(--color-divider);
+  content: '';
+}
+
+.itinerary-timeline__block {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-block: var(--space-xs);
+  padding-inline: var(--border-width-strong) var(--space-xs);
+  border-inline-start: var(--border-width-strong) solid var(--lane-color);
+  border-radius: var(--radius-hairline);
+  background: var(--lane-tint);
+  font-size: var(--text-caption-sm-size);
+  line-height: var(--text-caption-sm-leading);
+  overflow-wrap: anywhere;
+}
+
+.itinerary-timeline__block strong {
+  font-weight: var(--weight-semibold);
+}
+
+.itinerary-timeline__range {
+  font-variant-numeric: tabular-nums;
+}
+
+.itinerary-timeline__range time {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+.itinerary-timeline__range time span {
+  white-space: nowrap;
+}
+
+.itinerary-timeline__block[data-skipped] {
+  border-inline-start-style: dashed;
+}
+
+.itinerary-timeline__untimed,
+.itinerary-timeline__empty-filter {
+  margin: 0 0 var(--space-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+}
+
+.itinerary-timeline__empty-filter {
+  text-align: center;
+}
+
+.itinerary-timeline__filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-xs);
+  border-top: var(--border-width-default) solid var(--color-divider);
+  margin-top: var(--space-sm);
+}
+
+.itinerary-timeline__filters button {
+  display: grid;
+  place-items: center;
+  min-width: var(--size-touch-target);
+  min-height: var(--size-touch-target);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  font-weight: var(--weight-semibold);
+}
+
+.itinerary-timeline__filters button span {
+  padding: var(--space-xs) var(--space-sm);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-pill);
+}
+
+.itinerary-timeline__filters button[aria-pressed='true'] span {
+  border-color: var(--color-border-brand);
+  background: var(--color-surface-brand-subtle);
+  color: var(--color-text-brand);
 }

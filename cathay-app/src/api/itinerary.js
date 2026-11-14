@@ -1,6 +1,6 @@
 // Shared itinerary generation, reading and editing.
 import { notifyDataChanged } from './events';
-import { request } from './http';
+import { invalidateGet, request } from './http';
 
 const enc = encodeURIComponent;
 
@@ -18,8 +18,10 @@ export function getItinerary(groupId) {
 }
 
 // Saves removed and reordered stops: days = [{ date, stopIds }]. Flights cannot be moved.
-export async function saveItinerary(groupId, days) {
-  const result = await request('PUT', `/groups/${enc(groupId)}/itinerary`, { days });
+export async function saveItinerary(groupId, edit) {
+  const path = `/groups/${enc(groupId)}/itinerary`;
+  const result = await request('PUT', path, Array.isArray(edit) ? { days: edit } : edit);
+  invalidateGet(path);
   notifyDataChanged();
   return result;
 }

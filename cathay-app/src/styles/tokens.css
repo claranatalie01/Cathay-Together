@@ -44,6 +44,7 @@
   --color-canvas: #444444; /* page background around the phone frame; not product UI */
 
   /* ---- Colour: icons (Figma style "Dark") -------------------------------- */
+  --color-itinerary-violet: #70558b; /* Personal itinerary timeline dot */
   --color-icon-default: #141b34;
   --color-icon-brand: #336c6a;
 

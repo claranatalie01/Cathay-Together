@@ -41,3 +41,14 @@ export const clockOf = (tripMinute) => {
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 };
 export const minutesOf = (clock) => Number(clock.slice(0, 2)) * 60 + Number(clock.slice(3));
+
+const clockPattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+
+// Convert saved activity clocks to minutes within the activity's local day.
+export function activityTimes(stop) {
+  if (!clockPattern.test(stop.startTime)) return null;
+  const start = minutesOf(stop.startTime);
+  const end = clockPattern.test(stop.endTime) ? minutesOf(stop.endTime) : start;
+  const duration = Number.isInteger(stop.minutes) && stop.minutes > 0 ? stop.minutes : 0;
+  return { start, end: end < start ? end + DAY : end === start ? start + duration : end };
+}

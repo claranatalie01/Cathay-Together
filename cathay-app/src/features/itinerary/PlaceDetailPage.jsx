@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ApiError, getStop } from '../../api';
 import BottomNav from '../../components/layout/BottomNav';
 import PageHeader from '../../components/layout/PageHeader';
@@ -23,7 +23,9 @@ export default function PlaceDetailPage() {
   const copy = COPY.itin;
   const { status, data, error, reload } = useAsync(() => getStop(groupId, stopId), [groupId, stopId]);
   useDocumentTitle(data ? data.stop.name : copy.title);
-  const back = `/groups/${groupId}/itinerary`;
+  const [params] = useSearchParams();
+  const dayParam = params.get('day');
+  const back = `/groups/${groupId}/itinerary${dayParam ? `?day=${encodeURIComponent(dayParam)}` : ''}`;
 
   const frame = (title, body) => (
     <Screen>
@@ -55,6 +57,7 @@ export default function PlaceDetailPage() {
       <img className="place__photo" src={stop.photo} alt={stop.alt} referrerPolicy="no-referrer" onError={fallbackTo(stop.category_key)} />
       <div className="place__head">
         <h2 className="place__name">{stop.name}</h2>
+        {stop.myChange && <p className="place__text">{copy.myChange}</p>}
         <p className="place__area">
           <img src="/assets/ui-pin-teal.svg" alt="" />
           {stop.area}
